@@ -9,5 +9,7 @@ object dependencies {
     val testkit = org %% "cats-testkit" % version
   }
 
+  val scalacheck = "org.scalacheck" %% "scalacheck" % "1.13.5"
+
   val droste = "io.higherkindness" %% "droste-core" % "0.5.0"
 }

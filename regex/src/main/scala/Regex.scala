@@ -1,6 +1,8 @@
 package ceedubs.irrec
 package regex
 
+import cats.Foldable
+import cats.implicits._
 import qq.droste.data.prelude._
 import qq.droste.data.{Mu, CoattrF}
 
@@ -31,8 +33,12 @@ object Regex {
 
   def count[A](n: Int, r: Regex[A]): Regex[A] = (1 to n).foldLeft(empty[A])((acc, _) => andThen(acc, r))
 
-  def stringMatcher[A](r: Regex[Char]): String => Boolean = {
-    val n = NFA.runNFA(Glushkov.regexToNFA(r))
-    s => n(s.toStream)
+  def matcher[F[_], A](r: Regex[A])(implicit orderingA: Ordering[A], foldableF: Foldable[F]): F[A] => Boolean = {
+    NFA.runNFA[F, A, Int](Glushkov.regexToNFA(r))
+  }
+
+  def stringMatcher(r: Regex[Char]): String => Boolean = {
+    val matcher = r.matcher[List]
+    s => matcher(s.toList)
   }
 }

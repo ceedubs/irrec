@@ -21,12 +21,25 @@ lazy val regex = (project in file("regex"))
       droste,
       cats.testkit % Test))
   .settings(commonSettings)
+  // see https://github.com/sbt/sbt/issues/2698#issuecomment-311417188
+  .settings(unmanagedClasspath in Test ++= (fullClasspath in (regexGenRef, Compile)).value)
   .dependsOn(kleene % "test->test;compile->compile")
+
+lazy val regexGen = (project in file("regex-gen"))
+  .settings(
+    moduleName := "regex-gen",
+    libraryDependencies ++= Seq(
+      scalacheck,
+      cats.testkit % Test))
+  .settings(commonSettings)
+  .dependsOn(regex)
+
+lazy val regexGenRef = LocalProject("regexGen")
 
 lazy val root = project
   .settings(
     moduleName := "root"
-  ).aggregate(kleene, regex)
+  ).aggregate(kleene, regex, regexGen)
 
 // Thanks, Rob! https://tpolecat.github.io/2017/04/25/scalac-flags.html
 val scalacOptionSettings: Seq[Setting[_]] = Seq(

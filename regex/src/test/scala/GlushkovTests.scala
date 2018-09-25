@@ -2,78 +2,138 @@ package ceedubs.irrec
 package regex
 
 import ceedubs.irrec.regex.Regex._
+import ceedubs.irrec.regex.RegexGen._
+import org.scalacheck.Gen, Gen.Choose
+import org.scalacheck.Arbitrary, Arbitrary.arbitrary
 
 class GlushkovTests extends IrrecSuite {
+  import GlushkovTests._
 
-  test("literal match"){assert(stringMatcher(literal('b'))("b"))}
+  test("literal match"){assert(literal('b').stringMatcher("b"))}
 
-  test("literal non-match"){assert(!stringMatcher(literal('b'))("a"))}
+  test("literal non-match"){assert(!(literal('b').stringMatcher("a")))}
 
-  test("literal with trailing"){assert(!stringMatcher(literal('b'))("ba"))}
+  test("literal with trailing"){assert(!literal('b').stringMatcher("ba"))}
 
-  test("or left match"){assert(stringMatcher(or(literal('b'), literal('c')))("b"))}
+  test("or left match"){assert(or(literal('b'), literal('c')).stringMatcher("b"))}
 
-  test("or left match with trailing"){assert(!stringMatcher(or(literal('b'), literal('c')))("bc"))}
+  test("or left match with trailing"){assert(!or(literal('b'), literal('c')).stringMatcher("bc"))}
 
-  test("or right match"){assert(stringMatcher(or(literal('b'), literal('c')))("c"))}
+  test("or right match"){assert(or(literal('b'), literal('c')).stringMatcher("c"))}
 
-  test("or right match with trailing"){assert(!stringMatcher(or(literal('b'), literal('c')))("cb"))}
+  test("or right match with trailing"){assert(!or(literal('b'), literal('c')).stringMatcher("cb"))}
 
-  test("or no match"){assert(!stringMatcher(or(literal('b'), literal('c')))("a"))}
+  test("or no match"){assert(!or(literal('b'), literal('c')).stringMatcher("a"))}
 
-  test("or no match with trailing"){assert(!stringMatcher(or(literal('b'), literal('c')))("ad"))}
+  test("or no match with trailing"){assert(!or(literal('b'), literal('c')).stringMatcher("ad"))}
 
-  test("andThen match"){assert(stringMatcher(andThen(literal('b'), literal('c')))("bc"))}
+  test("andThen match"){assert(andThen(literal('b'), literal('c')).stringMatcher("bc"))}
 
-  test("andThen left only"){assert(!stringMatcher(andThen(literal('b'), literal('c')))("bd"))}
+  test("andThen left only"){assert(!andThen(literal('b'), literal('c')).stringMatcher("bd"))}
 
-  test("andThen right only"){assert(!stringMatcher(andThen(literal('b'), literal('c')))("ac"))}
+  test("andThen right only"){assert(!andThen(literal('b'), literal('c')).stringMatcher("ac"))}
 
-  test("andThen with trailing"){assert(!stringMatcher(andThen(literal('b'), literal('c')))("bcd"))}
+  test("andThen with trailing"){assert(!andThen(literal('b'), literal('c')).stringMatcher("bcd"))}
 
-  test("star zero"){assert(stringMatcher(star(literal('b')))(""))}
+  test("star zero"){assert(star(literal('b')).stringMatcher(""))}
 
-  test("star one"){assert(stringMatcher(star(literal('b')))("b"))}
+  test("star one"){assert(star(literal('b')).stringMatcher("b"))}
 
-  test("star two"){assert(stringMatcher(star(literal('b')))("bb"))}
+  test("star two"){assert(star(literal('b')).stringMatcher("bb"))}
 
-  test("star three"){assert(stringMatcher(star(or(literal('b'), literal('c'))))("bcb"))}
+  test("star three"){assert(star(or(literal('b'), literal('c'))).stringMatcher("bcb"))}
 
-  test("star trailing"){assert(!stringMatcher(star(or(literal('b'), literal('c'))))("bcbd"))}
+  test("star trailing"){assert(!star(or(literal('b'), literal('c'))).stringMatcher("bcbd"))}
 
-  test("wildcard"){assert(stringMatcher(wildcard[Char])("b"))}
+  test("wildcard"){assert(wildcard[Char].stringMatcher("b"))}
 
-  test("wildcard trailing"){assert(!stringMatcher(wildcard[Char])("bc"))}
+  test("wildcard trailing"){assert(!wildcard[Char].stringMatcher("bc"))}
 
-  test("wildcard empty"){assert(!stringMatcher(wildcard[Char])(""))}
+  test("wildcard empty"){assert(!wildcard[Char].stringMatcher(""))}
 
-  test("inside range"){assert(stringMatcher(range('a', 'c'))("b"))}
+  test("inside range"){assert(range('a', 'c').stringMatcher("b"))}
 
-  test("left range"){assert(stringMatcher(range('a', 'c'))("a"))}
+  test("left range"){assert(range('a', 'c').stringMatcher("a"))}
 
-  test("right range"){assert(stringMatcher(range('a', 'c'))("c"))}
+  test("right range"){assert(range('a', 'c').stringMatcher("c"))}
 
-  test("outside range"){assert(!stringMatcher(range('a', 'c'))("d"))}
+  test("outside range"){assert(!range('a', 'c').stringMatcher("d"))}
 
-  test("oneOrMore zero"){assert(!stringMatcher(oneOrMore(literal('b')))(""))}
+  test("oneOrMore zero"){assert(!oneOrMore(literal('b')).stringMatcher(""))}
 
-  test("oneOrMore one"){assert(stringMatcher(oneOrMore(literal('b')))("b"))}
+  test("oneOrMore one"){assert(oneOrMore(literal('b')).stringMatcher("b"))}
 
-  test("oneOrMore two"){assert(stringMatcher(oneOrMore(literal('b')))("bb"))}
+  test("oneOrMore two"){assert(oneOrMore(literal('b')).stringMatcher("bb"))}
 
-  test("oneOrMore three"){assert(stringMatcher(oneOrMore(literal('b')))("bbb"))}
+  test("oneOrMore three"){assert(oneOrMore(literal('b')).stringMatcher("bbb"))}
 
-  test("count zero empty"){assert(stringMatcher(count(0, literal('b')))(""))}
+  test("count zero empty"){assert(count(0, literal('b')).stringMatcher(""))}
 
-  test("count zero non-empty"){assert(!stringMatcher(count(0, literal('b')))("b"))}
+  test("count zero non-empty"){assert(!count(0, literal('b')).stringMatcher("b"))}
 
-  test("count 1 empty"){assert(!stringMatcher(count(1, literal('b')))(""))}
+  test("count 1 empty"){assert(!count(1, literal('b')).stringMatcher(""))}
 
-  test("count 1 match"){assert(stringMatcher(count(1, literal('b')))("b"))}
+  test("count 1 match"){assert(count(1, literal('b')).stringMatcher("b"))}
 
-  test("count 1 non-match"){assert(!stringMatcher(count(1, literal('b')))("c"))}
+  test("count 1 non-match"){assert(!count(1, literal('b')).stringMatcher("c"))}
 
-  test("count 2 match"){assert(stringMatcher(count(2, literal('b')))("bb"))}
+  test("count 2 match"){assert(count(2, literal('b')).stringMatcher("bb"))}
 
-  test("count 2 non-match"){assert(!stringMatcher(count(2, literal('b')))("bc"))}
+  test("count 2 non-match"){assert(!count(2, literal('b')).stringMatcher("bc"))}
+
+  test("general regex matching"){
+    forAll(genRegexAndMatch[Int]) { rm =>
+      assert(rm.r.matcher[Stream].apply(rm.candidate))
+    }
+  }
+
+  test("or(r, r) is equivalent to r"){
+    forAll { (rc: RegexAndCandidate[Int]) =>
+      val expected = rc.r.matcher[Stream].apply(rc.candidate)
+      val equivR = or(rc.r, rc.r)
+      val actual = equivR.matcher[Stream].apply(rc.candidate)
+      actual should ===(expected)
+    }
+  }
+
+  test("andThen(empty, r) is equivalent to r"){
+    forAll { (rc: RegexAndCandidate[Int]) =>
+      val expected = rc.r.matcher[Stream].apply(rc.candidate)
+      val equivR = andThen(Regex.empty, rc.r)
+      val actual = equivR.matcher[Stream].apply(rc.candidate)
+      actual should ===(expected)
+    }
+  }
+
+  test("andThen(r, empty) is equivalent to r"){
+    forAll { (rc: RegexAndCandidate[Int]) =>
+      val expected = rc.r.matcher[Stream].apply(rc.candidate)
+      val equivR = andThen(rc.r, Regex.empty)
+      val actual = equivR.matcher[Stream].apply(rc.candidate)
+      actual should ===(expected)
+    }
+  }
+}
+
+object GlushkovTests {
+  final case class RegexAndCandidate[A](r: Regex[A], candidate: Stream[A])
+
+  def genRegexAndMatch[A](implicit arbA: Arbitrary[A], chooseA: Choose[A], orderingA: Ordering[A]): Gen[RegexAndCandidate[A]] =
+    for {
+      r <- genRegex(arbitrary[A], false)
+      c <- r(regexMatchingStreamGen(arbitrary[A]))
+    } yield RegexAndCandidate(r, c)
+
+  /**
+   * Generates arbitrary regexes and candidate matches for the regex. The candidate will match the
+   * regex roughly 50% of the time.
+   */
+  implicit def arbRegexAndCandidate[A](implicit arbA: Arbitrary[A], chooseA: Choose[A], orderingA: Ordering[A]): Arbitrary[RegexAndCandidate[A]] = {
+    val probablyNotMatching = for {
+      r <- genRegex(arbitrary[A], true)
+      c <- arbitrary[Stream[A]]
+    } yield RegexAndCandidate(r, c)
+
+    Arbitrary(Gen.oneOf(probablyNotMatching, genRegexAndMatch[A]))
+  }
 }
