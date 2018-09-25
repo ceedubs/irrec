@@ -31,6 +31,14 @@ object Regex {
    */
   def empty[A]: Regex[A] = Mu(CoattrF.roll(KleeneF.One))
 
+  /**
+   * A regular expression that will never successfully match.
+   *
+   * This is part of all Kleene algebras but may not be particularly useful in the context of
+   * string/character regexes.
+   */
+  def impossible[A]: Regex[A] = Mu(CoattrF.roll(KleeneF.Zero))
+
   def count[A](n: Int, r: Regex[A]): Regex[A] = (1 to n).foldLeft(empty[A])((acc, _) => andThen(acc, r))
 
   def matcher[F[_], A](r: Regex[A])(implicit orderingA: Ordering[A], foldableF: Foldable[F]): F[A] => Boolean = {

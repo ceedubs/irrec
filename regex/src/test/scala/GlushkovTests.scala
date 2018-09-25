@@ -96,6 +96,24 @@ class GlushkovTests extends IrrecSuite {
     }
   }
 
+  test("or(impossible, r) is equivalent to r"){
+    forAll { (rc: RegexAndCandidate[Int]) =>
+      val expected = rc.r.matcher[Stream].apply(rc.candidate)
+      val equivR = or(impossible, rc.r)
+      val actual = equivR.matcher[Stream].apply(rc.candidate)
+      actual should ===(expected)
+    }
+  }
+
+  test("or(r, impossible) is equivalent to r"){
+    forAll { (rc: RegexAndCandidate[Int]) =>
+      val expected = rc.r.matcher[Stream].apply(rc.candidate)
+      val equivR = or(rc.r, impossible)
+      val actual = equivR.matcher[Stream].apply(rc.candidate)
+      actual should ===(expected)
+    }
+  }
+
   test("andThen(empty, r) is equivalent to r"){
     forAll { (rc: RegexAndCandidate[Int]) =>
       val expected = rc.r.matcher[Stream].apply(rc.candidate)
@@ -111,6 +129,24 @@ class GlushkovTests extends IrrecSuite {
       val equivR = andThen(rc.r, Regex.empty)
       val actual = equivR.matcher[Stream].apply(rc.candidate)
       actual should ===(expected)
+    }
+  }
+
+  test("if r matches, oneOrMore(r) matches"){
+    forAll(genRegexAndMatch[Int]) { rc =>
+      assert(oneOrMore(rc.r).matcher[Stream].apply(rc.candidate))
+    }
+  }
+
+  test("if r matches x, oneOrMore(r) matches n * x"){
+    forAll(genRegexAndMatch[Int], Gen.chooseNum(1, 10)){ (rc, n) =>
+      oneOrMore(rc.r).matcher[Stream].apply(Stream.fill(n)(rc.candidate).flatten) should ===(true)
+    }
+  }
+
+  test("if r matches x, star(r) matches n * x"){
+    forAll(genRegexAndMatch[Int], Gen.chooseNum(0, 10)){ (rc, n) =>
+      star(rc.r).matcher[Stream].apply(Stream.fill(n)(rc.candidate).flatten) should ===(true)
     }
   }
 }
