@@ -10,14 +10,23 @@ lazy val kleene = (project in file("kleene"))
   .settings(
     moduleName := "kleene",
     libraryDependencies ++= Seq(
+      cats.core,
+      cats.testkit % Test))
+  .settings(commonSettings)
+
+lazy val regex = (project in file("regex"))
+  .settings(
+    moduleName := "regex",
+    libraryDependencies ++= Seq(
       droste,
-      cats.testkit % "test"))
-  .settings(scalacOptionSettings)
+      cats.testkit % Test))
+  .settings(commonSettings)
+  .dependsOn(kleene % "test->test;compile->compile")
 
 lazy val root = project
   .settings(
     moduleName := "root"
-  ).aggregate(kleene)
+  ).aggregate(kleene, regex)
 
 // Thanks, Rob! https://tpolecat.github.io/2017/04/25/scalac-flags.html
 val scalacOptionSettings: Seq[Setting[_]] = Seq(
@@ -70,3 +79,7 @@ val scalacOptionSettings: Seq[Setting[_]] = Seq(
   ),
   scalacOptions in (Compile, console) --= Seq("-Ywarn-unused:imports", "-Xfatal-warnings")
 )
+
+val commonSettings: Seq[Setting[_]] = Seq(
+  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.7")
+) ++ scalacOptionSettings
