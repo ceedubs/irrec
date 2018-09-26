@@ -48,12 +48,10 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.rng.Seed
 
 val phraseGen: Gen[String] = regexMatchingStringGen(phrase, arbitrary[Char])
-
-val p: Gen.Parameters = Gen.Parameters.default
 ```
 
 ```tut:book
-Gen.listOfN(3, phraseGen).apply(p, Seed(105769L))
+Gen.listOfN(3, phraseGen).apply(Gen.Parameters.default, Seed(105769L))
 ```
 
 ## Inspiration and Credits

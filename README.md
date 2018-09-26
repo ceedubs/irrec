@@ -54,12 +54,10 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.rng.Seed
 
 val phraseGen: Gen[String] = regexMatchingStringGen(phrase, arbitrary[Char])
-
-val p: Gen.Parameters = Gen.Parameters.default
 ```
 
 ```scala
-Gen.listOfN(3, phraseGen).apply(p, Seed(105769L))
+Gen.listOfN(3, phraseGen).apply(Gen.Parameters.default, Seed(105769L))
 // res7: Option[List[String]] = Some(List(5 tired rats, 2 feisty gnats, 8 happy bats))
 ```
 
