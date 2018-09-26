@@ -1,5 +1,8 @@
 # irrec
 
+[![Build Status](https://api.travis-ci.org/ceedubs/irrec.svg)](https://travis-ci.org/ceedubs/irrec)
+[![codecov.io](http://codecov.io/github/ceedubs/irrec/coverage.svg?branch=master)](http://codecov.io/github/ceedubs/irrec?branch=master)
+
 An implementation of regular expressions based on recursion schemes and Kleene algebras.
 
 The name is a shameless rip-off of [irreg](https://github.com/non/irreg), which this library was inspired by. It's different than irreg in that it uses `rec`ursion schemes, hence the name.
