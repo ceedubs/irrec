@@ -1,0 +1,28 @@
+language: scala
+sudo: false
+scala:
+  - 2.12.6
+
+sbt_args: "-J-Xmx2G"
+
+jobs:
+  include:
+    - stage: Documentation
+      env: PHASE=A
+    - stage: Unit Tests
+      env: PHASE=B
+    - stage: Publish
+      env: PHASE=C
+
+script:
+  - scripts/travis-ci.sh
+
+after_script:
+  - find $HOME/.sbt -name "*.lock" | xargs rm
+  - find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm
+
+# These directories are cached to S3 at the end of the build
+cache:
+  directories:
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt/boot/
