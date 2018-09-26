@@ -36,6 +36,19 @@ lazy val regexGen = (project in file("regex-gen"))
 
 lazy val regexGenRef = LocalProject("regexGen")
 
+lazy val readme = (project in file("readme"))
+  .enablePlugins(TutPlugin)
+  .dependsOn(regex, regexGen)
+  .settings(
+    scalacOptions in Tut ~= {
+      _.filterNot(Set(
+        "-Ywarn-unused-import",
+        "-Yno-predef",
+        "-Ywarn-unused:imports"))
+    },
+    tutTargetDirectory := (baseDirectory in LocalRootProject).value
+  )
+
 lazy val root = project
   .settings(
     moduleName := "root"
