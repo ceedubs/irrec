@@ -20,14 +20,14 @@ object Regex {
 
   def andThen[A](l: Regex[A], r: Regex[A]): Regex[A] = Mu(CoattrF.roll(KleeneF.Times(l, r)))
 
-  def oneOfL[A](a1: A, as: A*): Regex[A] = as.foldLeft(lit(a1))((acc, a) => or(acc, lit(a)))
+  def oneOf[A](a1: A, as: A*): Regex[A] = as.foldLeft(lit(a1))((acc, a) => or(acc, lit(a)))
 
-  def oneOf[A](r1: Regex[A], rs: Regex[A]*): Regex[A] = rs.foldLeft(r1)((acc, r) => or(acc, r))
+  def oneOfR[A](r1: Regex[A], rs: Regex[A]*): Regex[A] = rs.foldLeft(r1)((acc, r) => or(acc, r))
 
-  def oneOfFL[F[_], A](values: F[A])(implicit reducibleF: Reducible[F]): Regex[A] =
+  def oneOfF[F[_], A](values: F[A])(implicit reducibleF: Reducible[F]): Regex[A] =
     reducibleF.reduceLeftTo(values)(lit(_))((acc, a) => or(acc, literal(a)))
 
-  def oneOfF[F[_], A](values: F[Regex[A]])(implicit reducibleF: Reducible[F]): Regex[A] =
+  def oneOfFR[F[_], A](values: F[Regex[A]])(implicit reducibleF: Reducible[F]): Regex[A] =
     reducibleF.reduceLeft(values)((acc, r) => or(acc, r))
 
   /**
@@ -39,19 +39,19 @@ object Regex {
 
   def wildcard[A]: Regex[A] = Mu(CoattrF.pure(Match.Wildcard))
 
-  def allOfF[F[_], A](values: F[Regex[A]])(implicit foldableF: Foldable[F]): Regex[A] =
+  def allOfFR[F[_], A](values: F[Regex[A]])(implicit foldableF: Foldable[F]): Regex[A] =
     foldableF.foldLeft(values, empty[A])((acc, a) => andThen(acc, a))
 
-  def allOfFL[F[_], A](values: F[A])(implicit foldableF: Foldable[F]): Regex[A] =
+  def allOfF[F[_], A](values: F[A])(implicit foldableF: Foldable[F]): Regex[A] =
     foldableF.foldLeft(values, empty[A])((acc, a) => andThen(acc, literal(a)))
 
-  def allOf[A](values: Regex[A]*): Regex[A] =
+  def allOfR[A](values: Regex[A]*): Regex[A] =
+    allOfFR(values.toList)
+
+  def allOf[A](values: A*): Regex[A] =
     allOfF(values.toList)
 
-  def allOfL[A](values: A*): Regex[A] =
-    allOfFL(values.toList)
-
-  def seqL[A](values: Seq[A]): Regex[A] =
+  def seq[A](values: Seq[A]): Regex[A] =
     values.foldLeft(empty[A])((acc, a) => andThen(acc, literal(a)))
 
   /**

@@ -11,12 +11,8 @@ At this point, this library is just me playing around and learning some things. 
 ```tut:silent
 import ceedubs.irrec.regex._, Regex._
 
-val animal: Regex[Char] = (oneOf(lit('b'), lit('c'), lit('r')) | allOf(lit('g'), lit('n'))) * lit('a') * lit('t')
-
-// a more concise way to write the same expression
-val animal: Regex[Char] = (oneOfL('b', 'c', 'r') | seqL("gn")) * seqL("at")
-
-//  way of writing this
+// `*` denotes that the expression on the right should follow the expression on the left.
+val animal: Regex[Char] = (oneOf('b', 'c', 'r') | seq("gn")) * seq("at")
 
 val isAnimal: String => Boolean = animal.stringMatcher
 ```
@@ -35,15 +31,13 @@ isAnimal("hat")
 isAnimal("toaster")
 ```
 
-The `L` in `OneOfL`, `allOfL`, and `seqL` means "literal".
-
 ## generating data that matches a regular expression
 
 Irrec provides support for creating [Scalacheck](https://www.scalacheck.org/) generators that produce values that match a regular expression. This generation is done efficiently as opposed to generating a bunch of random values and then filtering the ones that don't match the regular expression (which would quickly lead to Scalacheck giving up on generating matching values).
 
 ```tut:silent
 val n: Regex[Char] = range('2', '9')
-val adjective: Regex[Char] = oneOf(seqL("happy"), seqL("tired"), seqL("feisty"))
+val adjective: Regex[Char] = oneOfR(seq("happy"), seq("tired"), seq("feisty"))
 val phrase: Regex[Char] = n * lit(' ') * adjective * lit(' ') * animal * lit('s')
 ```
 

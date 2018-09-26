@@ -11,37 +11,31 @@ At this point, this library is just me playing around and learning some things. 
 ```scala
 import ceedubs.irrec.regex._, Regex._
 
-val animal: Regex[Char] = (oneOf(lit('b'), lit('c'), lit('r')) | allOf(lit('g'), lit('n'))) * lit('a') * lit('t')
-
-// a more concise way to write the same expression
-val animal: Regex[Char] = (oneOfL('b', 'c', 'r') | seqL("gn")) * seqL("at")
-
-//  way of writing this
+// `*` denotes that the expression on the right should follow the expression on the left.
+val animal: Regex[Char] = (oneOf('b', 'c', 'r') | seq("gn")) * seq("at")
 
 val isAnimal: String => Boolean = animal.stringMatcher
 ```
 
 ```scala
 isAnimal("bat")
-// res3: Boolean = true
+// res1: Boolean = true
 
 isAnimal("cat")
-// res4: Boolean = true
+// res2: Boolean = true
 
 isAnimal("rat")
-// res5: Boolean = true
+// res3: Boolean = true
 
 isAnimal("gnat")
-// res6: Boolean = true
+// res4: Boolean = true
 
 isAnimal("hat")
-// res7: Boolean = false
+// res5: Boolean = false
 
 isAnimal("toaster")
-// res8: Boolean = false
+// res6: Boolean = false
 ```
-
-The `L` in `OneOfL`, `allOfL`, and `seqL` means "literal".
 
 ## generating data that matches a regular expression
 
@@ -49,7 +43,7 @@ Irrec provides support for creating [Scalacheck](https://www.scalacheck.org/) ge
 
 ```scala
 val n: Regex[Char] = range('2', '9')
-val adjective: Regex[Char] = oneOf(seqL("happy"), seqL("tired"), seqL("feisty"))
+val adjective: Regex[Char] = oneOfR(seq("happy"), seq("tired"), seq("feisty"))
 val phrase: Regex[Char] = n * lit(' ') * adjective * lit(' ') * animal * lit('s')
 ```
 
@@ -66,7 +60,7 @@ val p: Gen.Parameters = Gen.Parameters.default
 
 ```scala
 Gen.listOfN(3, phraseGen).apply(p, Seed(105769L))
-// res9: Option[List[String]] = Some(List(5 tired rats, 2 feisty gnats, 8 happy bats))
+// res7: Option[List[String]] = Some(List(5 tired rats, 2 feisty gnats, 8 happy bats))
 ```
 
 ## Inspiration and Credits
