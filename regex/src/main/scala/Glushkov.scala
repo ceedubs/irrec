@@ -1,7 +1,7 @@
 package ceedubs.irrec
 package regex
 
-import cats.{Eval, Functor, Order}
+import cats.{Functor, Order}
 import cats.data.State
 import cats.implicits._
 import qq.droste.{Algebra, AlgebraM}
@@ -14,9 +14,9 @@ import scala.collection.immutable.{SortedMap, SortedSet}
 // TODO ceedubs document what these methods do
 object Glushkov {
 
-  type IndexedRegex[A] = Free[KleeneF, (Int, Match[A])]
+  type Kleene[A] = Free[KleeneF, A]
 
-  def kleeneLocalIsEmpty[A, I](k: KleeneF[LocalLanguage[A, I]]): Boolean = k match {
+  def kleeneLocalIsEmpty[I, A](k: KleeneF[LocalLanguage[I, A]]): Boolean = k match {
     case KleeneF.Times(l, r) => l.isEmpty && r.isEmpty
     case KleeneF.Plus(l, r) => l.isEmpty || r.isEmpty
     case KleeneF.Star(_) => true
@@ -24,7 +24,7 @@ object Glushkov {
     case KleeneF.One => true
   }
 
-  def kleeneLocalLeading[A, I](k: KleeneF[LocalLanguage[A, I]]): List[(I, A)] = k match {
+  def kleeneLocalLeading[I, A](k: KleeneF[LocalLanguage[I, A]]): List[(I, A)] = k match {
     case KleeneF.Times(l, r) => if (l.isEmpty) l.leading |+| r.leading else l.leading
     case KleeneF.Plus(l, r) => l.leading |+| r.leading
     case KleeneF.Star(x) => x.leading
@@ -32,7 +32,7 @@ object Glushkov {
     case KleeneF.Zero => List.empty
   }
 
-  def kleeneLocalTrailing[A, I](k: KleeneF[LocalLanguage[A, I]]): List[(I, A)] = k match {
+  def kleeneLocalTrailing[I, A](k: KleeneF[LocalLanguage[I, A]]): List[(I, A)] = k match {
     case KleeneF.Times(l, r) => if (r.isEmpty) l.trailing |+| r.trailing else r.trailing
     case KleeneF.Plus(l, r) => l.trailing |+| r.trailing
     case KleeneF.Star(x) => x.trailing
@@ -41,7 +41,7 @@ object Glushkov {
   }
 
   // TODO ceedubs formatting
-  def kleeneLocalTransitions[A, I](k: KleeneF[LocalLanguage[A, I]])(implicit orderingI: Ordering[I]): SortedMap[I, List[(I, A)]] = {
+  def kleeneLocalTransitions[I, A](k: KleeneF[LocalLanguage[I, A]])(implicit orderingI: Ordering[I]): SortedMap[I, List[(I, A)]] = {
     implicit val orderI: Order[I] = Order.fromOrdering(orderingI)
     k match {
       case KleeneF.Times(l, r) => l.transitions |+| r.transitions |+|
@@ -58,7 +58,7 @@ object Glushkov {
     }
   }
 
-  def kleeneLocalLanguage[A, I](implicit orderingI: Ordering[I]): Algebra[KleeneF, LocalLanguage[A, I]] = Algebra{ ll =>
+  def kleeneLocalLanguage[I, A](implicit orderingI: Ordering[I]): Algebra[KleeneF, LocalLanguage[I, A]] = Algebra{ ll =>
     LocalLanguage(
       isEmpty = kleeneLocalIsEmpty(ll),
       leading = kleeneLocalLeading(ll),
@@ -74,24 +74,21 @@ object Glushkov {
       }
     }
 
-  def kleeneToLocalLanguage[A, I](implicit orderingI: Ordering[I]): Algebra[CoattrF[KleeneF, (I, A), ?], LocalLanguage[A, I]] = Algebra{
+  def kleeneToLocalLanguage[I, A](implicit orderingI: Ordering[I]): Algebra[CoattrF[KleeneF, (I, A), ?], LocalLanguage[I, A]] = Algebra{
     CoattrF.un(_) match {
       case Left((i, ma)) => leafLocalLanguage(i, ma)
       case Right(kf) => kleeneLocalLanguage.apply(kf)
     }
   }
 
-  def indexRegex[A]: Regex[A] => Eval[IndexedRegex[A]] = r =>
-    scheme[Mu].cataM(indexLeaves[KleeneF, Match[A]]).apply(r).runA(1)
-
   // TODO ceedubs can we combine indexing leaves with another algebra and do a single pass?
-  def regexToNFA[A](r: Regex[A]): NFA[Match[A], Int] = {
-    val indexed = indexRegex(r).value
-    val ll = scheme[Mu].cata(kleeneToLocalLanguage[Match[A], Int]).apply(indexed)
+  def kleeneToNFA[A](k: Kleene[A]): NFA[Int, A] = {
+    val indexed = scheme[Mu].cataM(indexLeaves[KleeneF, A]).apply(k).runA(1).value
+    val ll = scheme[Mu].cata(kleeneToLocalLanguage[Int, A]).apply(indexed)
     localLanguageToNFA(ll)
   }
 
-  def leafLocalLanguage[A, I](index: I, a: A)(implicit orderingI: Ordering[I]): LocalLanguage[A, I] = {
+  def leafLocalLanguage[I, A](index: I, a: A)(implicit orderingI: Ordering[I]): LocalLanguage[I, A] = {
     val singletonList = List((index, a))
     LocalLanguage(
       isEmpty = false,
@@ -100,13 +97,13 @@ object Glushkov {
       transitions = SortedMap.empty)
   }
 
-  def localLanguageToNFA[A](ll: LocalLanguage[A, Int]): NFA[A, Int] = NFA(
+  def localLanguageToNFA[A](ll: LocalLanguage[Int, A]): NFA[Int, A] = NFA(
     initStates = SortedSet(0),
     finalStates = (if (ll.isEmpty) SortedSet(0) else SortedSet.empty[Int]) |+| ll.trailing.map(_._1).to[SortedSet],
     transitions = ll.leading.foldMap{ l => SortedMap((0, List(l)))} |+| ll.transitions)
 
   // TODO ceedubs document
-  final case class LocalLanguage[A, I](
+  final case class LocalLanguage[I, A](
     isEmpty: Boolean,
     leading: List[(I, A)],
     trailing: List[(I, A)],
