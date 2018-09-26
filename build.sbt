@@ -109,3 +109,5 @@ val scalacOptionSettings: Seq[Setting[_]] = Seq(
 val commonSettings: Seq[Setting[_]] = Seq(
   addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.7")
 ) ++ scalacOptionSettings
+
+addCommandAlias("validate", ";test;tut")
