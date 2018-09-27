@@ -81,6 +81,30 @@ class GlushkovTests extends IrrecSuite {
 
   test("count 2 non-match"){assert(!count(2, literal('b')).stringMatcher("bc"))}
 
+  test("repeat examples"){
+    val r = lit('b').repeat(2, 4)
+    val m = r.stringMatcher
+    m("") should ===(false)
+    m("b") should ===(false)
+    m("bb") should ===(true)
+    m("bbb") should ===(true)
+    m("bbbb") should ===(true)
+    m("bbbbb") should ===(false)
+    m("bcb") should ===(false)
+  }
+
+  test("repeat(0, n) matches empty"){
+    forAll(arbitrary[Regex[Int]], Gen.chooseNum(0, 20)){ (r, max) =>
+      assert(r.repeat(0, max).matcher[List].apply(List.empty))
+    }
+  }
+
+  test("repeat(0, 0) doesn't match non-empty"){
+    forAll(arbitrary[Regex[Int]], Gen.nonEmptyListOf(arbitrary[Int])){ (r, c) =>
+      assert(!r.repeat(0, 0).matcher[List].apply(c))
+    }
+  }
+
   test("general regex matching"){
     forAll(genRegexAndMatch[Int]) { rm =>
       assert(rm.r.matcher[Stream].apply(rm.candidate))
@@ -147,6 +171,30 @@ class GlushkovTests extends IrrecSuite {
   test("if r matches x, star(r) matches n * x"){
     forAll(genRegexAndMatch[Int], Gen.chooseNum(0, 10)){ (rc, n) =>
       star(rc.r).matcher[Stream].apply(Stream.fill(n)(rc.candidate).flatten) should ===(true)
+    }
+  }
+
+  test("repeat(n, n, r) is equivalent to count(n, r)"){
+    forAll(arbitrary[RegexAndCandidate[Int]], Gen.chooseNum(1, 10)){ (rc, n) =>
+      val expected = rc.r.count(n).matcher[Stream].apply(rc.candidate)
+      val equivR = rc.r.repeat(n, n)
+      val actual = equivR.matcher[Stream].apply(rc.candidate)
+      actual should ===(expected)
+    }
+  }
+
+  test("repeat(n, m, r) matches r.count(n) * r.star"){
+    val gen = for {
+      min <- Gen.chooseNum(0, 10)
+      plus <- Gen.chooseNum(0, 5)
+      r <- genRegex(arbitrary[Int], false)
+      rRepeat = r.repeat(min, min + plus)
+      c <- rRepeat(regexMatchingStreamGen(arbitrary[Int]))
+    } yield (min, r, c)
+
+    forAll(gen){ case (min, r, c) =>
+      val r2 = r.count(min) * r.star
+      assert(r2.matcher[Stream].apply(c))
     }
   }
 }
