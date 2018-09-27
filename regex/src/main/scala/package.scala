@@ -4,7 +4,8 @@ import qq.droste.data.{Mu, CoattrF}
 
 package object regex {
   type Free[F[_], A] = Mu[CoattrF[F, A, ?]]
-  type Regex[A] = Free[KleeneF, Match[A]]
+  type Kleene[A] = Free[KleeneF, A]
+  type Regex[A] = Kleene[Match[A]]
 
   implicit def toRegexOps[A](r: Regex[A]): RegexOps[A] = RegexOps(r)
 
