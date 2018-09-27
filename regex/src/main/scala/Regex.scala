@@ -54,6 +54,9 @@ object Regex {
   def seq[A](values: Seq[A]): Regex[A] =
     values.foldLeft(empty[Match[A]])((acc, a) => andThen(acc, literal(a)))
 
+  def repeat[A](minInclusive: Int, maxInclusive: Int, r: Kleene[A]): Kleene[A] =
+    count(minInclusive, r) * (1 to (maxInclusive - minInclusive)).foldLeft(empty[A])((acc, i) => or(acc, r.count(i)))
+
   /**
    * A match on the empty string (this should always succeed and consume no input).
    */
