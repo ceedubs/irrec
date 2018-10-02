@@ -26,7 +26,7 @@ object KleeneOptimization {
         case KleeneF.Star(Roll(KleeneF.Plus(l, Roll(KleeneF.One)))) =>
           or(star(l), empty)
         case KleeneF.Star(Roll(KleeneF.Plus(Roll(KleeneF.One), r))) =>
-          or(star(r), empty[A])
+          or(empty, star(r))
         case KleeneF.Star(x @ Roll(KleeneF.One)) => x
         case KleeneF.Star(x @ Roll(KleeneF.Star(_))) => x
         // TODO should be able to use an `Eq` instance and compare for OR of any 2 things that are equal?
