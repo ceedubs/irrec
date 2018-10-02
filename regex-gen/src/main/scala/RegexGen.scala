@@ -5,7 +5,7 @@ import ceedubs.irrec.regex.ScalacheckSupport._
 
 import cats.implicits._
 import qq.droste.{Algebra, CoalgebraM, scheme}
-import qq.droste.data.{Mu, CoattrF}
+import qq.droste.data.CoattrF
 import qq.droste.data.prelude._
 import org.scalacheck.{Arbitrary, Gen}, Gen.Choose
 
@@ -40,7 +40,7 @@ object RegexGen {
     }
 
   def regexMatchingStringGen(r: Regex[Char], genChar: Gen[Char]): Gen[String] =
-    r(regexMatchingStreamGen(genChar)).map(_.mkString)
+    scheme.cata(regexMatchingStreamGen(genChar)).apply(r).map(_.mkString)
 
   private def genRangeMatch[A](genA: Gen[A])(implicit orderingA: Ordering[A]): Gen[Match.Range[A]] =
     for {
@@ -77,7 +77,7 @@ object RegexGen {
   }
 
   def genRegex[A:Choose:Ordering](genA: Gen[A], includeZero: Boolean): Gen[Regex[A]] = Gen.sized(maxSize =>
-    scheme[Mu].anaM(genRegexCoalgebraM[A](genA, includeZero)).apply(maxSize))
+    scheme.anaM(genRegexCoalgebraM[A](genA, includeZero)).apply(maxSize))
 
   implicit def arbRegex[A:Choose:Ordering](implicit arbA: Arbitrary[A]): Arbitrary[Regex[A]] =
     Arbitrary(genRegex(arbA.arbitrary, true))

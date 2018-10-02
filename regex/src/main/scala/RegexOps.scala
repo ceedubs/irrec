@@ -3,7 +3,7 @@ package regex
 
 import cats.Foldable
 
-final case class KleeneOps[A](private val r: Kleene[A]) extends AnyVal {
+final class KleeneOps[A](private val r: Kleene[A]) extends AnyVal {
 
   def |(o: Kleene[A]): Kleene[A] = Regex.or(r, o)
 
@@ -18,11 +18,11 @@ final case class KleeneOps[A](private val r: Kleene[A]) extends AnyVal {
   def repeat(minInclusive: Int, maxInclusive: Int): Kleene[A] = Regex.repeat(minInclusive, maxInclusive, r)
 }
 
-final case class RegexOps[A](private val r: Regex[A]) extends AnyVal {
+final class RegexOps[A](private val r: Regex[A]) extends AnyVal {
   def matcher[F[_]](implicit orderingA: Ordering[A], foldableF: Foldable[F]): F[A] => Boolean =
     Regex.matcher(r)
 }
 
-final case class CharRegexOps(private val r: Regex[Char]) extends AnyVal {
+final class CharRegexOps(private val r: Regex[Char]) extends AnyVal {
   def stringMatcher: String => Boolean = Regex.stringMatcher(r)
 }
