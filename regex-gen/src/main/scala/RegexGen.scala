@@ -54,11 +54,11 @@ object RegexGen {
       3 -> genRangeMatch(genA),
       1 -> Gen.const(Match.Wildcard))
 
-  def genRegexCoalgebraM[A:Choose:Ordering](genA: Gen[A], includeZero: Boolean): CoalgebraM[Gen, CoattrF[KleeneF, Match[A], ?], Int] = {
+  def genRegexCoalgebraM[A:Choose:Ordering](genA: Gen[A], includeZero: Boolean, includeOne: Boolean): CoalgebraM[Gen, CoattrF[KleeneF, Match[A], ?], Int] = {
     val leafGen: Gen[CoattrF[KleeneF, Match[A], Int]] =
       Gen.frequency(
         10 -> genMatch[A](genA).map(CoattrF.pure),
-        2 -> Gen.const(CoattrF.roll(KleeneF.One)),
+        (if (includeOne) 2 else 0) -> Gen.const(CoattrF.roll(KleeneF.One)),
         (if (includeZero) 1 else 0) -> Gen.const(CoattrF.roll(KleeneF.Zero)))
 
     CoalgebraM[Gen, CoattrF[KleeneF, Match[A], ?], Int]((maxSize: Int) =>
@@ -76,9 +76,9 @@ object RegexGen {
     )
   }
 
-  def genRegex[A:Choose:Ordering](genA: Gen[A], includeZero: Boolean): Gen[Regex[A]] = Gen.sized(maxSize =>
-    scheme.anaM(genRegexCoalgebraM[A](genA, includeZero)).apply(maxSize))
+  def genRegex[A:Choose:Ordering](genA: Gen[A], includeZero: Boolean, includeOne: Boolean): Gen[Regex[A]] = Gen.sized(maxSize =>
+    scheme.anaM(genRegexCoalgebraM[A](genA, includeZero = includeZero, includeOne = includeOne)).apply(maxSize))
 
   implicit def arbRegex[A:Choose:Ordering](implicit arbA: Arbitrary[A]): Arbitrary[Regex[A]] =
-    Arbitrary(genRegex(arbA.arbitrary, true))
+    Arbitrary(genRegex(arbA.arbitrary, includeZero = true, includeOne = true))
 }

@@ -5,11 +5,11 @@ import ceedubs.irrec.regex.Regex._
 import ceedubs.irrec.regex.RegexGen._
 import qq.droste.scheme
 import qq.droste.data.prelude._
-import org.scalacheck.Gen, Gen.Choose
+import org.scalacheck.Gen
+import RegexAndCandidate._
 import org.scalacheck.Arbitrary, Arbitrary.arbitrary
 
 class GlushkovTests extends IrrecSuite {
-  import GlushkovTests._
 
   test("literal match"){assert(literal('b').stringMatcher("b"))}
 
@@ -108,7 +108,7 @@ class GlushkovTests extends IrrecSuite {
   }
 
   test("general regex matching"){
-    forAll(genRegexAndMatch[Int]) { rm =>
+    forAll(genRegexAndMatch(true, arbitrary[Int])) { rm =>
       assert(rm.r.matcher[Stream].apply(rm.candidate))
     }
   }
@@ -159,19 +159,19 @@ class GlushkovTests extends IrrecSuite {
   }
 
   test("if r matches, oneOrMore(r) matches"){
-    forAll(genRegexAndMatch[Int]) { rc =>
+    forAll(genRegexAndMatch(true, arbitrary[Int])) { rc =>
       assert(oneOrMore(rc.r).matcher[Stream].apply(rc.candidate))
     }
   }
 
   test("if r matches x, oneOrMore(r) matches n * x"){
-    forAll(genRegexAndMatch[Int], Gen.chooseNum(1, 10)){ (rc, n) =>
+    forAll(genRegexAndMatch[Int](true, arbitrary[Int]), Gen.chooseNum(1, 10)){ (rc, n) =>
       oneOrMore(rc.r).matcher[Stream].apply(Stream.fill(n)(rc.candidate).flatten) should ===(true)
     }
   }
 
   test("if r matches x, star(r) matches n * x"){
-    forAll(genRegexAndMatch[Int], Gen.chooseNum(0, 10)){ (rc, n) =>
+    forAll(genRegexAndMatch(true, arbitrary[Int]), Gen.chooseNum(0, 10)){ (rc, n) =>
       star(rc.r).matcher[Stream].apply(Stream.fill(n)(rc.candidate).flatten) should ===(true)
     }
   }
@@ -189,7 +189,7 @@ class GlushkovTests extends IrrecSuite {
     val gen = for {
       min <- Gen.chooseNum(0, 10)
       plus <- Gen.chooseNum(0, 5)
-      r <- genRegex(arbitrary[Int], false)
+      r <- genRegex(arbitrary[Int], includeZero = false, includeOne = true)
       rRepeat = r.repeat(min, min + plus)
       //c <- rRepeat(regexMatchingStreamGen(arbitrary[Int]))
       c <- scheme.cata(regexMatchingStreamGen(arbitrary[Int])).apply(rRepeat)
@@ -199,28 +199,5 @@ class GlushkovTests extends IrrecSuite {
       val r2 = r.count(min) * r.star
       assert(r2.matcher[Stream].apply(c))
     }
-  }
-}
-
-object GlushkovTests {
-  final case class RegexAndCandidate[A](r: Regex[A], candidate: Stream[A])
-
-  def genRegexAndMatch[A](implicit arbA: Arbitrary[A], chooseA: Choose[A], orderingA: Ordering[A]): Gen[RegexAndCandidate[A]] =
-    for {
-      r <- genRegex(arbitrary[A], false)
-      c <- scheme.cata(regexMatchingStreamGen(arbitrary[A])).apply(r)
-    } yield RegexAndCandidate(r, c)
-
-  /**
-   * Generates arbitrary regexes and candidate matches for the regex. The candidate will match the
-   * regex roughly 50% of the time.
-   */
-  implicit def arbRegexAndCandidate[A](implicit arbA: Arbitrary[A], chooseA: Choose[A], orderingA: Ordering[A]): Arbitrary[RegexAndCandidate[A]] = {
-    val probablyNotMatching = for {
-      r <- genRegex(arbitrary[A], true)
-      c <- arbitrary[Stream[A]]
-    } yield RegexAndCandidate(r, c)
-
-    Arbitrary(Gen.oneOf(probablyNotMatching, genRegexAndMatch[A]))
   }
 }

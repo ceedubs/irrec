@@ -16,6 +16,8 @@ final class KleeneOps[A](private val r: Kleene[A]) extends AnyVal {
   def count(n: Int): Kleene[A] = Regex.count(n, r)
 
   def repeat(minInclusive: Int, maxInclusive: Int): Kleene[A] = Regex.repeat(minInclusive, maxInclusive, r)
+
+  def optimize: Kleene[A] = KleeneOptimization.optimizeKleene(r)
 }
 
 final class RegexOps[A](private val r: Regex[A]) extends AnyVal {
@@ -25,4 +27,6 @@ final class RegexOps[A](private val r: Regex[A]) extends AnyVal {
 
 final class CharRegexOps(private val r: Regex[Char]) extends AnyVal {
   def stringMatcher: String => Boolean = Regex.stringMatcher(r)
+
+  def pprint: String = RegexPrettyPrinter.pprintCharRegex(r)
 }
