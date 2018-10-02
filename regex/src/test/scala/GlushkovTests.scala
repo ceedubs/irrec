@@ -3,6 +3,8 @@ package regex
 
 import ceedubs.irrec.regex.Regex._
 import ceedubs.irrec.regex.RegexGen._
+import qq.droste.scheme
+import qq.droste.data.prelude._
 import org.scalacheck.Gen, Gen.Choose
 import org.scalacheck.Arbitrary, Arbitrary.arbitrary
 
@@ -189,7 +191,8 @@ class GlushkovTests extends IrrecSuite {
       plus <- Gen.chooseNum(0, 5)
       r <- genRegex(arbitrary[Int], false)
       rRepeat = r.repeat(min, min + plus)
-      c <- rRepeat(regexMatchingStreamGen(arbitrary[Int]))
+      //c <- rRepeat(regexMatchingStreamGen(arbitrary[Int]))
+      c <- scheme.cata(regexMatchingStreamGen(arbitrary[Int])).apply(rRepeat)
     } yield (min, r, c)
 
     forAll(gen){ case (min, r, c) =>
@@ -205,7 +208,7 @@ object GlushkovTests {
   def genRegexAndMatch[A](implicit arbA: Arbitrary[A], chooseA: Choose[A], orderingA: Ordering[A]): Gen[RegexAndCandidate[A]] =
     for {
       r <- genRegex(arbitrary[A], false)
-      c <- r(regexMatchingStreamGen(arbitrary[A]))
+      c <- scheme.cata(regexMatchingStreamGen(arbitrary[A])).apply(r)
     } yield RegexAndCandidate(r, c)
 
   /**

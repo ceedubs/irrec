@@ -6,7 +6,7 @@ import cats.data.State
 import cats.implicits._
 import qq.droste.{Algebra, AlgebraM}
 import qq.droste.data.prelude._
-import qq.droste.data.{CoattrF, Mu}
+import qq.droste.data.{Coattr, CoattrF}
 import qq.droste.scheme
 import scala.collection.immutable.{SortedMap, SortedSet}
 
@@ -64,11 +64,11 @@ object Glushkov {
       transitions = kleeneLocalTransitions(ll))
   }
 
-  def indexLeaves[F[_]:Functor, A]: AlgebraM[State[Int, ?], CoattrF[F, A, ?], Free[F, (Int, A)]] =
+  def indexLeaves[F[_]:Functor, A]: AlgebraM[State[Int, ?], CoattrF[F, A, ?], Coattr[F, (Int, A)]] =
     AlgebraM {
       CoattrF.un(_) match {
-        case Left(a) => State((i: Int) => (i + 1, Mu(CoattrF.pure(i -> a))))
-        case Right(z) => State.pure(Mu(CoattrF.roll(z)))
+        case Left(a) => State((i: Int) => (i + 1, Coattr.pure(i -> a)))
+        case Right(z) => State.pure(Coattr.roll(z))
       }
     }
 
@@ -81,8 +81,8 @@ object Glushkov {
 
   // TODO ceedubs can we combine indexing leaves with another algebra and do a single pass?
   def kleeneToNFA[A](k: Kleene[A]): NFA[Int, A] = {
-    val indexed = scheme[Mu].cataM(indexLeaves[KleeneF, A]).apply(k).runA(1).value
-    val ll = scheme[Mu].cata(kleeneToLocalLanguage[Int, A]).apply(indexed)
+    val indexed = scheme.cataM(indexLeaves[KleeneF, A]).apply(k).runA(1).value
+    val ll = scheme.cata(kleeneToLocalLanguage[Int, A]).apply(indexed)
     localLanguageToNFA(ll)
   }
 

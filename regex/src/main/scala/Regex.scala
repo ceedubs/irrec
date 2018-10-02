@@ -3,8 +3,7 @@ package regex
 
 import cats.{Foldable, Order, Reducible}
 import cats.implicits._
-import qq.droste.data.prelude._
-import qq.droste.data.{Mu, CoattrF}
+import qq.droste.data.Coattr
 
 // TODO ceedubs work around that scala bug where a companion object and type alias have the same name
 object Regex {
@@ -12,15 +11,15 @@ object Regex {
   /** alias for [[literal]] */
   def lit[A](value: A): Regex[A] = literal(value)
 
-  def literal[A](value: A): Regex[A] = Mu(CoattrF.pure(Match.Literal(value)))
+  def literal[A](value: A): Regex[A] = Coattr.pure(Match.Literal(value))
 
-  def range[A](l: A, r: A): Regex[A] = Mu(CoattrF.pure(Match.Range(l, r)))
+  def range[A](l: A, r: A): Regex[A] = Coattr.pure(Match.Range(l, r))
 
-  def wildcard[A]: Regex[A] = Mu(CoattrF.pure(Match.Wildcard))
+  def wildcard[A]: Regex[A] = Coattr.pure(Match.Wildcard)
 
-  def or[A](l: Kleene[A], r: Kleene[A]): Kleene[A] = Mu(CoattrF.roll(KleeneF.Plus(l, r)))
+  def or[A](l: Kleene[A], r: Kleene[A]): Kleene[A] = Coattr.roll(KleeneF.Plus(l, r))
 
-  def andThen[A](l: Kleene[A], r: Kleene[A]): Kleene[A] = Mu(CoattrF.roll(KleeneF.Times(l, r)))
+  def andThen[A](l: Kleene[A], r: Kleene[A]): Kleene[A] = Coattr.roll(KleeneF.Times(l, r))
 
   def oneOf[A](a1: A, as: A*): Regex[A] = as.foldLeft(lit(a1))((acc, a) => or(acc, lit(a)))
 
@@ -37,7 +36,7 @@ object Regex {
    */
   def oneOrMore[A](value: Kleene[A]): Kleene[A] = andThen(value, star(value))
 
-  def star[A](value: Kleene[A]): Kleene[A] = Mu(CoattrF.roll(KleeneF.Star(value)))
+  def star[A](value: Kleene[A]): Kleene[A] = Coattr.roll(KleeneF.Star(value))
 
   def allOfFR[F[_], A](values: F[Kleene[A]])(implicit foldableF: Foldable[F]): Kleene[A] =
     foldableF.foldLeft(values, empty[A])((acc, a) => andThen(acc, a))
@@ -60,7 +59,7 @@ object Regex {
   /**
    * A match on the empty string (this should always succeed and consume no input).
    */
-  def empty[A]: Kleene[A] = Mu(CoattrF.roll(KleeneF.One))
+  def empty[A]: Kleene[A] = Coattr.roll[KleeneF, A](KleeneF.One)
 
   /**
    * A regular expression that will never successfully match.
@@ -68,7 +67,7 @@ object Regex {
    * This is part of all Kleene algebras but may not be particularly useful in the context of
    * string/character regexes.
    */
-  def impossible[A]: Kleene[A] = Mu(CoattrF.roll(KleeneF.Zero))
+  def impossible[A]: Kleene[A] = Coattr.roll[KleeneF, A](KleeneF.Zero)
 
   def count[A](n: Int, r: Kleene[A]): Kleene[A] = (1 to n).foldLeft(empty[A])((acc, _) => andThen(acc, r))
 
