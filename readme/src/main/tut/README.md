@@ -36,6 +36,14 @@ isAnimal("hat")
 isAnimal("toaster")
 ```
 
+## printing a regular expression
+
+Regular expressions can be printed in a (hopefully) POSIX style:
+
+```tut:book
+animal.pprint
+```
+
 ## generating data that matches a regular expression
 
 Irrec provides support for creating [Scalacheck](https://www.scalacheck.org/) generators that produce values that match a regular expression. This generation is done efficiently as opposed to generating a bunch of random values and then filtering the ones that don't match the regular expression (which would quickly lead to Scalacheck giving up on generating matching values).
@@ -57,6 +65,27 @@ val phraseGen: Gen[String] = regexMatchingStringGen(phrase, arbitrary[Char])
 
 ```tut:book
 Gen.listOfN(3, phraseGen).apply(Gen.Parameters.default, Seed(105769L))
+```
+
+## optimizing a regular expression
+
+Irrec has some support for optimizing a regular expression, though at this point it probably won't
+do much to optimize most regular expressions.
+
+```tut:silent
+val inefficientRegex: Regex[Char] = lit('a').star.star.star
+```
+
+```tut:book
+inefficientRegex.pprint
+```
+
+```tut:silent
+val moreEfficientRegex: Regex[Char] = inefficientRegex.optimize
+```
+
+```tut:book
+moreEfficientRegex.pprint
 ```
 
 ## Inspiration and Credits
