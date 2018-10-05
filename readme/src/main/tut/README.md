@@ -88,7 +88,13 @@ val moreEfficientRegex: Regex[Char] = inefficientRegex.optimize
 moreEfficientRegex.pprint
 ```
 
-## Inspiration and Credits
+## performance
+
+Irrec has been built with algorithmic performance in mind but at this point, it isn't built to be blazingly fast. It is built with a focus on correctness and clean (by some standard) functional code.
+
+Some benchmark results can be viewed in the [benchmarks/results](benchmarks/results) directory. In a sentence (that is a really lossy representation of reality), for common use-cases Java's `Pattern` performs about an order of magnitude better than irrec (think 10M matches per second vs 1M). However for some extreme cases, irrec performs several orders of magnitude better (think 500k matches per second vs 30).
+
+## inspiration and credits
 
 A number of libraries and resources were useful as inspiration and reference implementations for the code in this library. A special thanks goes out to these:
 

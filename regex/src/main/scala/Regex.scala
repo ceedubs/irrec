@@ -76,8 +76,10 @@ object Regex {
     NFA.runNFA[F, Int, Match[A], A](Glushkov.kleeneToNFA(r), _.matches(_))
   }
 
+  private implicit val indexedSeqFoldable: Foldable[IndexedSeq] = new IndexedSeqFoldable[IndexedSeq] {}
+
   def stringMatcher(r: Regex[Char]): String => Boolean = {
-    val matcher = r.matcher[List]
-    s => matcher(s.toList)
+    val matcher = r.matcher[IndexedSeq]
+    s => matcher(s)
   }
 }

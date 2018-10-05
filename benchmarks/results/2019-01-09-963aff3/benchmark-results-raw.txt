@@ -1,0 +1,22 @@
+[info] Benchmark                                                Mode  Cnt         Score        Error  Units
+[info] AndThenAndOrRegexBenchmarks.irrecLongNonMatch           thrpt   20   2209995.415 ±  16519.742  ops/s
+[info] AndThenAndOrRegexBenchmarks.irrecMatch                  thrpt   20   1350828.751 ±  42508.572  ops/s
+[info] AndThenAndOrRegexBenchmarks.irrecNonMatch               thrpt   20   1442104.888 ±  23754.905  ops/s
+[info] AndThenAndOrRegexBenchmarks.irrecOptimizedLongNonMatch  thrpt   20   2213221.193 ±  14478.895  ops/s
+[info] AndThenAndOrRegexBenchmarks.irrecOptimizedMatch         thrpt   20   1504600.364 ±  12535.381  ops/s
+[info] AndThenAndOrRegexBenchmarks.irrecOptimizedNonMatch      thrpt   20   3043542.902 ±   9291.273  ops/s
+[info] AndThenAndOrRegexBenchmarks.javaLongNonMatch            thrpt   20  14213289.977 ±  60644.629  ops/s
+[info] AndThenAndOrRegexBenchmarks.javaMatch                   thrpt   20  12912666.823 ± 127167.028  ops/s
+[info] AndThenAndOrRegexBenchmarks.javaNonMatch                thrpt   20  14174273.175 ± 161985.331  ops/s
+[info] RepeatCountRegexBenchmarks.irrecLongNonMatch            thrpt   20    270227.419 ±   2255.654  ops/s
+[info] RepeatCountRegexBenchmarks.irrecMatch                   thrpt   20    270109.754 ±   2208.532  ops/s
+[info] RepeatCountRegexBenchmarks.irrecNonMatch                thrpt   20    495106.596 ±   4728.522  ops/s
+[info] RepeatCountRegexBenchmarks.irrecOptimizedLongNonMatch   thrpt   20    256191.187 ±   3119.406  ops/s
+[info] RepeatCountRegexBenchmarks.irrecOptimizedMatch          thrpt   20    271812.968 ±    518.512  ops/s
+[info] RepeatCountRegexBenchmarks.irrecOptimizedNonMatch       thrpt   20    517246.957 ±   3142.710  ops/s
+[info] RepeatCountRegexBenchmarks.javaLongNonMatch             thrpt   20   1801165.562 ±  13948.995  ops/s
+[info] RepeatCountRegexBenchmarks.javaMatch                    thrpt   20   2123843.171 ±  13757.154  ops/s
+[info] RepeatCountRegexBenchmarks.javaNonMatch                 thrpt   20   2347989.401 ±  26273.974  ops/s
+[info] ZeroStarStarABenchmarks.irrecMatchManyZeros             thrpt   20    491247.162 ±    817.424  ops/s
+[info] ZeroStarStarABenchmarks.irrecOptimizedMatchManyZeros    thrpt   20    436371.003 ±   4668.516  ops/s
+[info] ZeroStarStarABenchmarks.javaMatchManyZeros              thrpt   20        32.636 ±      0.216  ops/s
