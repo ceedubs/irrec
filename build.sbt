@@ -49,6 +49,13 @@ lazy val readme = (project in file("readme"))
     tutTargetDirectory := (baseDirectory in LocalRootProject).value
   )
 
+lazy val benchmarks = (project in file("benchmarks"))
+  .settings(moduleName := "benchmarks")
+  .enablePlugins(JmhPlugin)
+  .settings(commonSettings)
+  .settings(noPublishSettings)
+  .dependsOn(regex)
+
 lazy val root = project
   .settings(
     moduleName := "root"
@@ -109,5 +116,11 @@ val scalacOptionSettings: Seq[Setting[_]] = Seq(
 val commonSettings: Seq[Setting[_]] = Seq(
   addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.7")
 ) ++ scalacOptionSettings
+
+val noPublishSettings = Seq(
+  publish := {},
+  publishLocal := {},
+  publishArtifact := false
+)
 
 addCommandAlias("validate", ";test;tut")
