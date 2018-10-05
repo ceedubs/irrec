@@ -6,6 +6,8 @@ organization in ThisBuild := "ceedubs"
 
 version in ThisBuild := "0.1.0-SNAPSHOT"
 
+coverageExcludedPackages in ThisBuild := "ceedubs.irrec.bench"
+
 lazy val kleene = (project in file("kleene"))
   .settings(
     moduleName := "kleene",
