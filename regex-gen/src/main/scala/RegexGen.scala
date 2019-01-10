@@ -42,17 +42,17 @@ object RegexGen {
   def regexMatchingStringGen(r: Regex[Char], genChar: Gen[Char]): Gen[String] =
     scheme.cata(regexMatchingStreamGen(genChar)).apply(r).map(_.mkString)
 
-  private def genRangeMatch[A](genA: Gen[A])(implicit orderingA: Ordering[A]): Gen[Match.Range[A]] =
+  private def genRangeMatch[A](genA: Gen[A])(implicit orderingA: Ordering[A]): Gen[Match[A]] =
     for {
       a1 <- genA
       a2 <- genA
-    } yield if (orderingA.lt(a1, a2)) Match.Range(a1, a2) else Match.Range(a2, a1)
+    } yield if (orderingA.lt(a1, a2)) Match.range(a1, a2) else Match.range(a2, a1)
 
   def genMatch[A](genA: Gen[A])(implicit orderingA: Ordering[A]): Gen[Match[A]] =
     Gen.frequency(
-      5 -> genA.map(Match.Literal(_)),
+      5 -> genA.map(Match.lit(_)),
       3 -> genRangeMatch(genA),
-      1 -> Gen.const(Match.Wildcard))
+      1 -> Gen.const(Match.wildcard))
 
   def genRegexCoalgebraM[A:Choose:Ordering](genA: Gen[A], includeZero: Boolean, includeOne: Boolean): CoalgebraM[Gen, CoattrF[KleeneF, Match[A], ?], Int] = {
     val leafGen: Gen[CoattrF[KleeneF, Match[A], Int]] =

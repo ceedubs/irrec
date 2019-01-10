@@ -51,6 +51,8 @@ object RegexPrettyPrinter {
     case KleeneF.Plus(l, r) =>
       s"${parensMaybe(plusPrecedence, l, false)}|${parensMaybe(plusPrecedence, r, false)}"
     case KleeneF.Star(x) => parensMaybe(starPrecedence, x, true) + "*"
+    // this is kind of hacky, but it seems unlikely that someone will use Zero in a regex and care
+    // about how it prints.
     case KleeneF.Zero => "∅"
     case KleeneF.One => ""
   }
