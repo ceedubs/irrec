@@ -61,7 +61,7 @@ class GlushkovTests extends IrrecSuite {
 
   test("outside range"){assert(!range('a', 'c').stringMatcher("d"))}
 
-  test("oneOrMore zero"){assert(!oneOrMore(literal('b')).stringMatcher(""))}
+  test("oneOrMore zero"){assert(!literal('b').oneOrMore.stringMatcher(""))}
 
   test("oneOrMore one"){assert(oneOrMore(literal('b')).stringMatcher("b"))}
 
