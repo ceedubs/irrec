@@ -242,6 +242,19 @@ class GlushkovTests extends IrrecSuite {
     }
   }
 
+  test("oneOfR consistent with oneOfFR"){
+    val gen = for {
+      values <- arbitrary[NonEmptyList[Byte]]
+      lits = values.map(lit(_))
+      r1 = oneOfFR(lits)
+      c <- genCandidateStream(r1, arbitrary[Byte])
+    } yield (lits, r1, c)
+    forAll(gen){ case (lits, r1, c) =>
+      val r2 = oneOfR(lits.head, lits.tail: _*)
+      r1.matcher[Stream].apply(c) should ===(r2.matcher[Stream].apply(c))
+    }
+  }
+
   test("seq consistent with allOf"){
     val gen = for {
       values <- arbitrary[List[Byte]]
