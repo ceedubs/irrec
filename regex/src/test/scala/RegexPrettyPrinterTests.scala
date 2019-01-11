@@ -9,7 +9,7 @@ class RegexPrettyPrinterTests extends IrrecSuite {
   test("char regex pretty printer matches java Pattern"){
     forAll(genRegexAndMatch(false, arbitrary[Char])){ rm =>
       val asString = rm.r.pprint
-      val javaR = java.util.regex.Pattern.compile(asString)
+      val javaR = rm.r.toPattern
       assert(javaR.matcher(rm.candidate.mkString).matches, s"${rm.candidate.toList} should match $asString")
     }
   }
