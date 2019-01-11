@@ -2,6 +2,7 @@ package ceedubs.irrec
 package regex
 
 import cats.Foldable
+import java.util.regex.Pattern
 
 final class KleeneOps[A](private val r: Kleene[A]) extends AnyVal {
 
@@ -27,6 +28,8 @@ final class RegexOps[A](private val r: Regex[A]) extends AnyVal {
 
 final class CharRegexOps(private val r: Regex[Char]) extends AnyVal {
   def stringMatcher: String => Boolean = Regex.stringMatcher(r)
+
+  def toPattern: Pattern = Pattern.compile(pprint)
 
   def pprint: String = RegexPrettyPrinter.pprintCharRegex(r)
 }

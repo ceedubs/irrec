@@ -51,6 +51,17 @@ animal.pprint
 // res7: String = (b|c|r|gn)at
 ```
 
+## converting a regular expression to a Java `Pattern`
+
+Regular expressions can be converted to a `java.util.regex.Pattern`:
+
+```scala
+animal.toPattern
+// res8: java.util.regex.Pattern = (b|c|r|gn)at
+```
+
+Currently there is no support for converting a `Pattern` (or its `String` form) into an irrec `Regex`.
+
 ## generating data that matches a regular expression
 
 Irrec provides support for creating [Scalacheck](https://www.scalacheck.org/) generators that produce values that match a regular expression. This generation is done efficiently as opposed to generating a bunch of random values and then filtering the ones that don't match the regular expression (which would quickly lead to Scalacheck giving up on generating matching values).
@@ -72,7 +83,7 @@ val phraseGen: Gen[String] = regexMatchingStringGen(phrase, arbitrary[Char])
 
 ```scala
 Gen.listOfN(3, phraseGen).apply(Gen.Parameters.default, Seed(105769L))
-// res8: Option[List[String]] = Some(List(5 tired rats, 2 feisty gnats, 8 happy bats))
+// res9: Option[List[String]] = Some(List(5 tired rats, 2 feisty gnats, 8 happy bats))
 ```
 
 ## optimizing a regular expression
@@ -86,7 +97,7 @@ val inefficientRegex: Regex[Char] = lit('a').star.star.star
 
 ```scala
 inefficientRegex.pprint
-// res9: String = ((a*)*)*
+// res10: String = ((a*)*)*
 ```
 
 ```scala
@@ -95,7 +106,7 @@ val moreEfficientRegex: Regex[Char] = inefficientRegex.optimize
 
 ```scala
 moreEfficientRegex.pprint
-// res10: String = a*
+// res11: String = a*
 ```
 
 ## performance

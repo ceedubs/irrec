@@ -44,6 +44,16 @@ Regular expressions can be printed in a (hopefully) POSIX style:
 animal.pprint
 ```
 
+## converting a regular expression to a Java `Pattern`
+
+Regular expressions can be converted to a `java.util.regex.Pattern`:
+
+```tut:book
+animal.toPattern
+```
+
+Currently there is no support for converting a `Pattern` (or its `String` form) into an irrec `Regex`.
+
 ## generating data that matches a regular expression
 
 Irrec provides support for creating [Scalacheck](https://www.scalacheck.org/) generators that produce values that match a regular expression. This generation is done efficiently as opposed to generating a bunch of random values and then filtering the ones that don't match the regular expression (which would quickly lead to Scalacheck giving up on generating matching values).
