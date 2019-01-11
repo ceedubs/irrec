@@ -8,6 +8,8 @@ import qq.droste.data.prelude._
 import org.scalacheck.Gen
 import RegexAndCandidate._
 import org.scalacheck.Arbitrary, Arbitrary.arbitrary
+import cats.data.NonEmptyList
+import cats.laws.discipline.arbitrary._
 
 class GlushkovTests extends IrrecSuite {
 
@@ -82,6 +84,24 @@ class GlushkovTests extends IrrecSuite {
   test("count 2 match"){assert(count(2, literal('b')).stringMatcher("bb"))}
 
   test("count 2 non-match"){assert(!count(2, literal('b')).stringMatcher("bc"))}
+
+  test("oneOf first match"){assert(Regex.oneOf('a', 'b', 'c').stringMatcher("a"))}
+
+  test("oneOf second match"){assert(Regex.oneOf('a', 'b', 'c').stringMatcher("b"))}
+
+  test("oneOf second last match"){assert(Regex.oneOf('a', 'b', 'c').stringMatcher("c"))}
+
+  test("oneOf non match"){assert(!Regex.oneOf('a', 'b', 'c').stringMatcher("d"))}
+
+  test("seq empty match"){assert(seq("").stringMatcher(""))}
+
+  test("seq empty non-match"){assert(!seq("").stringMatcher("a"))}
+
+  test("seq single match"){assert(seq("a").stringMatcher("a"))}
+
+  test("seq match"){assert(seq("abc").stringMatcher("abc"))}
+
+  test("seq non-match"){assert(!seq("abc").stringMatcher("bcd"))}
 
   test("repeat examples"){
     val r = lit('b').repeat(2, 4)
@@ -191,7 +211,6 @@ class GlushkovTests extends IrrecSuite {
       plus <- Gen.chooseNum(0, 5)
       r <- genRegex(arbitrary[Int], includeZero = false, includeOne = true)
       rRepeat = r.repeat(min, min + plus)
-      //c <- rRepeat(regexMatchingStreamGen(arbitrary[Int]))
       c <- scheme.cata(regexMatchingStreamGen(arbitrary[Int])).apply(rRepeat)
     } yield (min, r, c)
 
@@ -200,4 +219,78 @@ class GlushkovTests extends IrrecSuite {
       assert(r2.matcher[Stream].apply(c))
     }
   }
+
+  test("oneOfF consistent with oneOf"){
+    val gen = for {
+      values <- arbitrary[NonEmptyList[Byte]]
+      r1 = oneOfF(values)
+      c <- genCandidateStream(r1, arbitrary[Byte])
+    } yield (values, r1, c)
+    forAll(gen){ case (values, r1, c) =>
+      val r2 = Regex.oneOf(values.head, values.tail: _*)
+      r1.matcher[Stream].apply(c) should ===(r2.matcher[Stream].apply(c))
+    }
+  }
+
+  test("oneOfF consistent with oneOfFR"){
+    val gen = for {
+      values <- arbitrary[NonEmptyList[Byte]]
+      r1 = oneOfF(values)
+      c <- genCandidateStream(r1, arbitrary[Byte])
+    } yield (values, r1, c)
+    forAll(gen){ case (values, r1, c) =>
+      val r2 = oneOfFR(values.map(lit(_)))
+      r1.matcher[Stream].apply(c) should ===(r2.matcher[Stream].apply(c))
+    }
+  }
+
+  test("seq consistent with allOf"){
+    val gen = for {
+      values <- arbitrary[List[Byte]]
+      r1 = seq(values)
+      c <- genCandidateStream(r1, arbitrary[Byte])
+    } yield (values, r1, c)
+    forAll(gen){ case (values, r1, c) =>
+      val r2 = Regex.allOf(values: _*)
+      r1.matcher[Stream].apply(c) should ===(r2.matcher[Stream].apply(c))
+    }
+  }
+
+  test("allOfF consistent with allOf"){
+    val gen = for {
+      values <- arbitrary[List[Byte]]
+      r1 = allOfF(values)
+      c <- genCandidateStream(r1, arbitrary[Byte])
+    } yield (values, r1, c)
+    forAll(gen){ case (values, r1, c) =>
+      val r2 = Regex.allOf(values: _*)
+      r1.matcher[Stream].apply(c) should ===(r2.matcher[Stream].apply(c))
+    }
+  }
+
+  test("allOfF consistent with allOfFR"){
+    val gen = for {
+      values <- arbitrary[List[Byte]]
+      r1 = allOfF(values)
+      c <- genCandidateStream(r1, arbitrary[Byte])
+    } yield (values, r1, c)
+    forAll(gen){ case (values, r1, c) =>
+      val r2 = allOfFR(values.map(lit(_)))
+      r1.matcher[Stream].apply(c) should ===(r2.matcher[Stream].apply(c))
+    }
+  }
+
+  test("allOfR consistent with allOfFR"){
+    val gen = for {
+      values <- arbitrary[List[Byte]]
+      lits = values.map(lit(_))
+      r1 = allOfR(lits: _*)
+      c <- genCandidateStream(r1, arbitrary[Byte])
+    } yield (lits, r1, c)
+    forAll(gen){ case (lits, r1, c) =>
+      val r2 = allOfFR(lits)
+      r1.matcher[Stream].apply(c) should ===(r2.matcher[Stream].apply(c))
+    }
+  }
+
 }
