@@ -31,7 +31,7 @@ object RegexGen {
     case KleeneF.One => Gen.const(Stream.empty)
   }
 
-  def regexMatchingStreamGen[A:Choose](genA: Gen[A]): Algebra[CoattrF[KleeneF, Match[A], ?], Gen[Stream[A]]] =
+  def regexMatchingStreamAlgebra[A:Choose](genA: Gen[A]): Algebra[CoattrF[KleeneF, Match[A], ?], Gen[Stream[A]]] =
     Algebra[CoattrF[KleeneF, Match[A], ?], Gen[Stream[A]]]{
       CoattrF.un(_) match {
         case Left(ma) => matchingGen(ma, genA).map(Stream(_))
@@ -39,8 +39,13 @@ object RegexGen {
       }
     }
 
-  def regexMatchingStringGen(r: Regex[Char], genChar: Gen[Char]): Gen[String] =
-    scheme.cata(regexMatchingStreamGen(genChar)).apply(r).map(_.mkString)
+  def regexMatchingStreamGen[A:Choose](genA: Gen[A]): Regex[A] => Gen[Stream[A]] =
+    scheme.cata(regexMatchingStreamAlgebra(genA))
+
+  def regexMatchingStringGen(genChar: Gen[Char]): Regex[Char] => Gen[String] = {
+    val streamGen = regexMatchingStreamGen(genChar)
+    r => streamGen(r).map(_.mkString)
+  }
 
   private def genRangeMatch[A](genA: Gen[A])(implicit orderingA: Ordering[A]): Gen[Match[A]] =
     for {

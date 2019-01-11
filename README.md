@@ -67,7 +67,7 @@ import org.scalacheck.Gen
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.rng.Seed
 
-val phraseGen: Gen[String] = regexMatchingStringGen(phrase, arbitrary[Char])
+val phraseGen: Gen[String] = regexMatchingStringGen(arbitrary[Char])(phrase)
 ```
 
 ```scala
