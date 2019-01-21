@@ -36,6 +36,28 @@ isAnimal("hat")
 isAnimal("toaster")
 ```
 
+## creating and matching a non-string regular expression
+
+While `Regex[Char]` is the most common choice, irrec supports regular expressions for types other than chars/strings. For example if your input is a stream of integers instead of a string:
+
+
+```tut:silent
+// needed for Foldable[Stream] instance
+import cats.implicits._
+
+val numRegex: Regex[Int] = lit(1).star * range(2, 4).repeat(1, 3) * oneOf(5, 6).oneOrMore
+
+val numMatcher: Stream[Int] => Boolean = numRegex.matcher[Stream]
+```
+
+```tut:book
+numMatcher(Stream(1, 2, 5))
+
+numMatcher(Stream(1, 1, 1, 2, 4, 5, 6, 5))
+
+numMatcher(Stream(0, 5, 42))
+```
+
 ## printing a regular expression
 
 Regular expressions can be printed in a (hopefully) POSIX style:

@@ -42,13 +42,38 @@ isAnimal("toaster")
 // res6: Boolean = false
 ```
 
+## creating and matching a non-string regular expression
+
+While `Regex[Char]` is the most common choice, irrec supports regular expressions for types other than chars/strings. For example if your input is a stream of integers instead of a string:
+
+
+```scala
+// needed for Foldable[Stream] instance
+import cats.implicits._
+
+val numRegex: Regex[Int] = lit(1).star * range(2, 4).repeat(1, 3) * oneOf(5, 6).oneOrMore
+
+val numMatcher: Stream[Int] => Boolean = numRegex.matcher[Stream]
+```
+
+```scala
+numMatcher(Stream(1, 2, 5))
+// res8: Boolean = true
+
+numMatcher(Stream(1, 1, 1, 2, 4, 5, 6, 5))
+// res9: Boolean = true
+
+numMatcher(Stream(0, 5, 42))
+// res10: Boolean = false
+```
+
 ## printing a regular expression
 
 Regular expressions can be printed in a (hopefully) POSIX style:
 
 ```scala
 animal.pprint
-// res7: String = (b|c|r|gn)at
+// res11: String = (b|c|r|gn)at
 ```
 
 ## converting a regular expression to a Java `Pattern`
@@ -57,7 +82,7 @@ Regular expressions can be converted to a `java.util.regex.Pattern`:
 
 ```scala
 animal.toPattern
-// res8: java.util.regex.Pattern = (b|c|r|gn)at
+// res12: java.util.regex.Pattern = (b|c|r|gn)at
 ```
 
 Currently there is no support for converting a `Pattern` (or its `String` form) into an irrec `Regex`.
@@ -83,7 +108,7 @@ val phraseGen: Gen[String] = regexMatchingStringGen(arbitrary[Char])(phrase)
 
 ```scala
 Gen.listOfN(3, phraseGen).apply(Gen.Parameters.default, Seed(105769L))
-// res9: Option[List[String]] = Some(List(5 tired rats, 2 feisty gnats, 8 happy bats))
+// res13: Option[List[String]] = Some(List(5 tired rats, 2 feisty gnats, 8 happy bats))
 ```
 
 ## optimizing a regular expression
@@ -97,7 +122,7 @@ val inefficientRegex: Regex[Char] = lit('a').star.star.star
 
 ```scala
 inefficientRegex.pprint
-// res10: String = ((a*)*)*
+// res14: String = ((a*)*)*
 ```
 
 ```scala
@@ -106,7 +131,7 @@ val moreEfficientRegex: Regex[Char] = inefficientRegex.optimize
 
 ```scala
 moreEfficientRegex.pprint
-// res11: String = a*
+// res15: String = a*
 ```
 
 ## performance
