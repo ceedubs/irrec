@@ -19,7 +19,7 @@ coverageExcludedPackages in ThisBuild := "ceedubs.irrec.bench"
 
 lazy val kleene = (project in file("kleene"))
   .settings(
-    moduleName := "kleene",
+    moduleName := "irrec-kleene",
     libraryDependencies ++= Seq(
       cats.core,
       cats.testkit % Test))
@@ -27,7 +27,7 @@ lazy val kleene = (project in file("kleene"))
 
 lazy val regex = (project in file("regex"))
   .settings(
-    moduleName := "regex",
+    moduleName := "irrec-regex",
     libraryDependencies ++= Seq(
       droste,
       cats.testkit % Test))
@@ -38,7 +38,7 @@ lazy val regex = (project in file("regex"))
 
 lazy val regexGen = (project in file("regex-gen"))
   .settings(
-    moduleName := "regex-gen",
+    moduleName := "irrec-regex-gen",
     libraryDependencies ++= Seq(
       scalacheck,
       cats.testkit % Test))
@@ -58,10 +58,10 @@ lazy val readme = (project in file("readme"))
         "-Ywarn-unused:imports"))
     },
     tutTargetDirectory := (baseDirectory in LocalRootProject).value
-  )
+  ).settings(noPublishSettings)
 
 lazy val benchmarks = (project in file("benchmarks"))
-  .settings(moduleName := "benchmarks")
+  .settings(moduleName := "irrec-benchmarks")
   .enablePlugins(JmhPlugin)
   .settings(commonSettings)
   .settings(noPublishSettings)
@@ -69,8 +69,9 @@ lazy val benchmarks = (project in file("benchmarks"))
 
 lazy val root = project
   .settings(
-    moduleName := "root"
+    moduleName := "irrec-root"
   ).aggregate(kleene, regex, regexGen)
+  .settings(noPublishSettings)
 
 // Thanks, Rob! https://tpolecat.github.io/2017/04/25/scalac-flags.html
 val scalac212Options: Seq[String] = Seq(
