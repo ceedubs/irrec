@@ -3,7 +3,7 @@ package regex
 
 import ceedubs.irrec.regex.RegexGen._
 import org.scalacheck.Gen, Gen.Choose
-import org.scalacheck.Arbitrary, Arbitrary.arbitrary
+import org.scalacheck.Arbitrary
 
 final case class RegexAndCandidate[A](r: Regex[A], candidate: Stream[A])
 
@@ -35,12 +35,18 @@ object RegexAndCandidate {
    * Generates arbitrary regexes and candidate matches for the regex. The candidate will match the
    * regex roughly 50% of the time.
    */
-  implicit def arbRegexAndCandidate[A](implicit arbA: Arbitrary[A], chooseA: Choose[A], orderingA: Ordering[A]): Arbitrary[RegexAndCandidate[A]] = {
+  def genRegexAndCandidate[A](genA: Gen[A])(implicit chooseA: Choose[A], orderingA: Ordering[A]): Gen[RegexAndCandidate[A]] = {
     val probablyNotMatching = for {
-      r <- genRegex(arbitrary[A], includeZero = true, includeOne = true)
-      c <- arbitrary[Stream[A]]
+      r <- genRegex(genA, includeZero = true, includeOne = true)
+      c <- Gen.containerOf[Stream, A](genA)
     } yield RegexAndCandidate(r, c)
 
-    Arbitrary(Gen.oneOf(probablyNotMatching, genRegexAndMatch[A](includeOne = true, arbA.arbitrary)))
+    Gen.oneOf(probablyNotMatching, genRegexAndMatch[A](includeOne = true, genA))
   }
+
+  /**
+   * @see [[genRegexAndCandidate]]
+   */
+  implicit def arbRegexAndCandidate[A](implicit arbA: Arbitrary[A], chooseA: Choose[A], orderingA: Ordering[A]): Arbitrary[RegexAndCandidate[A]] =
+    Arbitrary(genRegexAndCandidate(arbA.arbitrary))
 }

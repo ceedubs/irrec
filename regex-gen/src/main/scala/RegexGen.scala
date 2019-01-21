@@ -21,12 +21,7 @@ object RegexGen {
     case KleeneF.Plus(l, r) => Gen.oneOf(l, r)
     case KleeneF.Times(l, r) => l.flatMap(ls => r.map(rs => ls ++ rs))
     // TODO ceedubs probably need to do something fancier so we don't get large nested structures
-    case KleeneF.Star(g) => Gen.sized(maxSize =>
-      for {
-        size <- Gen.chooseNum(0, maxSize)
-        sa <- g
-      } yield Stream.fill(size)(sa).flatten
-    )
+    case KleeneF.Star(g) => Gen.containerOf[Stream, Stream[A]](g).map(_.flatten)
     case KleeneF.Zero => Gen.fail
     case KleeneF.One => Gen.const(Stream.empty)
   }
