@@ -47,17 +47,11 @@ lazy val regexGen = (project in file("regex-gen"))
 
 lazy val regexGenRef = LocalProject("regexGen")
 
-lazy val docs = (project in file("docs"))
-  .enablePlugins(TutPlugin)
+lazy val docs = (project in file("irrec-docs"))
+  .enablePlugins(MdocPlugin)
   .dependsOn(regex, regexGen)
   .settings(
-    scalacOptions in Tut ~= {
-      _.filterNot(Set(
-        "-Ywarn-unused-import",
-        "-Yno-predef",
-        "-Ywarn-unused:imports"))
-    },
-    tutTargetDirectory := (baseDirectory in LocalRootProject).value
+    mdocOut := (baseDirectory in LocalRootProject).value
   ).settings(noPublishSettings)
 
 lazy val benchmarks = (project in file("benchmarks"))
@@ -156,4 +150,4 @@ val noPublishSettings = Seq(
   publishArtifact := false
 )
 
-addCommandAlias("validate", ";test;tut")
+addCommandAlias("validate", ";test;docs/mdoc")

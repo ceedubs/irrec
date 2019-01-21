@@ -13,7 +13,7 @@ At this point, this library is just me playing around and learning some things. 
 
 ## creating and matching a string regular expression
 
-```tut:silent
+```scala mdoc:silent
 import ceedubs.irrec.regex._, Regex._
 
 // `*` denotes that the expression on the right should follow the expression on the left.
@@ -22,7 +22,7 @@ val animal: Regex[Char] = (oneOf('b', 'c', 'r') | seq("gn")) * seq("at")
 val isAnimal: String => Boolean = animal.stringMatcher
 ```
 
-```tut:book
+```scala mdoc
 isAnimal("bat")
 
 isAnimal("cat")
@@ -41,7 +41,7 @@ isAnimal("toaster")
 While `Regex[Char]` is the most common choice, irrec supports regular expressions for types other than chars/strings. For example if your input is a stream of integers instead of a string:
 
 
-```tut:silent
+```scala mdoc:silent
 // needed for Foldable[Stream] instance
 import cats.implicits._
 
@@ -50,7 +50,7 @@ val numRegex: Regex[Int] = lit(1).star * range(2, 4).repeat(1, 3) * oneOf(5, 6).
 val numMatcher: Stream[Int] => Boolean = numRegex.matcher[Stream]
 ```
 
-```tut:book
+```scala mdoc
 numMatcher(Stream(1, 2, 5))
 
 numMatcher(Stream(1, 1, 1, 2, 4, 5, 6, 5))
@@ -62,7 +62,7 @@ numMatcher(Stream(0, 5, 42))
 
 Regular expressions can be printed in a (hopefully) POSIX style:
 
-```tut:book
+```scala mdoc
 animal.pprint
 ```
 
@@ -70,7 +70,7 @@ animal.pprint
 
 Regular expressions can be converted to a `java.util.regex.Pattern`:
 
-```tut:book
+```scala mdoc
 animal.toPattern
 ```
 
@@ -80,13 +80,13 @@ Currently there is no support for converting a `Pattern` (or its `String` form) 
 
 Irrec provides support for creating [Scalacheck](https://www.scalacheck.org/) generators that produce values that match a regular expression. This generation is done efficiently as opposed to generating a bunch of random values and then filtering the ones that don't match the regular expression (which would quickly lead to Scalacheck giving up on generating matching values).
 
-```tut:silent
+```scala mdoc:silent
 val n: Regex[Char] = range('2', '9')
 val adjective: Regex[Char] = oneOfR(seq("happy"), seq("tired"), seq("feisty"))
 val phrase: Regex[Char] = n * lit(' ') * adjective * lit(' ') * animal * lit('s')
 ```
 
-```tut:silent
+```scala mdoc:silent
 import ceedubs.irrec.regex.RegexGen.regexMatchingStringGen
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary.arbitrary
@@ -95,7 +95,7 @@ import org.scalacheck.rng.Seed
 val phraseGen: Gen[String] = regexMatchingStringGen(arbitrary[Char])(phrase)
 ```
 
-```tut:book
+```scala mdoc
 Gen.listOfN(3, phraseGen).apply(Gen.Parameters.default, Seed(105769L))
 ```
 
@@ -104,19 +104,19 @@ Gen.listOfN(3, phraseGen).apply(Gen.Parameters.default, Seed(105769L))
 Irrec has some support for optimizing a regular expression, though at this point it probably won't
 do much to optimize most regular expressions.
 
-```tut:silent
+```scala mdoc:silent
 val inefficientRegex: Regex[Char] = lit('a').star.star.star
 ```
 
-```tut:book
+```scala mdoc
 inefficientRegex.pprint
 ```
 
-```tut:silent
+```scala mdoc:silent
 val moreEfficientRegex: Regex[Char] = inefficientRegex.optimize
 ```
 
-```tut:book
+```scala mdoc
 moreEfficientRegex.pprint
 ```
 

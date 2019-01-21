@@ -24,22 +24,22 @@ val isAnimal: String => Boolean = animal.stringMatcher
 
 ```scala
 isAnimal("bat")
-// res1: Boolean = true
+// res0: Boolean = true
 
 isAnimal("cat")
-// res2: Boolean = true
+// res1: Boolean = true
 
 isAnimal("rat")
-// res3: Boolean = true
+// res2: Boolean = true
 
 isAnimal("gnat")
-// res4: Boolean = true
+// res3: Boolean = true
 
 isAnimal("hat")
-// res5: Boolean = false
+// res4: Boolean = false
 
 isAnimal("toaster")
-// res6: Boolean = false
+// res5: Boolean = false
 ```
 
 ## creating and matching a non-string regular expression
@@ -58,13 +58,13 @@ val numMatcher: Stream[Int] => Boolean = numRegex.matcher[Stream]
 
 ```scala
 numMatcher(Stream(1, 2, 5))
-// res8: Boolean = true
+// res6: Boolean = true
 
 numMatcher(Stream(1, 1, 1, 2, 4, 5, 6, 5))
-// res9: Boolean = true
+// res7: Boolean = true
 
 numMatcher(Stream(0, 5, 42))
-// res10: Boolean = false
+// res8: Boolean = false
 ```
 
 ## printing a regular expression
@@ -73,7 +73,7 @@ Regular expressions can be printed in a (hopefully) POSIX style:
 
 ```scala
 animal.pprint
-// res11: String = (b|c|r|gn)at
+// res9: String = "(b|c|r|gn)at"
 ```
 
 ## converting a regular expression to a Java `Pattern`
@@ -82,7 +82,7 @@ Regular expressions can be converted to a `java.util.regex.Pattern`:
 
 ```scala
 animal.toPattern
-// res12: java.util.regex.Pattern = (b|c|r|gn)at
+// res10: java.util.regex.Pattern = (b|c|r|gn)at
 ```
 
 Currently there is no support for converting a `Pattern` (or its `String` form) into an irrec `Regex`.
@@ -108,7 +108,9 @@ val phraseGen: Gen[String] = regexMatchingStringGen(arbitrary[Char])(phrase)
 
 ```scala
 Gen.listOfN(3, phraseGen).apply(Gen.Parameters.default, Seed(105769L))
-// res13: Option[List[String]] = Some(List(5 tired rats, 2 feisty gnats, 8 happy bats))
+// res11: Option[List[String]] = Some(
+//   List("5 tired rats", "2 feisty gnats", "8 happy bats")
+// )
 ```
 
 ## optimizing a regular expression
@@ -122,7 +124,7 @@ val inefficientRegex: Regex[Char] = lit('a').star.star.star
 
 ```scala
 inefficientRegex.pprint
-// res14: String = ((a*)*)*
+// res12: String = "((a*)*)*"
 ```
 
 ```scala
@@ -131,7 +133,7 @@ val moreEfficientRegex: Regex[Char] = inefficientRegex.optimize
 
 ```scala
 moreEfficientRegex.pprint
-// res15: String = a*
+// res13: String = "a*"
 ```
 
 ## performance
@@ -147,3 +149,4 @@ A number of libraries and resources were useful as inspiration and reference imp
 - [irreg](https://github.com/non/irreg) by [Erik Osheim](https://github.com/non). Irrec is inspired by irreg and Erik's talk [Regexes, Kleene Algebras, and Real Ultimate Power!](https://vimeo.com/96644096)
 - [Extending Glushkov NFA with sub matching over Strings](http://luzhuomi.blogspot.com/2012/06/extending-glushkov-nfa-with-sub.html), a blog post by Kenny Zhuo Ming Lu. The implementation of the Glushkov construction algorithm in irrec is based on the Haskell implementation in this blog post.
 - [Andy Scott](https://github.com/andyscott) has been helpful both in creating [droste](https://github.com/andyscott/droste) (the recursion scheme library that irrec uses), and in answering my questions about recursion schemes.
+

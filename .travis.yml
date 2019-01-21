@@ -14,7 +14,7 @@ stages:
 jobs:
   include:
     - env: TEST="docs"
-      script: sbt tut
+      script: sbt docs/mdoc
     - env: TEST="test"
       script: sbt +test
     - env: TEST="coverage"
