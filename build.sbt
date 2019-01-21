@@ -47,7 +47,7 @@ lazy val regexGen = (project in file("regex-gen"))
 
 lazy val regexGenRef = LocalProject("regexGen")
 
-lazy val readme = (project in file("readme"))
+lazy val docs = (project in file("docs"))
   .enablePlugins(TutPlugin)
   .dependsOn(regex, regexGen)
   .settings(
