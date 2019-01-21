@@ -1,6 +1,6 @@
 # irrec
 
-[![Build Status](https://api.travis-ci.org/ceedubs/irrec.svg)](https://travis-ci.org/ceedubs/irrec)
+[![Build Status](https://travis-ci.org/ceedubs/irrec.svg?branch=master)](https://travis-ci.org/ceedubs/irrec/branches)
 [![codecov.io](http://codecov.io/github/ceedubs/irrec/coverage.svg?branch=master)](http://codecov.io/github/ceedubs/irrec?branch=master)
 
 An implementation of regular expressions based on recursion schemes and Kleene algebras.
