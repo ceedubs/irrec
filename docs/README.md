@@ -118,10 +118,13 @@ You can now generate random data to match this regular expression as described [
 Sometimes you may want to generate both matches and non-matches for your random regular expression to make sure that both cases are handled. The `Arbitrary` instance for `RegexAndCandidate` will generate random regular expressions along with data that matches the regular expresssion roughly half of the time.
 
 ```scala mdoc:silent
-val regexesAndCandidatesGen: Gen[List[RegexAndCandidate[Char]]] =
-  Gen.listOfN(4, RegexAndCandidate.genRegexAndCandidate(Gen.alphaNumChar))
+val regexAndCandidateGen: Gen[RegexAndCandidate[Char]] =
+  RegexAndCandidate.genRegexAndCandidate(Gen.alphaNumChar, includeZero = false, includeOne = false)
 
-val regexesAndCandidates: List[RegexAndCandidate[Char]] = regexesAndCandidatesGen.apply(Gen.Parameters.default.withSize(30), Seed(105763L)).get
+val regexesAndCandidatesGen: Gen[List[RegexAndCandidate[Char]]] =
+  Gen.listOfN(4, regexAndCandidateGen)
+
+val regexesAndCandidates: List[RegexAndCandidate[Char]] = regexesAndCandidatesGen.apply(Gen.Parameters.default.withSize(30), Seed(105771L)).get
 ```
 
 ```scala mdoc

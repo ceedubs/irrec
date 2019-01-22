@@ -35,18 +35,18 @@ object RegexAndCandidate {
    * Generates arbitrary regexes and candidate matches for the regex. The candidate will match the
    * regex roughly 50% of the time.
    */
-  def genRegexAndCandidate[A](genA: Gen[A])(implicit chooseA: Choose[A], orderingA: Ordering[A]): Gen[RegexAndCandidate[A]] = {
+  def genRegexAndCandidate[A](genA: Gen[A], includeZero: Boolean, includeOne: Boolean)(implicit chooseA: Choose[A], orderingA: Ordering[A]): Gen[RegexAndCandidate[A]] = {
     val probablyNotMatching = for {
-      r <- genRegex(genA, includeZero = true, includeOne = true)
+      r <- genRegex(genA, includeZero = includeZero, includeOne = includeOne)
       c <- Gen.containerOf[Stream, A](genA)
     } yield RegexAndCandidate(r, c)
 
-    Gen.oneOf(probablyNotMatching, genRegexAndMatch[A](includeOne = true, genA))
+    Gen.oneOf(probablyNotMatching, genRegexAndMatch[A](includeOne = includeOne, genA))
   }
 
   /**
    * @see [[genRegexAndCandidate]]
    */
   implicit def arbRegexAndCandidate[A](implicit arbA: Arbitrary[A], chooseA: Choose[A], orderingA: Ordering[A]): Arbitrary[RegexAndCandidate[A]] =
-    Arbitrary(genRegexAndCandidate(arbA.arbitrary))
+    Arbitrary(genRegexAndCandidate(arbA.arbitrary, includeZero = true, includeOne = true))
 }
