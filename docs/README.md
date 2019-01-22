@@ -87,7 +87,7 @@ val phrase: Regex[Char] = n * lit(' ') * adjective * lit(' ') * animal * lit('s'
 ```
 
 ```scala mdoc:silent
-import ceedubs.irrec.regex.RegexGen.regexMatchingStringGen
+import ceedubs.irrec.regex.RegexGen._
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.rng.Seed
@@ -97,6 +97,37 @@ val phraseGen: Gen[String] = regexMatchingStringGen(arbitrary[Char])(phrase)
 
 ```scala mdoc
 Gen.listOfN(3, phraseGen).apply(Gen.Parameters.default, Seed(105769L))
+```
+
+## generating random regular expressions
+
+Irrec provies support for creating random (valid) regular expressions along with potential matches for them.
+
+```scala mdoc:silent
+val regexGen: Gen[Regex[Char]] = arbitrary[Regex[Char]]
+
+val randomRegex1: Regex[Char] = regexGen.apply(Gen.Parameters.default, Seed(105769L)).get
+```
+
+```scala mdoc
+randomRegex1.pprint
+```
+
+You can now generate random data to match this regular expression as described [here](#generating-data-that-matches-a-regular-expression).
+
+Sometimes you may want to generate both matches and non-matches for your random regular expression to make sure that both cases are handled. The `Arbitrary` instance for `RegexAndCandidate` will generate random regular expressions along with data that matches the regular expresssion roughly half of the time.
+
+```scala mdoc:silent
+val regexesAndCandidatesGen: Gen[List[RegexAndCandidate[Char]]] =
+  Gen.listOfN(4, RegexAndCandidate.genRegexAndCandidate(Gen.alphaNumChar))
+
+val regexesAndCandidates: List[RegexAndCandidate[Char]] = regexesAndCandidatesGen.apply(Gen.Parameters.default.withSize(30), Seed(105763L)).get
+```
+
+```scala mdoc
+regexesAndCandidates.map(x =>
+  (x.r.pprint, x.candidate.mkString, x.r.matcher[Stream].apply(x.candidate))
+)
 ```
 
 ## optimizing a regular expression

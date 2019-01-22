@@ -98,7 +98,7 @@ val phrase: Regex[Char] = n * lit(' ') * adjective * lit(' ') * animal * lit('s'
 ```
 
 ```scala
-import ceedubs.irrec.regex.RegexGen.regexMatchingStringGen
+import ceedubs.irrec.regex.RegexGen._
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.rng.Seed
@@ -113,6 +113,44 @@ Gen.listOfN(3, phraseGen).apply(Gen.Parameters.default, Seed(105769L))
 // )
 ```
 
+## generating random regular expressions
+
+Irrec provies support for creating random (valid) regular expressions along with potential matches for them.
+
+```scala
+val regexGen: Gen[Regex[Char]] = arbitrary[Regex[Char]]
+
+val randomRegex1: Regex[Char] = regexGen.apply(Gen.Parameters.default, Seed(105769L)).get
+```
+
+```scala
+randomRegex1.pprint
+// res12: String = "(\u245b|\u6f40)*[\u637a-\ue1f7]\u87a6*\u8b69"
+```
+
+You can now generate random data to match this regular expression as described [here](#generating-data-that-matches-a-regular-expression).
+
+Sometimes you may want to generate both matches and non-matches for your random regular expression to make sure that both cases are handled. The `Arbitrary` instance for `RegexAndCandidate` will generate random regular expressions along with data that matches the regular expresssion roughly half of the time.
+
+```scala
+val regexesAndCandidatesGen: Gen[List[RegexAndCandidate[Char]]] =
+  Gen.listOfN(4, RegexAndCandidate.genRegexAndCandidate(Gen.alphaNumChar))
+
+val regexesAndCandidates: List[RegexAndCandidate[Char]] = regexesAndCandidatesGen.apply(Gen.Parameters.default.withSize(30), Seed(105763L)).get
+```
+
+```scala
+regexesAndCandidates.map(x =>
+  (x.r.pprint, x.candidate.mkString, x.r.matcher[Stream].apply(x.candidate))
+)
+// res13: List[(String, String, Boolean)] = List(
+//   ("2kc((l|.)[L-p]cu(j|r)([f-o]|(1)*)|.)", "2kclncujm", true),
+//   ("\u2205|.[I-q](R|3)", "otfqpmpc2cxn7", false),
+//   ("[g-u].[4-d]([i-u]||s|[j-p])", "pQ:n", true),
+//   ("[Z-y]ck", "uOq8bbkfdudN90pgqunk8vkm", false)
+// )
+```
+
 ## optimizing a regular expression
 
 Irrec has some support for optimizing a regular expression, though at this point it probably won't
@@ -124,7 +162,7 @@ val inefficientRegex: Regex[Char] = lit('a').star.star.star
 
 ```scala
 inefficientRegex.pprint
-// res12: String = "((a*)*)*"
+// res14: String = "((a*)*)*"
 ```
 
 ```scala
@@ -133,7 +171,7 @@ val moreEfficientRegex: Regex[Char] = inefficientRegex.optimize
 
 ```scala
 moreEfficientRegex.pprint
-// res13: String = "a*"
+// res15: String = "a*"
 ```
 
 ## performance
