@@ -3,17 +3,10 @@ package regex
 
 import Regex._
 import qq.droste.{Algebra, scheme}
-import qq.droste.data.{Coattr, CoattrF}
+import qq.droste.data.{Coattr, CoattrF}, Coattr.Roll
 import qq.droste.data.prelude._
 
 object KleeneOptimization {
-  // TODO this can be removed if https://github.com/andyscott/droste/pull/79 is merged
-  private object Roll {
-    def unapply[F[_], A](f: Coattr[F, A]): Option[F[Coattr[F, A]]] = Coattr.un(f) match {
-      case Right(fa) => Some(fa)
-      case _ => None
-    }
-  }
 
   def optimizeKleeneAlgebra[A]: Algebra[CoattrF[KleeneF, A, ?], Kleene[A]] = Algebra{
     CoattrF.un(_) match {
