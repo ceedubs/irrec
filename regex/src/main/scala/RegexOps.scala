@@ -29,7 +29,7 @@ final class RegexOps[A](private val r: Regex[A]) extends AnyVal {
 final class CharRegexOps(private val r: Regex[Char]) extends AnyVal {
   def stringMatcher: String => Boolean = Regex.stringMatcher(r)
 
-  def toPattern: Pattern = Pattern.compile(pprint)
+  def toPattern: Pattern = Pattern.compile(pprint, Pattern.DOTALL)
 
   def pprint: String = RegexPrettyPrinter.pprintCharRegex(r)
 }

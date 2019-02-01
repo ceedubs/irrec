@@ -113,13 +113,29 @@ val randomRegex1: Regex[Char] = regexGen.apply(Gen.Parameters.default, Seed(1057
 randomRegex1.pprint
 ```
 
-You can now generate random data to match this regular expression as described [here](#generating-data-that-matches-a-regular-expression).
+You can now generate random data to match this regular expression as described [here](#generating-data-that-matches-a-regular-expression). Alternatively, you can generate a regular expression and a match for it in one step:
 
-Sometimes you may want to generate both matches and non-matches for your random regular expression to make sure that both cases are handled. The `Arbitrary` instance for `RegexAndCandidate` will generate random regular expressions along with data that matches the regular expresssion roughly half of the time.
+```scala mdoc:silent
+val regexAndMatchGen: Gen[RegexAndCandidate[Char]] =
+  CharRegexGen.genAlphaNumCharRegexAndMatch
+
+val regexesAndMatchesGen: Gen[List[RegexAndCandidate[Char]]] =
+  Gen.listOfN(4, regexAndMatchGen)
+
+val regexesAndMatches: List[RegexAndCandidate[Char]] = regexesAndMatchesGen.apply(Gen.Parameters.default.withSize(30), Seed(105773L)).get
+```
+
+```scala mdoc
+regexesAndMatches.map(x =>
+  (x.r.pprint, x.candidate.mkString)
+)
+```
+
+Sometimes you may want to generate both matches and non-matches for your random regular expression to make sure that both cases are handled. There are various `Gen` instances for `RegexAndCandidate` that will generate random regular expressions along with data that matches the regular expresssion roughly half of the time.
 
 ```scala mdoc:silent
 val regexAndCandidateGen: Gen[RegexAndCandidate[Char]] =
-  RegexAndCandidate.genRegexAndCandidate(Gen.alphaNumChar, includeZero = false, includeOne = false)
+  CharRegexGen.genAlphaNumCharRegexAndCandidate
 
 val regexesAndCandidatesGen: Gen[List[RegexAndCandidate[Char]]] =
   Gen.listOfN(4, regexAndCandidateGen)

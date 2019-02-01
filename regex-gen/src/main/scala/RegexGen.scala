@@ -42,22 +42,22 @@ object RegexGen {
     r => streamGen(r).map(_.mkString)
   }
 
-  private def genRangeMatch[A](genA: Gen[A])(implicit orderingA: Ordering[A]): Gen[Match[A]] =
+  def genRangeMatch[A](genA: Gen[A])(implicit orderingA: Ordering[A]): Gen[Match.Range[A]] =
     for {
       a1 <- genA
       a2 <- genA
-    } yield if (orderingA.lt(a1, a2)) Match.range(a1, a2) else Match.range(a2, a1)
+    } yield if (orderingA.lt(a1, a2)) Match.Range(a1, a2) else Match.Range(a2, a1)
 
-  def genMatch[A](genA: Gen[A])(implicit orderingA: Ordering[A]): Gen[Match[A]] =
+  def genMatch[A](genA: Gen[A], genRange: Gen[Match.Range[A]]): Gen[Match[A]] =
     Gen.frequency(
       5 -> genA.map(Match.lit(_)),
-      3 -> genRangeMatch(genA),
+      3 -> genRange,
       1 -> Gen.const(Match.wildcard))
 
-  def genRegexCoalgebraM[A:Choose:Ordering](genA: Gen[A], includeZero: Boolean, includeOne: Boolean): CoalgebraM[Gen, CoattrF[KleeneF, Match[A], ?], Int] = {
+  def genRegexCoalgebraM[A](genA: Gen[A], genRangeA: Gen[Match.Range[A]], includeZero: Boolean, includeOne: Boolean): CoalgebraM[Gen, CoattrF[KleeneF, Match[A], ?], Int] = {
     val leafGen: Gen[CoattrF[KleeneF, Match[A], Int]] =
       Gen.frequency(
-        10 -> genMatch[A](genA).map(CoattrF.pure),
+        10 -> genMatch[A](genA, genRangeA).map(CoattrF.pure),
         (if (includeOne) 2 else 0) -> Gen.const(CoattrF.roll(KleeneF.One)),
         (if (includeZero) 1 else 0) -> Gen.const(CoattrF.roll(KleeneF.Zero)))
 
@@ -76,9 +76,17 @@ object RegexGen {
     )
   }
 
-  def genRegex[A:Choose:Ordering](genA: Gen[A], includeZero: Boolean, includeOne: Boolean): Gen[Regex[A]] = Gen.sized(maxSize =>
-    scheme.anaM(genRegexCoalgebraM[A](genA, includeZero = includeZero, includeOne = includeOne)).apply(maxSize))
+  def genRegex[A](genA: Gen[A], genRangeA: Gen[Match.Range[A]], includeZero: Boolean, includeOne: Boolean): Gen[Regex[A]] = Gen.sized(maxSize =>
+    scheme.anaM(genRegexCoalgebraM[A](genA, genRangeA, includeZero = includeZero, includeOne = includeOne)).apply(maxSize))
 
-  implicit def arbRegex[A:Choose:Ordering](implicit arbA: Arbitrary[A]): Arbitrary[Regex[A]] =
-    Arbitrary(genRegex(arbA.arbitrary, includeZero = true, includeOne = true))
+  def arbRegex[A](implicit arbA: Arbitrary[A], orderingA: Ordering[A]): Arbitrary[Regex[A]] =
+    Arbitrary(genRegex(arbA.arbitrary, genRangeMatch(arbA.arbitrary), includeZero = true, includeOne = true))
+
+  implicit val arbCharRegex: Arbitrary[Regex[Char]] = Arbitrary(CharRegexGen.genStandardRegexChar)
+
+  implicit val arbByteRegex: Arbitrary[Regex[Byte]] = arbRegex[Byte]
+
+  implicit val arbIntRegex: Arbitrary[Regex[Int]] = arbRegex[Int]
+
+  implicit val arbLongRegex: Arbitrary[Regex[Long]] = arbRegex[Long]
 }
