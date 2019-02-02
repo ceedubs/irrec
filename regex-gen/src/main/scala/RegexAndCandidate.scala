@@ -2,6 +2,7 @@ package ceedubs.irrec
 package regex
 
 import ceedubs.irrec.regex.RegexGen._
+import ceedubs.irrec.regex.CharRegexGen.genCharRegexAndCandidate
 import org.scalacheck.Gen, Gen.Choose
 import org.scalacheck.Arbitrary
 
@@ -25,9 +26,9 @@ object RegexAndCandidate {
   def genCandidateStream[A](r: Regex[A], genA: Gen[A])(implicit chooseA: Choose[A]): Gen[Stream[A]] =
     Gen.oneOf(genMatchingStream(r, genA), Gen.containerOf[Stream, A](genA))
 
-  def genRegexAndMatch[A](includeOne: Boolean, genA: Gen[A])(implicit chooseA: Choose[A], orderingA: Ordering[A]): Gen[RegexAndCandidate[A]] =
+  def genRegexAndMatch[A](includeOne: Boolean, genA: Gen[A], genRangeA: Gen[Match.Range[A]])(implicit chooseA: Choose[A]): Gen[RegexAndCandidate[A]] =
     for {
-      r <- genRegex(genA, includeZero = false, includeOne = includeOne)
+      r <- genRegex(genA, genRangeA, includeZero = false, includeOne = includeOne)
       c <- genMatchingStream(r, genA)
     } yield RegexAndCandidate(r, c)
 
@@ -35,18 +36,26 @@ object RegexAndCandidate {
    * Generates arbitrary regexes and candidate matches for the regex. The candidate will match the
    * regex roughly 50% of the time.
    */
-  def genRegexAndCandidate[A](genA: Gen[A], includeZero: Boolean, includeOne: Boolean)(implicit chooseA: Choose[A], orderingA: Ordering[A]): Gen[RegexAndCandidate[A]] = {
+  def genRegexAndCandidate[A](genA: Gen[A], genRangeA: Gen[Match.Range[A]], includeZero: Boolean, includeOne: Boolean)(implicit chooseA: Choose[A]): Gen[RegexAndCandidate[A]] = {
     val probablyNotMatching = for {
-      r <- genRegex(genA, includeZero = includeZero, includeOne = includeOne)
+      r <- genRegex(genA, genRangeA, includeZero = includeZero, includeOne = includeOne)
       c <- Gen.containerOf[Stream, A](genA)
     } yield RegexAndCandidate(r, c)
 
-    Gen.oneOf(probablyNotMatching, genRegexAndMatch[A](includeOne = includeOne, genA))
+    Gen.oneOf(probablyNotMatching, genRegexAndMatch[A](includeOne = includeOne, genA, genRangeA))
   }
 
   /**
    * @see [[genRegexAndCandidate]]
    */
-  implicit def arbRegexAndCandidate[A](implicit arbA: Arbitrary[A], chooseA: Choose[A], orderingA: Ordering[A]): Arbitrary[RegexAndCandidate[A]] =
-    Arbitrary(genRegexAndCandidate(arbA.arbitrary, includeZero = true, includeOne = true))
+  def arbRegexAndCandidate[A](implicit arbA: Arbitrary[A], chooseA: Choose[A], orderingA: Ordering[A]): Arbitrary[RegexAndCandidate[A]] =
+    Arbitrary(genRegexAndCandidate(arbA.arbitrary, genRangeMatch(arbA.arbitrary), includeZero = true, includeOne = true))
+
+  implicit val arbRegexAndCandidateChar: Arbitrary[RegexAndCandidate[Char]] = Arbitrary(genCharRegexAndCandidate)
+
+  implicit val arbRegexAndCandidateByte: Arbitrary[RegexAndCandidate[Byte]] = arbRegexAndCandidate[Byte]
+
+  implicit val arbRegexAndCandidateInt: Arbitrary[RegexAndCandidate[Int]] = arbRegexAndCandidate[Int]
+
+  implicit val arbRegexAndCandidateLong: Arbitrary[RegexAndCandidate[Long]] = arbRegexAndCandidate[Long]
 }

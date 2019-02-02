@@ -10,6 +10,8 @@ import cats.data.NonEmptyList
 import cats.laws.discipline.arbitrary._
 
 class GlushkovTests extends IrrecSuite {
+  val genIntRegexAndMatch: Gen[RegexAndCandidate[Int]] =
+    genRegexAndMatch(includeOne = true, arbitrary[Int], genRangeMatch(arbitrary[Int]))
 
   test("literal match"){assert(literal('b').stringMatcher("b"))}
 
@@ -126,7 +128,7 @@ class GlushkovTests extends IrrecSuite {
   }
 
   test("general regex matching"){
-    forAll(genRegexAndMatch(true, arbitrary[Int])) { rm =>
+    forAll(genIntRegexAndMatch) { rm =>
       assert(rm.r.matcher[Stream].apply(rm.candidate))
     }
   }
@@ -177,19 +179,19 @@ class GlushkovTests extends IrrecSuite {
   }
 
   test("if r matches, oneOrMore(r) matches"){
-    forAll(genRegexAndMatch(true, arbitrary[Int])) { rc =>
+    forAll(genIntRegexAndMatch) { rc =>
       assert(oneOrMore(rc.r).matcher[Stream].apply(rc.candidate))
     }
   }
 
   test("if r matches x, oneOrMore(r) matches n * x"){
-    forAll(genRegexAndMatch[Int](true, arbitrary[Int]), Gen.chooseNum(1, 10)){ (rc, n) =>
+    forAll(genIntRegexAndMatch, Gen.chooseNum(1, 10)){ (rc, n) =>
       oneOrMore(rc.r).matcher[Stream].apply(Stream.fill(n)(rc.candidate).flatten) should ===(true)
     }
   }
 
   test("if r matches x, star(r) matches n * x"){
-    forAll(genRegexAndMatch(true, arbitrary[Int]), Gen.chooseNum(0, 10)){ (rc, n) =>
+    forAll(genIntRegexAndMatch, Gen.chooseNum(0, 10)){ (rc, n) =>
       star(rc.r).matcher[Stream].apply(Stream.fill(n)(rc.candidate).flatten) should ===(true)
     }
   }
@@ -207,7 +209,7 @@ class GlushkovTests extends IrrecSuite {
     val gen = for {
       min <- Gen.chooseNum(0, 10)
       plus <- Gen.chooseNum(0, 5)
-      r <- genRegex(arbitrary[Int], includeZero = false, includeOne = true)
+      r <- genRegex(arbitrary[Int], genRangeMatch(arbitrary[Int]), includeZero = false, includeOne = true)
       rRepeat = r.repeat(min, min + plus)
       c <- regexMatchingStreamGen(arbitrary[Int]).apply(rRepeat)
     } yield (min, r, c)

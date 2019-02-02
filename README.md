@@ -125,16 +125,38 @@ val randomRegex1: Regex[Char] = regexGen.apply(Gen.Parameters.default, Seed(1057
 
 ```scala
 randomRegex1.pprint
-// res12: String = "(\u245b|\u6f40)*[\u637a-\ue1f7]\u87a6*\u8b69"
+// res12: String = "(\u245b|[\ua615-\uc4eb]\u64db)*.*([\uce76-\ud24f]\uaefa\u1363\u881f*|([\ud4b2-\ud618]|\u6ba1)\u7009)([\u8086-\ud694]\ube8e|.)"
 ```
 
-You can now generate random data to match this regular expression as described [here](#generating-data-that-matches-a-regular-expression).
+You can now generate random data to match this regular expression as described [here](#generating-data-that-matches-a-regular-expression). Alternatively, you can generate a regular expression and a match for it in one step:
 
-Sometimes you may want to generate both matches and non-matches for your random regular expression to make sure that both cases are handled. The `Arbitrary` instance for `RegexAndCandidate` will generate random regular expressions along with data that matches the regular expresssion roughly half of the time.
+```scala
+val regexAndMatchGen: Gen[RegexAndCandidate[Char]] =
+  CharRegexGen.genAlphaNumCharRegexAndMatch
+
+val regexesAndMatchesGen: Gen[List[RegexAndCandidate[Char]]] =
+  Gen.listOfN(4, regexAndMatchGen)
+
+val regexesAndMatches: List[RegexAndCandidate[Char]] = regexesAndMatchesGen.apply(Gen.Parameters.default.withSize(30), Seed(105773L)).get
+```
+
+```scala
+regexesAndMatches.map(x =>
+  (x.r.pprint, x.candidate.mkString)
+)
+// res13: List[(String, String)] = List(
+//   (".S[o-x]", "pSx"),
+//   ("7(Y|[e-k])u", "7iu"),
+//   ("sbb0(s|[7-n]*|[l-t]s).B.", "sbb0rszBG"),
+//   ("[a-j]", "i")
+// )
+```
+
+Sometimes you may want to generate both matches and non-matches for your random regular expression to make sure that both cases are handled. There are various `Gen` instances for `RegexAndCandidate` that will generate random regular expressions along with data that matches the regular expresssion roughly half of the time.
 
 ```scala
 val regexAndCandidateGen: Gen[RegexAndCandidate[Char]] =
-  RegexAndCandidate.genRegexAndCandidate(Gen.alphaNumChar, includeZero = false, includeOne = false)
+  CharRegexGen.genAlphaNumCharRegexAndCandidate
 
 val regexesAndCandidatesGen: Gen[List[RegexAndCandidate[Char]]] =
   Gen.listOfN(4, regexAndCandidateGen)
@@ -146,7 +168,7 @@ val regexesAndCandidates: List[RegexAndCandidate[Char]] = regexesAndCandidatesGe
 regexesAndCandidates.map(x =>
   (x.r.pprint, x.candidate.mkString, x.r.matcher[Stream].apply(x.candidate))
 )
-// res13: List[(String, String, Boolean)] = List(
+// res14: List[(String, String, Boolean)] = List(
 //   ("i*[e-r].[L-m][7-c]rqzakh[q-x][C-p][8-w]", "riK8acx3d", false),
 //   ("zhh(9z|z)[i-l].*", "zhhzklpawcbbw", true),
 //   ("m*.*.[7-d]", "mmmmmmmmmmmmmmmmmmmmmmmmm5thgxjucrTaA", true),
@@ -165,7 +187,7 @@ val inefficientRegex: Regex[Char] = lit('a').star.star.star
 
 ```scala
 inefficientRegex.pprint
-// res14: String = "((a*)*)*"
+// res15: String = "((a*)*)*"
 ```
 
 ```scala
@@ -174,7 +196,7 @@ val moreEfficientRegex: Regex[Char] = inefficientRegex.optimize
 
 ```scala
 moreEfficientRegex.pprint
-// res15: String = "a*"
+// res16: String = "a*"
 ```
 
 ## performance

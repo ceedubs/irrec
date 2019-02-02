@@ -2,15 +2,17 @@ package ceedubs.irrec
 package regex
 
 import Regex._
-import org.scalacheck.Arbitrary.arbitrary
-import RegexAndCandidate._
+import CharRegexGen._
 
 class RegexPrettyPrinterTests extends IrrecSuite {
+
   test("char regex pretty printer matches java Pattern"){
-    forAll(genRegexAndMatch(false, arbitrary[Char])){ rm =>
-      val asString = rm.r.pprint
+    forAll(genCharRegexAndMatch){ rm =>
+      val prettyRegex = rm.r.pprint
+      val regexHex = prettyRegex.map(_.toInt.toHexString).toList
       val javaR = rm.r.toPattern
-      assert(javaR.matcher(rm.candidate.mkString).matches, s"${rm.candidate.toList} should match $asString")
+      val candidateHex = rm.candidate.map(_.toInt.toHexString).toList
+      assert(javaR.matcher(rm.candidate.mkString).matches, s"${rm.candidate.mkString} ($candidateHex) should match $prettyRegex ($regexHex)")
     }
   }
 
