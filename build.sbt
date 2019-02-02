@@ -65,6 +65,7 @@ lazy val root = project
   .settings(
     moduleName := "irrec-root"
   ).aggregate(kleene, regex, regexGen)
+  .settings(commonSettings)
   .settings(noPublishSettings)
 
 // Thanks, Rob! https://tpolecat.github.io/2017/04/25/scalac-flags.html
