@@ -58,9 +58,13 @@ lazy val parser = (project in file("parser"))
 
 lazy val docs = (project in file("irrec-docs"))
   .enablePlugins(MdocPlugin)
-  .dependsOn(regex, regexGen)
+  .dependsOn(regex, regexGen, parser)
   .settings(
-    mdocOut := (baseDirectory in LocalRootProject).value
+    mdocOut := (baseDirectory in LocalRootProject).value,
+    mdocVariables := Map(
+      "ORG" -> organization.value,
+      "VERSION" -> previousStableVersion.value.get
+    )
   ).settings(noPublishSettings)
 
 lazy val benchmarks = (project in file("benchmarks"))

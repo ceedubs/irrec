@@ -9,37 +9,111 @@ The name is a shameless rip-off of [irreg](https://github.com/non/irreg), which 
 
 ## warning
 
-At this point, this library is just me playing around and learning some things. It provides no stability guarantees, and I don't know if I'll ever even get around to publishing it. That said, if you are interested in actually using it, please let me know! If enough people star this repository maybe I'll do something with it.
+At this point, this library is just me playing around and learning some things. It provides no stability guarantees.
 
-## creating and matching a string regular expression
+## brief tour
+
+Creating regular expressions:
 
 ```scala
 import ceedubs.irrec.regex._, Regex._
+import ceedubs.irrec.parse.regex
 
-// `*` denotes that the expression on the right should follow the expression on the left.
-val animal: Regex[Char] = (oneOf('b', 'c', 'r') | seq("gn")) * seq("at")
-
-val isAnimal: String => Boolean = animal.stringMatcher
+val animal: Regex[Char] = regex("(b|c|r|gn)at")
+val phrase: Regex[Char] = regex("[2-9] (happy|tired|feisty) ") * animal * lit('s')
 ```
 
 ```scala
-isAnimal("bat")
-// res0: Boolean = true
+phrase.pprint
+// res0: String = "[2-9] (happy|tired|feisty) (b|c|r|gn)ats"
+```
 
-isAnimal("cat")
+Matching against a regular expression:
+
+```scala
+val matchesPhrase: String => Boolean = phrase.stringMatcher
+```
+
+```scala
+matchesPhrase("7 feisty cats")
 // res1: Boolean = true
+matchesPhrase("3 expensive toasters")
+// res2: Boolean = false
+```
 
-isAnimal("rat")
-// res2: Boolean = true
+Generating data that matches a regular expression:
 
-isAnimal("gnat")
-// res3: Boolean = true
+```scala
+import ceedubs.irrec.regex.RegexGen._
+import org.scalacheck.Gen
+import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.rng.Seed
 
-isAnimal("hat")
-// res4: Boolean = false
+val phraseGen: Gen[String] = regexMatchingStringGen(arbitrary[Char])(phrase)
+```
 
-isAnimal("toaster")
-// res5: Boolean = false
+```scala
+Gen.listOfN(3, phraseGen).apply(Gen.Parameters.default, Seed(1046527L))
+// res3: Option[List[String]] = Some(
+//   List("6 happy cats", "5 feisty bats", "2 tired gnats")
+// )
+```
+
+## getting irrec
+
+If you are using SBT, you can add irrec as a dependency to your project with:
+
+```scala
+libraryDependencies ++= Seq(
+  // for basic functionality
+  "net.ceedubs" % "irrec-parser" % "0.2.0",
+  // for Scalacheck generators
+  "net.ceedubs" % "irrec-regex-gen" % "0.2.0"
+)
+```
+
+In addition to bringing in core functionality, the `irrec-parser` module provides support for creating regexes from strings. If you are okay with inheriting a [fastparse](http://www.lihaoyi.com/fastparse/) dependency, then it's probably the way to go. If you don't want to inherit this dependency and plan to create regexes via the DSL, then you can depend on `iirec-regex`.
+
+## creating and matching a string regular expression
+
+You can create a regular expression via a `String` literal:
+
+```scala
+val animalLit: Regex[Char] = regex("(b|c|r|gn)at")
+```
+
+You'll even get a compile-time error if the regex is invalid:
+
+```scala
+val invalid: Regex[Char] = regex("a{1,-3}")
+// error: Error compiling regular expression: Expected regexExpr:1:1 / regex:1:1 / term:1:1 / factor:1:1 / repeatCount:1:2 / <Integer between 0 and 2147483647>:1:5, found "-3}"
+// val invalid: Regex[Char] = regex("a{1,-3}")
+//                            ^^^^^^^^^^^^^^^^
+```
+
+Alternatively, you can build up a regular expression using the methods in the
+`Regex` object and irrec's DSL for combining regexes.
+
+* `*` denotes that the expression on the right should follow the expression on the left.
+* `+` denotes that either the expression on the left _or_ the right needs to match.
+* `.star` denotes the Kleene star (repeat 0 to many times).
+
+```scala
+val animalDSL: Regex[Char] = (oneOf('b', 'c', 'r') | seq("gn")) * seq("at")
+```
+
+Whether you have created a `Regex` via a `String` literal or the DSL, irrec's
+regular expressions are composable.
+
+```scala
+val count: Regex[Char] = range('2', '9')
+val adjective: Regex[Char] = regex("happy|tired|feisty")
+val animalPhrase: Regex[Char] = count * lit(' ') * adjective * lit(' ') * animalDSL * lit('s')
+```
+
+```scala
+animalPhrase.pprint
+// res5: String = "[2-9] (happy|tired|feisty) (b|c|r|gn)ats"
 ```
 
 ## creating and matching a non-string regular expression
@@ -85,31 +159,14 @@ animal.toPattern
 // res10: java.util.regex.Pattern = (b|c|r|gn)at
 ```
 
-Currently there is no support for converting a `Pattern` (or its `String` form) into an irrec `Regex`.
-
 ## generating data that matches a regular expression
 
 Irrec provides support for creating [Scalacheck](https://www.scalacheck.org/) generators that produce values that match a regular expression. This generation is done efficiently as opposed to generating a bunch of random values and then filtering the ones that don't match the regular expression (which would quickly lead to Scalacheck giving up on generating matching values).
 
 ```scala
-val n: Regex[Char] = range('2', '9')
-val adjective: Regex[Char] = oneOfR(seq("happy"), seq("tired"), seq("feisty"))
-val phrase: Regex[Char] = n * lit(' ') * adjective * lit(' ') * animal * lit('s')
-```
-
-```scala
-import ceedubs.irrec.regex.RegexGen._
-import org.scalacheck.Gen
-import org.scalacheck.Arbitrary.arbitrary
-import org.scalacheck.rng.Seed
-
-val phraseGen: Gen[String] = regexMatchingStringGen(arbitrary[Char])(phrase)
-```
-
-```scala
-Gen.listOfN(3, phraseGen).apply(Gen.Parameters.default, Seed(105769L))
+Gen.listOfN(3, phraseGen).apply(Gen.Parameters.default, Seed(1046527L))
 // res11: Option[List[String]] = Some(
-//   List("5 tired rats", "2 feisty gnats", "8 happy bats")
+//   List("6 happy cats", "5 feisty bats", "2 tired gnats")
 // )
 ```
 
