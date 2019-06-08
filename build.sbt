@@ -43,15 +43,28 @@ lazy val regexGen = (project in file("regex-gen"))
       scalacheck,
       cats.testkit % Test))
   .settings(commonSettings)
-  .dependsOn(regex)
+  .dependsOn(regex % "test->test;compile->compile")
 
 lazy val regexGenRef = LocalProject("regexGen")
 
+lazy val parser = (project in file("parser"))
+  .settings(
+    moduleName := "irrec-parser",
+    libraryDependencies += fastparse)
+  .settings(commonSettings)
+  .dependsOn(
+    regex % "test->test;compile->compile",
+    regexGen % Test)
+
 lazy val docs = (project in file("irrec-docs"))
   .enablePlugins(MdocPlugin)
-  .dependsOn(regex, regexGen)
+  .dependsOn(regex, regexGen, parser)
   .settings(
-    mdocOut := (baseDirectory in LocalRootProject).value
+    mdocOut := (baseDirectory in LocalRootProject).value,
+    mdocVariables := Map(
+      "ORG" -> organization.value,
+      "VERSION" -> previousStableVersion.value.get
+    )
   ).settings(noPublishSettings)
 
 lazy val benchmarks = (project in file("benchmarks"))
@@ -64,7 +77,7 @@ lazy val benchmarks = (project in file("benchmarks"))
 lazy val root = project
   .settings(
     moduleName := "irrec-root"
-  ).aggregate(kleene, regex, regexGen)
+  ).aggregate(kleene, regex, regexGen, parser)
   .settings(commonSettings)
   .settings(noPublishSettings)
 

@@ -9,31 +9,101 @@ The name is a shameless rip-off of [irreg](https://github.com/non/irreg), which 
 
 ## warning
 
-At this point, this library is just me playing around and learning some things. It provides no stability guarantees, and I don't know if I'll ever even get around to publishing it. That said, if you are interested in actually using it, please let me know! If enough people star this repository maybe I'll do something with it.
+At this point, this library is just me playing around and learning some things. It provides no stability guarantees.
 
-## creating and matching a string regular expression
+## brief tour
+
+Creating regular expressions:
 
 ```scala mdoc:silent
 import ceedubs.irrec.regex._, Regex._
+import ceedubs.irrec.parse.regex
 
-// `*` denotes that the expression on the right should follow the expression on the left.
-val animal: Regex[Char] = (oneOf('b', 'c', 'r') | seq("gn")) * seq("at")
-
-val isAnimal: String => Boolean = animal.stringMatcher
+val animal: Regex[Char] = regex("(b|c|r|gn)at")
+val phrase: Regex[Char] = regex("[2-9] (happy|tired|feisty) ") * animal * lit('s')
 ```
 
 ```scala mdoc
-isAnimal("bat")
+phrase.pprint
+```
 
-isAnimal("cat")
+Matching against a regular expression:
 
-isAnimal("rat")
+```scala mdoc:silent
+val matchesPhrase: String => Boolean = phrase.stringMatcher
+```
 
-isAnimal("gnat")
+```scala mdoc
+matchesPhrase("7 feisty cats")
+matchesPhrase("3 expensive toasters")
+```
 
-isAnimal("hat")
+Generating data that matches a regular expression:
 
-isAnimal("toaster")
+```scala mdoc:silent
+import ceedubs.irrec.regex.RegexGen._
+import org.scalacheck.Gen
+import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.rng.Seed
+
+val phraseGen: Gen[String] = regexMatchingStringGen(arbitrary[Char])(phrase)
+```
+
+```scala mdoc
+Gen.listOfN(3, phraseGen).apply(Gen.Parameters.default, Seed(1046527L))
+```
+
+## getting irrec
+
+If you are using SBT, you can add irrec as a dependency to your project with:
+
+```scala
+libraryDependencies ++= Seq(
+  // for basic functionality
+  "@ORG@" % "irrec-parser" % "@VERSION@",
+  // for Scalacheck generators
+  "@ORG@" % "irrec-regex-gen" % "@VERSION@"
+)
+```
+
+In addition to bringing in core functionality, the `irrec-parser` module provides support for creating regexes from strings. If you are okay with inheriting a [fastparse](http://www.lihaoyi.com/fastparse/) dependency, then it's probably the way to go. If you don't want to inherit this dependency and plan to create regexes via the DSL, then you can depend on `iirec-regex`.
+
+## creating and matching a string regular expression
+
+You can create a regular expression via a `String` literal:
+
+```scala mdoc:silent
+val animalLit: Regex[Char] = regex("(b|c|r|gn)at")
+```
+
+You'll even get a compile-time error if the regex is invalid:
+
+```scala mdoc:fail
+val invalid: Regex[Char] = regex("a{1,-3}")
+```
+
+Alternatively, you can build up a regular expression using the methods in the
+`Regex` object and irrec's DSL for combining regexes.
+
+* `*` denotes that the expression on the right should follow the expression on the left.
+* `+` denotes that either the expression on the left _or_ the right needs to match.
+* `.star` denotes the Kleene star (repeat 0 to many times).
+
+```scala mdoc:silent
+val animalDSL: Regex[Char] = (oneOf('b', 'c', 'r') | seq("gn")) * seq("at")
+```
+
+Whether you have created a `Regex` via a `String` literal or the DSL, irrec's
+regular expressions are composable.
+
+```scala mdoc:silent
+val count: Regex[Char] = range('2', '9')
+val adjective: Regex[Char] = regex("happy|tired|feisty")
+val animalPhrase: Regex[Char] = count * lit(' ') * adjective * lit(' ') * animalDSL * lit('s')
+```
+
+```scala mdoc
+animalPhrase.pprint
 ```
 
 ## creating and matching a non-string regular expression
@@ -74,29 +144,12 @@ Regular expressions can be converted to a `java.util.regex.Pattern`:
 animal.toPattern
 ```
 
-Currently there is no support for converting a `Pattern` (or its `String` form) into an irrec `Regex`.
-
 ## generating data that matches a regular expression
 
 Irrec provides support for creating [Scalacheck](https://www.scalacheck.org/) generators that produce values that match a regular expression. This generation is done efficiently as opposed to generating a bunch of random values and then filtering the ones that don't match the regular expression (which would quickly lead to Scalacheck giving up on generating matching values).
 
-```scala mdoc:silent
-val n: Regex[Char] = range('2', '9')
-val adjective: Regex[Char] = oneOfR(seq("happy"), seq("tired"), seq("feisty"))
-val phrase: Regex[Char] = n * lit(' ') * adjective * lit(' ') * animal * lit('s')
-```
-
-```scala mdoc:silent
-import ceedubs.irrec.regex.RegexGen._
-import org.scalacheck.Gen
-import org.scalacheck.Arbitrary.arbitrary
-import org.scalacheck.rng.Seed
-
-val phraseGen: Gen[String] = regexMatchingStringGen(arbitrary[Char])(phrase)
-```
-
 ```scala mdoc
-Gen.listOfN(3, phraseGen).apply(Gen.Parameters.default, Seed(105769L))
+Gen.listOfN(3, phraseGen).apply(Gen.Parameters.default, Seed(1046527L))
 ```
 
 ## generating random regular expressions
