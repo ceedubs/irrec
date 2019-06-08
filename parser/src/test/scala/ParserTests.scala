@@ -3,124 +3,125 @@ package parse
 
 import ceedubs.irrec.regex._
 import CharRegexGen._
+import ceedubs.irrec.parse.{regex => parse}
 
 import fastparse._
 import ceedubs.irrec.regex.Regex._
 import org.scalatest.compatible.Assertion
 
 class ParserTests extends IrrecSuite {
-  def parseRegex(regex: String): Parsed[Regex[Char]] = parse(regex, Parser.regexExpr(_))
+  def parseRegex(regex: String): Parsed[Regex[Char]] = fastparse.parse(regex, Parser.regexExpr(_))
 
   test("regex parsing works for single literal"){
     val expected = Regex.lit('a')
-    val Parsed.Success(r, _) = parseRegex("a")
+    val r = parse("a")
     sameRegex(r, expected)
   }
 
   test("regex parsing works for literal then literal"){
     val expected = Regex.lit('a') * Regex.lit('b')
-    val Parsed.Success(r, _) = parseRegex("ab")
+    val r = parse("ab")
     sameRegex(r, expected)
   }
   test("regex parsing works for literal or literal"){
     val expected = Regex.lit('a') | Regex.lit('b')
-    val Parsed.Success(r, _) = parseRegex("a|b")
+    val r = parse("a|b")
     sameRegex(r, expected)
   }
 
   test("regex parsing matches disjunction of literal sequences"){
     val expected = Regex.seq("ab") | Regex.seq("bc")
-    val Parsed.Success(r, _) = parseRegex("ab|bc")
+    val r = parse("ab|bc")
     sameRegex(r, expected)
   }
 
   test("regex parsing matches unnecessary outer parens"){
     val expected = Regex.seq("ab")
-    val Parsed.Success(r, _) = parseRegex("(ab)")
+    val r = parse("(ab)")
     sameRegex(r, expected)
   }
 
   test("regex parsing matches literal*"){
     val expected = Regex.lit('a').star
-    val Parsed.Success(r, _) = parseRegex("a*")
+    val r = parse("a*")
     sameRegex(r, expected)
   }
 
   test("regex parsing matches literal* then another matcher"){
     val expected = Regex.lit('a').star * lit('b')
-    val Parsed.Success(r, _) = parseRegex("a*b")
+    val r = parse("a*b")
     sameRegex(r, expected)
   }
 
   test("regex parsing handles precedence with *"){
     val expected = Regex.lit('a') | (Regex.lit('c') * Regex.lit('d').star)
-    val Parsed.Success(r, _) = parseRegex("a|cd*")
+    val r = parse("a|cd*")
     sameRegex(r, expected)
   }
 
   test("regex parsing respects parens"){
     val expected = (Regex.lit('a') | Regex.lit('c')) * Regex.lit('d')
-    val Parsed.Success(r, _) = parseRegex("(a|c)d")
+    val r = parse("(a|c)d")
     sameRegex(r, expected)
   }
 
   test("regex parsing is fine with nested parens"){
     val expected = (Regex.lit('a') | Regex.lit('c')) * Regex.lit('d')
-    val Parsed.Success(r, _) = parseRegex("(((a|(c)))d)")
+    val r = parse("(((a|(c)))d)")
     sameRegex(r, expected)
   }
 
   test("regex parsing respects spaces"){
     val expected = seq("ab cd")
-    val Parsed.Success(r, _) = parseRegex("ab cd")
+    val r = parse("ab cd")
     sameRegex(r, expected)
   }
 
   test("regex parsing respects tabs"){
     val expected = seq("ab\tcd")
-    val Parsed.Success(r, _) = parseRegex("ab\tcd")
+    val r = parse("ab\tcd")
     sameRegex(r, expected)
   }
 
   test("regex parsing supports character classes"){
     val expected = lit('a') * Regex.oneOf('b', 'c', 'd') * lit('e')
-    val Parsed.Success(r, _) = parseRegex("a[bcd]e")
+    val r = parse("a[bcd]e")
     sameRegex(r, expected)
   }
 
   test("regex parsing supports ranges"){
     val expected = lit('a') * range('b', 'd') * lit('e')
-    val Parsed.Success(r, _) = parseRegex("a[b-d]e")
+    val r = parse("a[b-d]e")
     sameRegex(r, expected)
   }
 
   test("regex parsing supports ranges with multiple ranges and non-ranges"){
     val expected = lit('a') * (range('b', 'd') | Regex.oneOf('e', 'g') | range('i', 'k')) * lit('e')
-    val Parsed.Success(r, _) = parseRegex("a[b-degi-k]e")
+    val r = parse("a[b-degi-k]e")
     sameRegex(r, expected)
   }
 
   test("regex parsing supports exact repeat counts"){
     val expected = lit('a') * lit('b').repeat(3, 3) * lit('e')
-    val Parsed.Success(r, _) = parseRegex("ab{3}e")
+    val r = parse("ab{3}e")
     sameRegex(r, expected)
   }
 
   test("regex parsing supports count ranges starting with 1"){
     val expected = lit('a') * lit('b').repeat(1, 3) * lit('e')
-    val Parsed.Success(r, _) = parseRegex("ab{1,3}e")
+    val r = parse("ab{1,3}e")
     sameRegex(r, expected)
   }
 
   test("regex parsing supports count ranges starting with 0"){
     val expected = lit('a') * lit('b').repeat(0, 3) * lit('e')
-    val Parsed.Success(r, _) = parseRegex("ab{0,3}e")
+    val r = parse("ab{0,3}e")
     sameRegex(r, expected)
   }
 
   test("regex parsing handles complex nested expressions"){
     val expected = (lit('a') | (lit('b') * wildcard.star)) * lit('d')
-    val Parsed.Success(r, _) = parseRegex("(a|b.*)d")
+    val r = parse("(a|b.*)d")
     sameRegex(r, expected)
   }
 
@@ -134,7 +135,7 @@ class ParserTests extends IrrecSuite {
 
   test("regex parsing handles empty strings"){
     val expected = Regex.empty[Match[Char]]
-    val Parsed.Success(r, _) = parseRegex("")
+    val r = parse("")
     sameRegex(r, expected)
     val matcher = r.stringMatcher
     matcher("") should ===(true)
@@ -143,13 +144,13 @@ class ParserTests extends IrrecSuite {
 
   test("regex parsing handles + matches"){
     val expected = lit('a') * lit('b').oneOrMore * lit('c')
-    val Parsed.Success(r, _) = parseRegex("ab+c")
+    val r = parse("ab+c")
     sameRegex(r, expected)
   }
 
   test("regex parsing handles + matches in nested bits"){
     val expected = lit('a') * (lit('b') * lit('c').star).oneOrMore * lit('d')
-    val Parsed.Success(r, _) = parseRegex("a(bc*)+d")
+    val r = parse("a(bc*)+d")
     sameRegex(r, expected)
   }
 
