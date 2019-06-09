@@ -66,9 +66,9 @@ If you are using SBT, you can add irrec as a dependency to your project with:
 ```scala
 libraryDependencies ++= Seq(
   // for basic functionality
-  "net.ceedubs" % "irrec-parser" % "0.2.0",
+  "net.ceedubs" % "irrec-parser" % "0.2.1",
   // for Scalacheck generators
-  "net.ceedubs" % "irrec-regex-gen" % "0.2.0"
+  "net.ceedubs" % "irrec-regex-gen" % "0.2.1"
 )
 ```
 
