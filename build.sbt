@@ -1,5 +1,7 @@
 import dependencies._
 
+val stableVersion = "0.2.1"
+
 inThisBuild(List(
   organization := "net.ceedubs",
   homepage := Some(url("https://github.com/ceedubs/irrec")),
@@ -63,7 +65,7 @@ lazy val docs = (project in file("irrec-docs"))
     mdocOut := (baseDirectory in LocalRootProject).value,
     mdocVariables := Map(
       "ORG" -> organization.value,
-      "VERSION" -> previousStableVersion.value.get
+      "VERSION" -> stableVersion
     )
   ).settings(noPublishSettings)
 
