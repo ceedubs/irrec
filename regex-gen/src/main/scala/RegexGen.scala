@@ -3,6 +3,7 @@ package regex
 
 import ceedubs.irrec.regex.ScalacheckSupport._
 
+import cats.Order
 import cats.implicits._
 import qq.droste.{Algebra, CoalgebraM, scheme}
 import qq.droste.data.CoattrF
@@ -11,10 +12,11 @@ import org.scalacheck.{Arbitrary, Gen}, Gen.Choose
 
 object RegexGen {
 
-  def matchingGen[A](m: Match[A], genA: Gen[A])(implicit chooseA: Choose[A]): Gen[A] = m match {
+  def matchingGen[A](m: Match[A], genA: Gen[A])(implicit chooseA: Choose[A], orderA: Order[A]): Gen[A] = m match {
     case Match.Literal(expected) => Gen.const(expected)
     case Match.Wildcard => genA
     case Match.Range(l, r) => chooseA.choose(l, r)
+    case Match.NoneOf(l) => genA.filter(a => l.forall(m => !m.toMatch.matches(a)))
   }
 
   def kleeneFStreamAlgebra[A]: Algebra[KleeneF, Gen[Stream[A]]] = Algebra{
@@ -26,7 +28,7 @@ object RegexGen {
     case KleeneF.One => Gen.const(Stream.empty)
   }
 
-  def regexMatchingStreamAlgebra[A:Choose](genA: Gen[A]): Algebra[CoattrF[KleeneF, Match[A], ?], Gen[Stream[A]]] =
+  def regexMatchingStreamAlgebra[A:Choose:Order](genA: Gen[A]): Algebra[CoattrF[KleeneF, Match[A], ?], Gen[Stream[A]]] =
     Algebra[CoattrF[KleeneF, Match[A], ?], Gen[Stream[A]]]{
       CoattrF.un(_) match {
         case Left(ma) => matchingGen(ma, genA).map(Stream(_))
@@ -34,7 +36,7 @@ object RegexGen {
       }
     }
 
-  def regexMatchingStreamGen[A:Choose](genA: Gen[A]): Regex[A] => Gen[Stream[A]] =
+  def regexMatchingStreamGen[A:Choose:Order](genA: Gen[A]): Regex[A] => Gen[Stream[A]] =
     scheme.cata(regexMatchingStreamAlgebra(genA))
 
   def regexMatchingStringGen(genChar: Gen[Char]): Regex[Char] => Gen[String] = {

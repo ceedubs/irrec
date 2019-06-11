@@ -8,6 +8,7 @@ import RegexAndCandidate._
 import org.scalacheck.Arbitrary, Arbitrary.arbitrary
 import cats.data.NonEmptyList
 import cats.laws.discipline.arbitrary._
+import ceedubs.irrec.parse.{regex => parse}
 
 class GlushkovTests extends IrrecSuite {
   val genIntRegexAndMatch: Gen[RegexAndCandidate[Int]] =
@@ -103,8 +104,26 @@ class GlushkovTests extends IrrecSuite {
 
   test("seq non-match"){assert(!seq("abc").stringMatcher("bcd"))}
 
+  test("character class literal match beginning"){assert(parse("a[bd-fh]j").stringMatcher("abj"))}
+
+  test("character class literal match middle"){assert(parse("a[bd-fhj]l").stringMatcher("ahl"))}
+
+  test("character class literal match end"){assert(parse("a[bd-fh]j").stringMatcher("ahj"))}
+
+  test("character class literal non-match"){assert(!parse("a[bd-fh]j").stringMatcher("axj"))}
+
+  test("character class range match beginning"){assert(parse("a[d-fh]j").stringMatcher("aej"))}
+
+  test("character class range match end"){assert(parse("a[bd-f]j").stringMatcher("aej"))}
+
+  test("character class range non-match"){assert(!parse("a[d-fh]j").stringMatcher("axj"))}
+
+  test("character class range match low"){assert(parse("a[bd-fh]j").stringMatcher("adj"))}
+
+  test("character class range match high"){assert(parse("a[bd-fh]j").stringMatcher("afj"))}
+
   test("repeat examples"){
-    val r = lit('b').repeat(2, 4)
+    val r = lit('b').repeat(2, Some(4))
     val m = r.stringMatcher
     m("") should ===(false)
     m("b") should ===(false)
@@ -116,14 +135,14 @@ class GlushkovTests extends IrrecSuite {
   }
 
   test("repeat(0, n) matches empty"){
-    forAll(arbitrary[Regex[Int]], Gen.chooseNum(0, 20)){ (r, max) =>
+    forAll(arbitrary[Regex[Int]], Gen.option(Gen.chooseNum(0, 20))){ (r, max) =>
       assert(r.repeat(0, max).matcher[List].apply(List.empty))
     }
   }
 
   test("repeat(0, 0) doesn't match non-empty"){
     forAll(arbitrary[Regex[Int]], Gen.nonEmptyListOf(arbitrary[Int])){ (r, c) =>
-      assert(!r.repeat(0, 0).matcher[List].apply(c))
+      assert(!r.repeat(0, Some(0)).matcher[List].apply(c))
     }
   }
 
@@ -199,7 +218,7 @@ class GlushkovTests extends IrrecSuite {
   test("repeat(n, n, r) is equivalent to count(n, r)"){
     forAll(arbitrary[RegexAndCandidate[Int]], Gen.chooseNum(1, 10)){ (rc, n) =>
       val expected = rc.r.count(n).matcher[Stream].apply(rc.candidate)
-      val equivR = rc.r.repeat(n, n)
+      val equivR = rc.r.repeat(n, Some(n))
       val actual = equivR.matcher[Stream].apply(rc.candidate)
       actual should ===(expected)
     }
@@ -210,7 +229,7 @@ class GlushkovTests extends IrrecSuite {
       min <- Gen.chooseNum(0, 10)
       plus <- Gen.chooseNum(0, 5)
       r <- genRegex(arbitrary[Int], genRangeMatch(arbitrary[Int]), includeZero = false, includeOne = true)
-      rRepeat = r.repeat(min, min + plus)
+      rRepeat = r.repeat(min, Some(min + plus))
       c <- regexMatchingStreamGen(arbitrary[Int]).apply(rRepeat)
     } yield (min, r, c)
 

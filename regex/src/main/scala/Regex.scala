@@ -53,8 +53,9 @@ object Regex {
   def seq[A](values: Seq[A]): Regex[A] =
     values.foldLeft(empty[Match[A]])((acc, a) => andThen(acc, literal(a)))
 
-  def repeat[A](minInclusive: Int, maxInclusive: Int, r: Kleene[A]): Kleene[A] =
-    count(minInclusive, r) * (1 to (maxInclusive - minInclusive)).foldLeft(empty[A])((acc, i) => or(acc, r.count(i)))
+  def repeat[A](minInclusive: Int, maxInclusive: Option[Int], r: Kleene[A]): Kleene[A] =
+    count(minInclusive, r) * maxInclusive.fold(star(r))(max =>
+      (1 to (max - minInclusive)).foldLeft(empty[A])((acc, i) => or(acc, r.count(i))))
 
   /**
    * A match on the empty string (this should always succeed and consume no input).
@@ -70,6 +71,18 @@ object Regex {
   def impossible[A]: Kleene[A] = Coattr.roll[KleeneF, A](KleeneF.Zero)
 
   def count[A](n: Int, r: Kleene[A]): Kleene[A] = (1 to n).foldLeft(empty[A])((acc, _) => andThen(acc, r))
+
+  /**
+   * Matches a single digit character ('0', '3', '9', etc). Could be represented in a regular
+   * expression as `\d` or `[0-9]`.
+   */
+  def digit: Regex[Char] = range('0', '9')
+
+  /**
+   * Matches a single "word" character ('A', 'a', '_', etc). Could be represented in a regular
+   * expression as `\w`.
+   */
+  def wordCharacter: Regex[Char] = range('A', 'Z') | range('a', 'z') | digit | lit('_')
 
   def matcher[F[_], A](r: Regex[A])(implicit orderingA: Ordering[A], foldableF: Foldable[F]): F[A] => Boolean = {
     implicit val orderA: Order[A] = Order.fromOrdering(orderingA)

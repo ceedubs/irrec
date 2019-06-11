@@ -4,6 +4,7 @@ package regex
 import RegexGen.{genRegex, genRangeMatch}
 import RegexAndCandidate.{genRegexAndCandidate, genRegexAndMatch}
 
+import cats.implicits._
 import org.scalacheck.Gen
 
 

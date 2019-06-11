@@ -12,7 +12,7 @@ class RepeatCountRegexBenchmarks {
   val nonMatchingString: String = ("a" * 9) + ("b" * 9)
   val longNonMatchingString: String = matchingString + ("c" * 20)
   val java: Pattern = Pattern.compile("(a|b){20,25}")
-  val irrec: Regex[Char] = oneOf('a', 'b').repeat(20, 25)
+  val irrec: Regex[Char] = oneOf('a', 'b').repeat(20, Some(25))
   val irrecMatcher: String => Boolean = irrec.stringMatcher
   val irrecOptimizedMatcher: String => Boolean =
     irrec.optimize.stringMatcher

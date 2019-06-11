@@ -3,6 +3,8 @@ package regex
 
 import ceedubs.irrec.regex.RegexGen._
 import ceedubs.irrec.regex.CharRegexGen.genCharRegexAndCandidate
+
+import cats.Order
 import org.scalacheck.Gen, Gen.Choose
 import org.scalacheck.Arbitrary
 
@@ -13,7 +15,7 @@ object RegexAndCandidate {
   /**
    * Generate a stream that matches the provided regular expression.
    */
-  def genMatchingStream[A](r: Regex[A], genA: Gen[A])(implicit chooseA: Choose[A]): Gen[Stream[A]] =
+  def genMatchingStream[A](r: Regex[A], genA: Gen[A])(implicit chooseA: Choose[A], orderA: Order[A]): Gen[Stream[A]] =
     regexMatchingStreamGen(genA).apply(r)
 
   /**
@@ -23,10 +25,10 @@ object RegexAndCandidate {
    *
    * @see also [[genMatchingStream]].
    */
-  def genCandidateStream[A](r: Regex[A], genA: Gen[A])(implicit chooseA: Choose[A]): Gen[Stream[A]] =
+  def genCandidateStream[A](r: Regex[A], genA: Gen[A])(implicit chooseA: Choose[A], orderA: Order[A]): Gen[Stream[A]] =
     Gen.oneOf(genMatchingStream(r, genA), Gen.containerOf[Stream, A](genA))
 
-  def genRegexAndMatch[A](includeOne: Boolean, genA: Gen[A], genRangeA: Gen[Match.Range[A]])(implicit chooseA: Choose[A]): Gen[RegexAndCandidate[A]] =
+  def genRegexAndMatch[A](includeOne: Boolean, genA: Gen[A], genRangeA: Gen[Match.Range[A]])(implicit chooseA: Choose[A], orderA: Order[A]): Gen[RegexAndCandidate[A]] =
     for {
       r <- genRegex(genA, genRangeA, includeZero = false, includeOne = includeOne)
       c <- genMatchingStream(r, genA)
@@ -36,7 +38,7 @@ object RegexAndCandidate {
    * Generates arbitrary regexes and candidate matches for the regex. The candidate will match the
    * regex roughly 50% of the time.
    */
-  def genRegexAndCandidate[A](genA: Gen[A], genRangeA: Gen[Match.Range[A]], includeZero: Boolean, includeOne: Boolean)(implicit chooseA: Choose[A]): Gen[RegexAndCandidate[A]] = {
+  def genRegexAndCandidate[A](genA: Gen[A], genRangeA: Gen[Match.Range[A]], includeZero: Boolean, includeOne: Boolean)(implicit chooseA: Choose[A], orderA: Order[A]): Gen[RegexAndCandidate[A]] = {
     val probablyNotMatching = for {
       r <- genRegex(genA, genRangeA, includeZero = includeZero, includeOne = includeOne)
       c <- Gen.containerOf[Stream, A](genA)
@@ -48,8 +50,10 @@ object RegexAndCandidate {
   /**
    * @see [[genRegexAndCandidate]]
    */
-  def arbRegexAndCandidate[A](implicit arbA: Arbitrary[A], chooseA: Choose[A], orderingA: Ordering[A]): Arbitrary[RegexAndCandidate[A]] =
+  def arbRegexAndCandidate[A](implicit arbA: Arbitrary[A], chooseA: Choose[A], orderingA: Ordering[A]): Arbitrary[RegexAndCandidate[A]] = {
+    implicit val orderA: Order[A] = Order.fromOrdering(orderingA)
     Arbitrary(genRegexAndCandidate(arbA.arbitrary, genRangeMatch(arbA.arbitrary), includeZero = true, includeOne = true))
+  }
 
   implicit val arbRegexAndCandidateChar: Arbitrary[RegexAndCandidate[Char]] = Arbitrary(genCharRegexAndCandidate)
 
