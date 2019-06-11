@@ -3,6 +3,7 @@ package parse
 
 import ceedubs.irrec.regex.RegexPrettyPrinter.charsToEscape
 
+import cats.data.NonEmptyList
 import cats.implicits._
 import fastparse._, NoWhitespace._
 import ceedubs.irrec.regex.Match
@@ -17,36 +18,53 @@ object Parser {
       case RepeatCount.Range(lower, _) => lower
     }
 
-    def max: Int = this match {
-      case RepeatCount.Exact(n) => n
+    def max: Option[Int] = this match {
+      case RepeatCount.Exact(n) => Some(n)
       case RepeatCount.Range(_, upper) => upper
     }
   }
 
   object RepeatCount {
     final case class Exact(n: Int) extends RepeatCount
-    final case class Range(lowerInclusive: Int, upperInclusive: Int) extends RepeatCount
+    final case class Range(lowerInclusive: Int, upperInclusive: Option[Int]) extends RepeatCount
   }
 
   /**
-   * Matches on escaped special characters like `\*` and `\{`.
+   * Matches on special characters that should be escaped like `*` and `{`.
    */
-  def escapedChar[_: P]: P[Char] =
-    P("\\" ~/ CharPred(charsToEscape.contains(_)).!.map(_.head))
+  def specialChar[_: P]: P[Char] =
+    P(
+      CharPred(charsToEscape.contains(_))
+        .opaque(s"special regular expression character that should be escaped such as '(', '}', '*', etc")
+        .!.map(_.head))
+
+  /**
+   * A shorthand class such as `\d` or `\w`. This parser itself doesn't look for the `\`; it starts
+   * with the character after it.
+   */
+  def shorthandClass[_: P]: P[Regex[Char]] = (
+    P("d").map(_ => Regex.digit) |
+    P("w").map(_ => Regex.wordCharacter)
+  ).opaque("""character class such as \w or \d""")
+
+  // TODO ceedubs extract common logic between this and shorthandClass?
+  def negatedShorthandClass[_: P]: P[NonEmptyList[Match.Negated[Char]]] = {
+    import Match._
+    P("d").map(_ => NonEmptyList.one(Negated.NegatedRange(Range('0', '9')))) |
+    P("w").map(_ =>
+      Negated.NegatedLiteral(Literal('_')) ::
+      NonEmptyList.of(
+        Range('A', 'Z'),
+        Range('a', 'z'),
+        Range('0', '9')
+      ).map(Negated.NegatedRange(_)))
+  }
 
   /**
    * Standard characters to match like `a` or `%`.
    */
   def standardMatchChar[_: P]: P[Char] =
     P(CharPred(c => !charsToEscape.contains(c)).!.map(s => s.head))
-
-  def singleLitChar[_: P]: P[Char] =
-    P((escapedChar | standardMatchChar))
-
-  def matchLitChar[_: P]: P[Match.Literal[Char]] =
-    P(singleLitChar.map(Match.Literal(_)))
-
-  def litChar[_: P]: P[Regex[Char]] = P(singleLitChar.map(Regex.lit))
 
   /**
    * Matches the wildcard character `.`.
@@ -58,16 +76,22 @@ object Parser {
    */
   def posInt[_: P]: P[Int] = P(CharIn("0-9").rep(1).!.flatMap{ s =>
     Either.catchNonFatal(s.toInt).fold(_ => Fail, Pass(_))
-  }).opaque(s"<Integer between 0 and ${Int.MaxValue}>")
+  }).opaque(s"integer between 0 and ${Int.MaxValue}")
 
   /**
    * Matches repeat counts like `{3}` or `{1,4}`.
    */
   def repeatCount[_: P]: P[RepeatCount] = P(
     "{" ~/ (
-      (posInt ~ "," ~/ posInt).map{ case (l, h) => RepeatCount.Range(l, h) } |
+      (posInt ~ "," ~/ posInt.?).map{ case (l, h) => RepeatCount.Range(l, h) } |
       posInt.map(RepeatCount.Exact(_))
-    ) ~ "}")
+    ) ~ "}").opaque("repeat count such as '{3}', '{1,4}', or '{3,}'")
+
+  def singleLitChar[_: P]: P[Char] =
+    P(("\\" ~ specialChar | standardMatchChar))
+
+  def matchLitChar[_: P]: P[Match.Literal[Char]] =
+    P(singleLitChar.map(Match.Literal(_)))
 
   /**
    * Character range like `a-z`.
@@ -78,14 +102,38 @@ object Parser {
     }
   )
 
+  def negatedCharOrRange[_: P]: P[Match.Negated[Char]] =
+    (matchCharRange.map(Match.Negated.NegatedRange(_)) | matchLitChar.map(Match.Negated.NegatedLiteral(_)))
+
+  def negatedCharClassContent[_: P]: P[Match.NoneOf[Char]] =
+    (negatedCharOrRange.map(NonEmptyList.one(_)) | ("\\" ~/ negatedShorthandClass))
+    .rep(1)
+    .map(xs => Match.NoneOf(xs.reduceOption(_ |+| _).get)) // .get is safe because of .rep(1)
+
+  def positiveCharClassContent[_: P]: P[Regex[Char]] =
+    (
+      (matchCharRange | matchLitChar).map(Coattr.pure[KleeneF, Match[Char]](_)) |
+      ("\\" ~/ shorthandClass)
+    ).opaque("""literal character to match (ex: 'a'), escaped special character literal (ex: '\*'), or shorthand class (ex: '\w')""")
+    .rep(1)
+    .map(matches => Regex.oneOfR(matches.head, matches.tail: _*)) // .head is safe because of .rep(1)
+
   /**
-   * Character classes like `[acz]` or `[a-cHP-W]`.
+   * Character classes like `[acz]` or `[^a-cHP-W]`.
    */
   def charClass[_: P]: P[Regex[Char]] =
-    P("[" ~/ (matchCharRange | matchLitChar).rep(1) ~ "]").map(matches =>
-      Regex.oneOfR(Coattr.pure(matches.head), matches.tail.map(Coattr.pure[KleeneF, Match[Char]](_)): _*))
+    P("[" ~/
+      (("^" ~/ negatedCharClassContent.map(Coattr.pure[KleeneF, Match[Char]](_))) | positiveCharClassContent) ~/
+      "]"
+    )
 
-  def base[_: P]: P[Regex[Char]] = P(("(" ~/ regex ~ ")") | litChar | wildcard | charClass)
+  def base[_: P]: P[Regex[Char]] = P(
+    standardMatchChar.map(Regex.lit(_)) |
+    ("\\" ~/ (specialChar.map(Regex.lit(_)) | shorthandClass)) |
+    wildcard |
+    charClass |
+    ("(" ~/ regex ~ ")")
+  )
 
   def factor[_: P]: P[Regex[Char]] = P {
     base.flatMap{ r =>

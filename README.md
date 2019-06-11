@@ -86,7 +86,7 @@ You'll even get a compile-time error if the regex is invalid:
 
 ```scala
 val invalid: Regex[Char] = regex("a{1,-3}")
-// error: Error compiling regular expression: Expected regexExpr:1:1 / regex:1:1 / term:1:1 / factor:1:1 / repeatCount:1:2 / <Integer between 0 and 2147483647>:1:5, found "-3}"
+// error: Error compiling regular expression: Expected repeat count such as '{3}', '{1,4}', or '{3,}':1:2, found "{1,-3}"
 // val invalid: Regex[Char] = regex("a{1,-3}")
 //                            ^^^^^^^^^^^^^^^^
 ```
@@ -125,7 +125,7 @@ While `Regex[Char]` is the most common choice, irrec supports regular expression
 // needed for Foldable[Stream] instance
 import cats.implicits._
 
-val numRegex: Regex[Int] = lit(1).star * range(2, 4).repeat(1, 3) * oneOf(5, 6).oneOrMore
+val numRegex: Regex[Int] = lit(1).star * range(2, 4).repeat(1, Some(3)) * oneOf(5, 6).oneOrMore
 
 val numMatcher: Stream[Int] => Boolean = numRegex.matcher[Stream]
 ```

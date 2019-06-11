@@ -24,6 +24,7 @@ object RegexShrink {
       val shrunkLeft = shrinkA.shrink(l).map(l2 => Match.Range(l2, r))
       val shrunkRight = shrinkA.shrink(r).map(r2 => Match.Range(l, r2))
       shrunkLeft append shrunkRight
+    case Match.NoneOf(_) => Stream.empty // TODO ceedubs implement
   }
 
   def shrinkRegexCoattrF[A:Shrink]: CoattrF[KleeneF, Match[A], Regex[A]] => Stream[Regex[A]] =

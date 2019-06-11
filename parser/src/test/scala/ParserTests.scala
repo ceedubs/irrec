@@ -5,6 +5,8 @@ import ceedubs.irrec.regex._
 import CharRegexGen._
 import ceedubs.irrec.parse.{regex => parse}
 
+import qq.droste.data.Coattr
+import cats.data.NonEmptyList
 import fastparse._
 import ceedubs.irrec.regex.Regex._
 import org.scalatest.compatible.Assertion
@@ -101,21 +103,45 @@ class ParserTests extends IrrecSuite {
     sameRegex(r, expected)
   }
 
+  test("regex parsing supports ranges with negative character classes"){
+    import Match.Negated._
+    import Match.{Range, Literal}
+
+    val negated: Regex[Char] = Coattr.pure(
+      Match.NoneOf(
+        NonEmptyList.of(
+          NegatedRange(Range('b', 'd')),
+          NegatedLiteral(Literal('e')),
+          NegatedLiteral(Literal('g')),
+          NegatedRange(Range('i', 'k')))))
+
+    val expected = lit('a') * negated * lit('e')
+
+    val r = parse("a[^b-degi-k]e")
+    sameRegex(r, expected)
+  }
+
   test("regex parsing supports exact repeat counts"){
-    val expected = lit('a') * lit('b').repeat(3, 3) * lit('e')
+    val expected = lit('a') * lit('b').repeat(3, Some(3)) * lit('e')
     val r = parse("ab{3}e")
     sameRegex(r, expected)
   }
 
   test("regex parsing supports count ranges starting with 1"){
-    val expected = lit('a') * lit('b').repeat(1, 3) * lit('e')
+    val expected = lit('a') * lit('b').repeat(1, Some(3)) * lit('e')
     val r = parse("ab{1,3}e")
     sameRegex(r, expected)
   }
 
   test("regex parsing supports count ranges starting with 0"){
-    val expected = lit('a') * lit('b').repeat(0, 3) * lit('e')
+    val expected = lit('a') * lit('b').repeat(0, Some(3)) * lit('e')
     val r = parse("ab{0,3}e")
+    sameRegex(r, expected)
+  }
+
+  test("regex parsing supports count ranges with unbounded upper limit"){
+    val expected = lit('a') * lit('b').repeat(1, None) * lit('e')
+    val r = parse("ab{1,}e")
     sameRegex(r, expected)
   }
 
@@ -123,6 +149,28 @@ class ParserTests extends IrrecSuite {
     val expected = (lit('a') | (lit('b') * wildcard.star)) * lit('d')
     val r = parse("(a|b.*)d")
     sameRegex(r, expected)
+  }
+
+  test("regex parsing handles digit classes"){
+    val expected = lit('a') * (lit('b') | Regex.digit | lit('c'))
+    val r = parse("""a[b\dc]""")
+    sameRegex(r, expected)
+  }
+
+  test("regex parsing handles negative digit classes"){
+    import Match.{lit => _, _}
+    val expected = lit('a') * Coattr.pure(
+      NoneOf(
+        NonEmptyList.of(
+          Negated.NegatedLiteral(Literal('b')),
+          Negated.NegatedRange(Range('0','9')),
+          Negated.NegatedLiteral(Literal('c')))))
+    val r = parse("""a[^b\dc]""")
+    sameRegex(r, expected)
+  }
+
+  test("regex parsing rejects ranges on character class shorthands"){
+    assert(!parseRegex("""a[b\d-df]""").isSuccess)
   }
 
   test("pretty print parser round trip"){

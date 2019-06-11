@@ -4,6 +4,7 @@ package regex
 import RegexGen.{genRegex, genRangeMatch}
 import RegexAndCandidate.{genRegexAndCandidate, genRegexAndMatch}
 
+import cats.implicits._
 import org.scalacheck.Gen
 
 
@@ -45,6 +46,8 @@ object CharRegexGen {
   def genRegexChar(includeZero: Boolean, includeOne: Boolean): Gen[Regex[Char]] = genRegex(genSupportedChar, genSupportedCharMatchRange, includeZero = includeZero, includeOne = includeOne)
 
   val genStandardRegexChar: Gen[Regex[Char]] = genRegexChar(includeZero = false, includeOne = false)
+
+  val genAlphaNumCharRegex: Gen[Regex[Char]] = genRegex(Gen.alphaNumChar, genRangeMatch(Gen.alphaNumChar), includeZero = false, includeOne = false)
 
   val genCharRegexAndMatch: Gen[RegexAndCandidate[Char]] = genRegexAndMatch(includeOne = false, genSupportedChar, genSupportedCharMatchRange)
 

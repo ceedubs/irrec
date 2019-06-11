@@ -35,7 +35,10 @@ lazy val regex = (project in file("regex"))
       cats.testkit % Test))
   .settings(commonSettings)
   // see https://github.com/sbt/sbt/issues/2698#issuecomment-311417188
-  .settings(unmanagedClasspath in Test ++= (fullClasspath in (regexGenRef, Compile)).value)
+  .settings(
+    unmanagedClasspath in Test ++=
+      (fullClasspath in (regexGenRef, Compile)).value ++
+      (fullClasspath in (parserRef, Compile)).value)
   .dependsOn(kleene % "test->test;compile->compile")
 
 lazy val regexGen = (project in file("regex-gen"))
@@ -57,6 +60,8 @@ lazy val parser = (project in file("parser"))
   .dependsOn(
     regex % "test->test;compile->compile",
     regexGen % Test)
+
+lazy val parserRef = LocalProject("parser")
 
 lazy val docs = (project in file("irrec-docs"))
   .enablePlugins(MdocPlugin)

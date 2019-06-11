@@ -115,7 +115,7 @@ While `Regex[Char]` is the most common choice, irrec supports regular expression
 // needed for Foldable[Stream] instance
 import cats.implicits._
 
-val numRegex: Regex[Int] = lit(1).star * range(2, 4).repeat(1, 3) * oneOf(5, 6).oneOrMore
+val numRegex: Regex[Int] = lit(1).star * range(2, 4).repeat(1, Some(3)) * oneOf(5, 6).oneOrMore
 
 val numMatcher: Stream[Int] => Boolean = numRegex.matcher[Stream]
 ```

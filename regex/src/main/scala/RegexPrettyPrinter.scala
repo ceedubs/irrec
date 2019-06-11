@@ -57,10 +57,17 @@ object RegexPrettyPrinter {
     case KleeneF.One => ""
   }
 
-  def showMatch[A](f: A => String)(m: Match[A]): String = m match {
-    case Match.Literal(a) => f(a)
-    case Match.Range(l, r) => s"[${f(l)}-${f(r)}]"
-    case Match.Wildcard => "."
+  def showMatch[A](f: A => String)(m: Match[A]): String = {
+    import Match._
+    m match {
+      case Literal(a) => f(a)
+      case Range(l, r) => s"[${f(l)}-${f(r)}]"
+      case NoneOf(l) => l.map{
+        case Negated.NegatedRange(Range(l, h)) => s"${f(l)}-${f(h)}"
+        case Negated.NegatedLiteral(Literal(a)) => f(a)
+      }.toList.mkString("[^", "", "]")
+      case Match.Wildcard => "."
+    }
   }
 
   def showCharMatch: Match[Char] => String = showMatch(showChar)

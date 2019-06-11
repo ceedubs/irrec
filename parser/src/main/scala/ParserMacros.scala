@@ -14,7 +14,7 @@ object ParserMacros {
     regex.tree match {
       case Literal(Constant(s: String)) => parse(s, Parser.regexExpr(_), verboseFailures = true) match {
         case f @ Failure(_, _, _) =>
-          c.abort(c.enclosingPosition, s"Error compiling regular expression: ${f.longMsg}")
+          c.abort(c.enclosingPosition, s"Error compiling regular expression: ${f.msg}")
         case Success(_, _) =>
           reify(parse(regex.splice, Parser.regexExpr(_)).get.value)
       }
