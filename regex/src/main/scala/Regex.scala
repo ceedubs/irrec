@@ -84,6 +84,12 @@ object Regex {
    */
   def wordCharacter: Regex[Char] = range('A', 'Z') | range('a', 'z') | digit | lit('_')
 
+  /**
+   * A single whitespace character `[\t\n\f\r ]`. Could be represented in a regular expression as
+   * `\s`.
+   */
+  def whitespaceCharacter: Regex[Char] = oneOf('\t', '\n', '\f', '\r', ' ')
+
   def matcher[F[_], A](r: Regex[A])(implicit orderingA: Ordering[A], foldableF: Foldable[F]): F[A] => Boolean = {
     implicit val orderA: Order[A] = Order.fromOrdering(orderingA)
     NFA.runNFA[F, Int, Match[A], A](Glushkov.kleeneToNFA(r), _.matches(_))

@@ -175,6 +175,28 @@ class ParserTests extends IrrecSuite {
     sameRegex(r, expected)
   }
 
+  test("regex parsing handles whitespace classes"){
+    val expected = lit('a') * (lit('b') | Regex.whitespaceCharacter | lit('c'))
+    val r = parse("""a[b\sc]""")
+    sameRegex(r, expected)
+  }
+
+  test("regex parsing handles negative whitespace classes"){
+    import Match.{lit => _, _}
+    val expected = lit('a') * Coattr.pure(
+      NoneOf(
+      NonEmptyList.of(
+        Negated.NegatedLiteral(Literal('b')),
+        Negated.NegatedLiteral(Literal('\t')),
+        Negated.NegatedLiteral(Literal('\n')),
+        Negated.NegatedLiteral(Literal('\f')),
+        Negated.NegatedLiteral(Literal('\r')),
+        Negated.NegatedLiteral(Literal(' ')),
+        Negated.NegatedLiteral(Literal('c')))))
+    val r = parse("""a[^b\sc]""")
+    sameRegex(r, expected)
+  }
+
   test("regex parsing rejects ranges on character class shorthands"){
     assert(!parseRegex("""a[b\d-df]""").isSuccess)
   }
