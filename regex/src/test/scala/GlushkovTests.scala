@@ -122,6 +122,17 @@ class GlushkovTests extends IrrecSuite {
 
   test("character class range match high"){assert(parse("a[bd-fh]j").stringMatcher("afj"))}
 
+  test("word character single match"){assert(parse("\\w").stringMatcher("a"))}
+
+  test("word character non-match"){assert(!parse("\\w").stringMatcher("%"))}
+
+  test("word character match"){
+    val gen = Gen.oneOf(Gen.alphaNumChar, Gen.const('_'))
+    forAll(gen){ s =>
+      assert(parse("\\w").stringMatcher(s.toString))
+    }
+  }
+
   test("repeat examples"){
     val r = lit('b').repeat(2, Some(4))
     val m = r.stringMatcher
