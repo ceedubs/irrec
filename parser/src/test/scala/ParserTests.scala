@@ -43,6 +43,12 @@ class ParserTests extends IrrecSuite {
     sameRegex(r, expected)
   }
 
+  test("regex parsing handles non-capturing parens"){
+    val expected = lit('a') * seq("bc") * lit('d')
+    val r = parse("a(?:bc)d")
+    sameRegex(r, expected)
+  }
+
   test("regex parsing matches literal*"){
     val expected = Regex.lit('a').star
     val r = parse("a*")
