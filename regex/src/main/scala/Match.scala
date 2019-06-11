@@ -12,7 +12,7 @@ sealed abstract class Match[+A] extends Product with Serializable {
   def matches[AA >: A](a: AA)(implicit orderA: Order[AA]): Boolean = this match {
     case Literal(expected) => a === expected
     case Range(l, r) => a >= l && a <= r
-    case NoneOf(l) => l.forall(_.toMatch.matches(a))
+    case NoneOf(l) => l.forall(n => !n.toMatch.matches(a))
     case Wildcard => true
   }
 }

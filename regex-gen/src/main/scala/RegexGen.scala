@@ -16,7 +16,7 @@ object RegexGen {
     case Match.Literal(expected) => Gen.const(expected)
     case Match.Wildcard => genA
     case Match.Range(l, r) => chooseA.choose(l, r)
-    case Match.NoneOf(l) => genA.filter(a => l.forall(m => !m.toMatch.matches(a)))
+    case m @ Match.NoneOf(_) => genA.filter(m.matches(_))
   }
 
   def kleeneFStreamAlgebra[A]: Algebra[KleeneF, Gen[Stream[A]]] = Algebra{

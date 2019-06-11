@@ -47,6 +47,8 @@ object CharRegexGen {
 
   val genStandardRegexChar: Gen[Regex[Char]] = genRegexChar(includeZero = false, includeOne = false)
 
+  val genAlphaNumCharRegex: Gen[Regex[Char]] = genRegex(Gen.alphaNumChar, genRangeMatch(Gen.alphaNumChar), includeZero = false, includeOne = false)
+
   val genCharRegexAndMatch: Gen[RegexAndCandidate[Char]] = genRegexAndMatch(includeOne = false, genSupportedChar, genSupportedCharMatchRange)
 
   val genAlphaNumCharRegexAndMatch: Gen[RegexAndCandidate[Char]] = genRegexAndMatch(includeOne = false, Gen.alphaNumChar, genRangeMatch(Gen.alphaNumChar))
