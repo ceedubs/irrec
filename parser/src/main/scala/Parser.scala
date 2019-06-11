@@ -132,7 +132,7 @@ object Parser {
     ("\\" ~/ (specialChar.map(Regex.lit(_)) | shorthandClass)) |
     wildcard |
     charClass |
-    ("(" ~/ regex ~ ")")
+    ("(" ~/ "?:".? ~ regex ~ ")")
   )
 
   def factor[_: P]: P[Regex[Char]] = P {
