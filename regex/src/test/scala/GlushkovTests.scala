@@ -126,10 +126,25 @@ class GlushkovTests extends IrrecSuite {
 
   test("word character non-match"){assert(!parse("\\w").stringMatcher("%"))}
 
+  test("whitespace character single match"){assert(parse("\\s").stringMatcher(" "))}
+
+  test("whitespace character non-match"){assert(!parse("\\s").stringMatcher("%"))}
+
+  test("whitespace character negated range match"){assert(parse("a[^\\s]c").stringMatcher("abc"))}
+
+  test("whitespace character negated range non-match"){assert(!parse("a[^\\s]c").stringMatcher("a c"))}
+
   test("word character match"){
     val gen = Gen.oneOf(Gen.alphaNumChar, Gen.const('_'))
     forAll(gen){ s =>
       assert(parse("\\w").stringMatcher(s.toString))
+    }
+  }
+
+  test("whitespace character match"){
+    val gen = Gen.oneOf('\t', '\n', '\f', '\r', ' ')
+    forAll(gen){ s =>
+      assert(parse("\\s").stringMatcher(s.toString))
     }
   }
 

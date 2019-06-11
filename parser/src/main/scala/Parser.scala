@@ -44,8 +44,9 @@ object Parser {
    */
   def shorthandClass[_: P]: P[Regex[Char]] = (
     P("d").map(_ => Regex.digit) |
-    P("w").map(_ => Regex.wordCharacter)
-  ).opaque("""character class such as \w or \d""")
+    P("w").map(_ => Regex.wordCharacter) |
+    P("s").map(_ => Regex.whitespaceCharacter)
+  ).opaque("""character class such as \w, \d, etc""")
 
   // TODO ceedubs extract common logic between this and shorthandClass?
   def negatedShorthandClass[_: P]: P[NonEmptyList[Match.Negated[Char]]] = {
@@ -57,7 +58,14 @@ object Parser {
         Range('A', 'Z'),
         Range('a', 'z'),
         Range('0', '9')
-      ).map(Negated.NegatedRange(_)))
+      ).map(Negated.NegatedRange(_))) |
+    P("s").map(_ =>
+      NonEmptyList.of(
+        Negated.NegatedLiteral(Literal('\t')),
+        Negated.NegatedLiteral(Literal('\n')),
+        Negated.NegatedLiteral(Literal('\f')),
+        Negated.NegatedLiteral(Literal('\r')),
+        Negated.NegatedLiteral(Literal(' '))))
   }
 
   /**
