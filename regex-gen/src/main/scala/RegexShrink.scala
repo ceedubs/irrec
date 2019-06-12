@@ -1,7 +1,7 @@
 package ceedubs.irrec
 package regex
 
-import qq.droste.{AlgebraM, scheme}
+import qq.droste.{scheme, AlgebraM}
 import qq.droste.data.{Coattr, CoattrF}
 import qq.droste.data.prelude._
 import org.scalacheck.Shrink
@@ -27,13 +27,14 @@ object RegexShrink {
     case Match.NoneOf(_) => Stream.empty // TODO ceedubs implement
   }
 
-  def shrinkRegexCoattrF[A:Shrink]: CoattrF[KleeneF, Match[A], Regex[A]] => Stream[Regex[A]] =
+  def shrinkRegexCoattrF[A: Shrink]: CoattrF[KleeneF, Match[A], Regex[A]] => Stream[Regex[A]] =
     CoattrF.un(_) match {
       case Left(ma) => shrinkMatch[A].apply(ma).map(Coattr.pure[KleeneF, Match[A]](_))
       case Right(kf) => shrinkKleeneF(kf)
     }
 
-  def shrinkRegexCoattrFAlgebra[A:Shrink]: AlgebraM[Stream, CoattrF[KleeneF, Match[A], ?], Regex[A]]  = AlgebraM(shrinkRegexCoattrF[A])
+  def shrinkRegexCoattrFAlgebra[A: Shrink]
+    : AlgebraM[Stream, CoattrF[KleeneF, Match[A], ?], Regex[A]] = AlgebraM(shrinkRegexCoattrF[A])
 
   def shrinkRegex[A: Shrink]: Regex[A] => Stream[Regex[A]] =
     scheme.cataM(shrinkRegexCoattrFAlgebra[A])

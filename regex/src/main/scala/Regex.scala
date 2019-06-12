@@ -71,7 +71,8 @@ object Regex {
    */
   def impossible[A]: Kleene[A] = Coattr.roll[KleeneF, A](KleeneF.Zero)
 
-  def count[A](n: Int, r: Kleene[A]): Kleene[A] = (1 to n).foldLeft(empty[A])((acc, _) => andThen(acc, r))
+  def count[A](n: Int, r: Kleene[A]): Kleene[A] =
+    (1 to n).foldLeft(empty[A])((acc, _) => andThen(acc, r))
 
   /**
    * Matches a single digit character ('0', '3', '9', etc). Could be represented in a regular
@@ -91,7 +92,8 @@ object Regex {
    * expression as `\w`.
    */
   val wordCharacter: Regex[Char] = oneOfFR[NonEmptyList, Match[Char]](
-    CharacterClasses.wordCharMatches.widen[Match[Char]]
+    CharacterClasses.wordCharMatches
+      .widen[Match[Char]]
       .map(Coattr.pure(_)))
 
   /**
@@ -106,7 +108,8 @@ object Regex {
    * `\s`.
    */
   val whitespaceCharacter: Regex[Char] = oneOfFR[NonEmptyList, Match[Char]](
-    CharacterClasses.whitespaceCharMatches.widen[Match[Char]]
+    CharacterClasses.whitespaceCharMatches
+      .widen[Match[Char]]
       .map(Coattr.pure(_)))
 
   /**
@@ -116,12 +119,14 @@ object Regex {
   val nonWhitespaceCharacter: Regex[Char] =
     Coattr.pure(Match.NoneOf(CharacterClasses.whitespaceCharMatches.map(_.negate)))
 
-  def matcher[F[_], A](r: Regex[A])(implicit orderingA: Ordering[A], foldableF: Foldable[F]): F[A] => Boolean = {
+  def matcher[F[_], A](
+    r: Regex[A])(implicit orderingA: Ordering[A], foldableF: Foldable[F]): F[A] => Boolean = {
     implicit val orderA: Order[A] = Order.fromOrdering(orderingA)
     NFA.runNFA[F, Int, Match[A], A](Glushkov.kleeneToNFA(r), _.matches(_))
   }
 
-  private implicit val indexedSeqFoldable: Foldable[IndexedSeq] = new IndexedSeqFoldable[IndexedSeq] {}
+  implicit private val indexedSeqFoldable: Foldable[IndexedSeq] =
+    new IndexedSeqFoldable[IndexedSeq] {}
 
   def stringMatcher(r: Regex[Char]): String => Boolean = {
     val matcher = r.matcher[IndexedSeq]
