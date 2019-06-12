@@ -171,4 +171,6 @@ val noPublishSettings = Seq(
   publishArtifact := false
 )
 
-addCommandAlias("validate", ";test;docs/mdoc")
+addCommandAlias("format", ";scalafmtSbt;scalafmtAll")
+addCommandAlias("lint", ";scalafmtSbtCheck;scalafmtCheckAll")
+addCommandAlias("validate", ";lint;test;docs/mdoc")
