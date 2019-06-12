@@ -9,6 +9,16 @@ let
     # Hash obtained using `nix-prefetch-url --unpack <url>`
     sha256 = "1ib96has10v5nr6bzf7v8kw7yzww8zanxgw2qi1ll1sbv6kj6zpd";
   }) {};
+
+  sbt = with pkgs; symlinkJoin {
+    name = "sbt-irrec";
+    buildInputs = [ makeWrapper ];
+    paths = [ pkgs.sbt ];
+    postBuild = ''
+      wrapProgram "$out/bin/sbt" \
+      --add-flags "-mem 2048"
+    '';
+  };
 in
   with pkgs;
   stdenv.mkDerivation {
