@@ -10,9 +10,11 @@ import cats.data.NonEmptyList
 import fastparse._
 import ceedubs.irrec.regex.Regex._
 import org.scalatest.compatible.Assertion
+import fastparse.Parsed.Failure
+import fastparse.Parsed.Success
 
 class ParserTests extends IrrecSuite {
-  def parseRegex(regex: String): Parsed[Regex[Char]] = fastparse.parse(regex, Parser.regexExpr(_))
+  def parseRegex(regex: String): Parsed[Regex[Char]] = fastparse.parse(regex, Parser.regexExpr(_), verboseFailures = true)
 
   test("regex parsing works for single literal"){
     val expected = Regex.lit('a')
@@ -208,11 +210,13 @@ class ParserTests extends IrrecSuite {
   }
 
   test("pretty print parser round trip"){
-    forAll(genCharRegexAndCandidate){ case RegexAndCandidate(r, s) =>
-      withClue(s"regex: (${r.pprint}), candidate: (${s.mkString})"){
-        val Parsed.Success(parsed, _) = parseRegex(r.pprint)
-        sameRegex(parsed, r)
-        r.matcher[Stream].apply(s) should ===(parsed.matcher[Stream].apply(s))
+    forAll(genCharRegexAndCandidate, minSuccessful(100000)){ case RegexAndCandidate(r, s) =>
+      val clue = s"regex: (${r.pprint}), candidate: (${s.mkString})"
+      parseRegex(r.pprint) match {
+        case Failure(label, _, _) => withClue(clue)(fail(s"parsing failure: $label"))
+        case Success(parsed, _) =>
+          sameRegex(parsed, r)
+          withClue(clue)(r.matcher[Stream].apply(s) should ===(parsed.matcher[Stream].apply(s)))
       }
     }
   }
