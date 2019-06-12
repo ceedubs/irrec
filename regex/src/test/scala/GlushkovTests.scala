@@ -122,9 +122,21 @@ class GlushkovTests extends IrrecSuite {
 
   test("character class range match high"){assert(parse("a[bd-fh]j").stringMatcher("afj"))}
 
+  test("digit character single match"){assert(parse("\\d").stringMatcher("2"))}
+
+  test("digit character non-match"){assert(!parse("\\d").stringMatcher("a"))}
+
+  test("non-digit character single match"){assert(parse("\\D").stringMatcher("a"))}
+
+  test("non-digit character non-match"){assert(!parse("\\D").stringMatcher("3"))}
+
   test("word character single match"){assert(parse("\\w").stringMatcher("a"))}
 
   test("word character non-match"){assert(!parse("\\w").stringMatcher("%"))}
+
+  test("non-word character single match"){assert(parse("\\W").stringMatcher("%"))}
+
+  test("non-word character non-match"){assert(!parse("\\W").stringMatcher("a"))}
 
   test("whitespace character single match"){assert(parse("\\s").stringMatcher(" "))}
 
@@ -133,6 +145,10 @@ class GlushkovTests extends IrrecSuite {
   test("whitespace character negated range match"){assert(parse("a[^\\s]c").stringMatcher("abc"))}
 
   test("whitespace character negated range non-match"){assert(!parse("a[^\\s]c").stringMatcher("a c"))}
+
+  test("non-whitespace character single match"){assert(parse("\\S").stringMatcher("a"))}
+
+  test("non-whitespace character non-match"){assert(!parse("\\S").stringMatcher(" "))}
 
   test("word character match"){
     val gen = Gen.oneOf(Gen.alphaNumChar, Gen.const('_'))

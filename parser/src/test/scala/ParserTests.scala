@@ -197,15 +197,23 @@ class ParserTests extends IrrecSuite {
     sameRegex(r, expected)
   }
 
+  test("regex parsing handles non-whitespace classes"){
+    val expected = lit('a') * Regex.nonWhitespaceCharacter * lit('c')
+    val r = parse("""a\Sc""")
+    sameRegex(r, expected)
+  }
+
   test("regex parsing rejects ranges on character class shorthands"){
     assert(!parseRegex("""a[b\d-df]""").isSuccess)
   }
 
   test("pretty print parser round trip"){
     forAll(genCharRegexAndCandidate){ case RegexAndCandidate(r, s) =>
-      val Parsed.Success(parsed, _) = parseRegex(r.pprint)
-      sameRegex(parsed, r)
-      r.matcher[Stream].apply(s) should ===(parsed.matcher[Stream].apply(s))
+      withClue(s"regex: (${r.pprint}), candidate: (${s.mkString})"){
+        val Parsed.Success(parsed, _) = parseRegex(r.pprint)
+        sameRegex(parsed, r)
+        r.matcher[Stream].apply(s) should ===(parsed.matcher[Stream].apply(s))
+      }
     }
   }
 

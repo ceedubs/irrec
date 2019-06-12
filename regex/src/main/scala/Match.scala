@@ -18,10 +18,19 @@ sealed abstract class Match[+A] extends Product with Serializable {
 }
 
 object Match {
-  final case class Literal[+A](value: A) extends Match[A]
+
+  sealed trait Negatable[+A] extends Match[A] {
+    def negate: Negated[A]
+  }
+
+  final case class Literal[+A](value: A) extends Negatable[A] {
+    def negate: Negated.NegatedLiteral[A] = Negated.NegatedLiteral(this)
+  }
 
   /** An inclusive range */
-  final case class Range[+A](lower: A, upper: A) extends Match[A]
+  final case class Range[+A](lower: A, upper: A) extends Negatable[A] {
+    def negate: Negated.NegatedRange[A] = Negated.NegatedRange(this)
+  }
 
   case object Wildcard extends Match[Nothing]
 

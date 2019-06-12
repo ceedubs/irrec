@@ -4,6 +4,7 @@ package regex
 import cats.{Foldable, Order, Reducible}
 import cats.implicits._
 import qq.droste.data.Coattr
+import cats.data.NonEmptyList
 
 // TODO ceedubs work around that scala bug where a companion object and type alias have the same name
 object Regex {
@@ -76,19 +77,44 @@ object Regex {
    * Matches a single digit character ('0', '3', '9', etc). Could be represented in a regular
    * expression as `\d` or `[0-9]`.
    */
-  def digit: Regex[Char] = range('0', '9')
+  val digit: Regex[Char] = Coattr.pure(CharacterClasses.digitMatch)
+
+  /**
+   * Opposite of [[digit]]. Could be represented in a regular expression as
+   * `\D`.
+   */
+  val nonDigit: Regex[Char] =
+    Coattr.pure(Match.NoneOf(NonEmptyList.one(CharacterClasses.digitMatch.negate)))
 
   /**
    * Matches a single "word" character ('A', 'a', '_', etc). Could be represented in a regular
    * expression as `\w`.
    */
-  def wordCharacter: Regex[Char] = range('A', 'Z') | range('a', 'z') | digit | lit('_')
+  val wordCharacter: Regex[Char] = oneOfFR[NonEmptyList, Match[Char]](
+    CharacterClasses.wordCharMatches.widen[Match[Char]]
+      .map(Coattr.pure(_)))
+
+  /**
+   * Opposite of [[wordCharacter]]. Could be represented in a regular expression as
+   * `\W`.
+   */
+  val nonWordCharacter: Regex[Char] =
+    Coattr.pure(Match.NoneOf(CharacterClasses.wordCharMatches.map(_.negate)))
 
   /**
    * A single whitespace character `[\t\n\f\r ]`. Could be represented in a regular expression as
    * `\s`.
    */
-  def whitespaceCharacter: Regex[Char] = oneOf('\t', '\n', '\f', '\r', ' ')
+  val whitespaceCharacter: Regex[Char] = oneOfFR[NonEmptyList, Match[Char]](
+    CharacterClasses.whitespaceCharMatches.widen[Match[Char]]
+      .map(Coattr.pure(_)))
+
+  /**
+   * Opposite of [[whitespaceCharacter]]. Could be represented in a regular expression as
+   * `\S`.
+   */
+  val nonWhitespaceCharacter: Regex[Char] =
+    Coattr.pure(Match.NoneOf(CharacterClasses.whitespaceCharMatches.map(_.negate)))
 
   def matcher[F[_], A](r: Regex[A])(implicit orderingA: Ordering[A], foldableF: Foldable[F]): F[A] => Boolean = {
     implicit val orderA: Order[A] = Order.fromOrdering(orderingA)
