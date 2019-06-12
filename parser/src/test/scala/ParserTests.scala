@@ -210,7 +210,7 @@ class ParserTests extends IrrecSuite {
   }
 
   test("pretty print parser round trip"){
-    forAll(genCharRegexAndCandidate, minSuccessful(100000)){ case RegexAndCandidate(r, s) =>
+    forAll(genCharRegexAndCandidate){ case RegexAndCandidate(r, s) =>
       val clue = s"regex: (${r.pprint}), candidate: (${s.mkString})"
       parseRegex(r.pprint) match {
         case Failure(label, _, _) => withClue(clue)(fail(s"parsing failure: $label"))
