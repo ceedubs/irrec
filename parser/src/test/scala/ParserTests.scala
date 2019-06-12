@@ -209,9 +209,11 @@ class ParserTests extends IrrecSuite {
 
   test("pretty print parser round trip"){
     forAll(genCharRegexAndCandidate){ case RegexAndCandidate(r, s) =>
-      val Parsed.Success(parsed, _) = parseRegex(r.pprint)
-      sameRegex(parsed, r)
-      r.matcher[Stream].apply(s) should ===(parsed.matcher[Stream].apply(s))
+      withClue(s"regex: (${r.pprint}), candidate: (${s.mkString})"){
+        val Parsed.Success(parsed, _) = parseRegex(r.pprint)
+        sameRegex(parsed, r)
+        r.matcher[Stream].apply(s) should ===(parsed.matcher[Stream].apply(s))
+      }
     }
   }
 
