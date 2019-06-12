@@ -39,24 +39,30 @@ object Glushkov {
   }
 
   // TODO ceedubs formatting
-  def kleeneLocalTransitions[I, A](k: KleeneF[LocalLanguage[I, A]])(implicit orderingI: Ordering[I]): SortedMap[I, List[(I, A)]] = {
+  def kleeneLocalTransitions[I, A](k: KleeneF[LocalLanguage[I, A]])(
+    implicit orderingI: Ordering[I]): SortedMap[I, List[(I, A)]] = {
     implicit val orderI: Order[I] = Order.fromOrdering(orderingI)
     k match {
-      case KleeneF.Times(l, r) => l.transitions |+| r.transitions |+|
-        l.trailing.foldMap{ case (ti, _) =>
-          SortedMap((ti, r.leading.toList))
-        }
+      case KleeneF.Times(l, r) =>
+        l.transitions |+| r.transitions |+|
+          l.trailing.foldMap {
+            case (ti, _) =>
+              SortedMap((ti, r.leading.toList))
+          }
       case KleeneF.Plus(l, r) => l.transitions |+| r.transitions
-      case KleeneF.Star(x) => x.transitions |+|
-        x.trailing.foldMap{ case (ti, _) =>
-          SortedMap((ti, x.leading.toList))
-        }
+      case KleeneF.Star(x) =>
+        x.transitions |+|
+          x.trailing.foldMap {
+            case (ti, _) =>
+              SortedMap((ti, x.leading.toList))
+          }
       case KleeneF.One => SortedMap.empty
       case KleeneF.Zero => SortedMap.empty
     }
   }
 
-  def kleeneLocalLanguage[I, A](implicit orderingI: Ordering[I]): Algebra[KleeneF, LocalLanguage[I, A]] = Algebra{ ll =>
+  def kleeneLocalLanguage[I, A](
+    implicit orderingI: Ordering[I]): Algebra[KleeneF, LocalLanguage[I, A]] = Algebra { ll =>
     LocalLanguage(
       isEmpty = kleeneLocalIsEmpty(ll),
       leading = kleeneLocalLeading(ll),
@@ -64,7 +70,8 @@ object Glushkov {
       transitions = kleeneLocalTransitions(ll))
   }
 
-  def indexLeaves[F[_]:Functor, A]: AlgebraM[State[Int, ?], CoattrF[F, A, ?], Coattr[F, (Int, A)]] =
+  def indexLeaves[F[_]: Functor, A]
+    : AlgebraM[State[Int, ?], CoattrF[F, A, ?], Coattr[F, (Int, A)]] =
     AlgebraM {
       CoattrF.un(_) match {
         case Left(a) => State((i: Int) => (i + 1, Coattr.pure(i -> a)))
@@ -72,12 +79,14 @@ object Glushkov {
       }
     }
 
-  def kleeneToLocalLanguage[I, A](implicit orderingI: Ordering[I]): Algebra[CoattrF[KleeneF, (I, A), ?], LocalLanguage[I, A]] = Algebra{
-    CoattrF.un(_) match {
-      case Left((i, ma)) => leafLocalLanguage(i, ma)
-      case Right(kf) => kleeneLocalLanguage.apply(kf)
+  def kleeneToLocalLanguage[I, A](
+    implicit orderingI: Ordering[I]): Algebra[CoattrF[KleeneF, (I, A), ?], LocalLanguage[I, A]] =
+    Algebra {
+      CoattrF.un(_) match {
+        case Left((i, ma)) => leafLocalLanguage(i, ma)
+        case Right(kf) => kleeneLocalLanguage.apply(kf)
+      }
     }
-  }
 
   // TODO ceedubs can we combine indexing leaves with another algebra and do a single pass?
   def kleeneToNFA[A](k: Kleene[A]): NFA[Int, A] = {
@@ -86,7 +95,8 @@ object Glushkov {
     localLanguageToNFA(ll)
   }
 
-  def leafLocalLanguage[I, A](index: I, a: A)(implicit orderingI: Ordering[I]): LocalLanguage[I, A] = {
+  def leafLocalLanguage[I, A](index: I, a: A)(
+    implicit orderingI: Ordering[I]): LocalLanguage[I, A] = {
     val singletonList = List((index, a))
     LocalLanguage(
       isEmpty = false,
@@ -95,10 +105,16 @@ object Glushkov {
       transitions = SortedMap.empty)
   }
 
-  def localLanguageToNFA[A](ll: LocalLanguage[Int, A]): NFA[Int, A] = NFA(
-    initStates = SortedSet(0),
-    finalStates = (if (ll.isEmpty) SortedSet(0) else SortedSet.empty[Int]) |+| ll.trailing.map(_._1).to[SortedSet],
-    transitions = ll.leading.foldMap{ l => SortedMap((0, List(l)))} |+| ll.transitions)
+  def localLanguageToNFA[A](ll: LocalLanguage[Int, A]): NFA[Int, A] =
+    NFA(
+      initStates = SortedSet(0),
+      finalStates = (if (ll.isEmpty) SortedSet(0) else SortedSet.empty[Int]) |+| ll.trailing
+        .map(_._1)
+        .to[SortedSet],
+      transitions = ll.leading.foldMap { l =>
+        SortedMap((0, List(l)))
+      } |+| ll.transitions
+    )
 
   // TODO ceedubs document
   final case class LocalLanguage[I, A](

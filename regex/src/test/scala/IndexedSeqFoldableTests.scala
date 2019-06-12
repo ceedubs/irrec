@@ -2,7 +2,7 @@ package ceedubs.irrec
 package regex
 
 import cats.{Eq, Foldable}
-import cats.laws.discipline.{SerializableTests, FoldableTests}
+import cats.laws.discipline.{FoldableTests, SerializableTests}
 
 class IndexedSeqFoldableTests extends IrrecSuite {
   {
