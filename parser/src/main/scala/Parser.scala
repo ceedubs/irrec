@@ -56,7 +56,8 @@ object Parser {
   def negatedShorthandClass[_: P]: P[NonEmptyList[Match.Negated[Char]]] =
     P("d").map(_ => NonEmptyList.one(CharacterClasses.digitMatch.negate)) |
       P("w").map(_ => CharacterClasses.wordCharMatches.map(_.negate)) |
-      P("s").map(_ => CharacterClasses.whitespaceCharMatches.map(_.negate))
+      P("s").map(_ => CharacterClasses.whitespaceCharMatches.map(_.negate)) |
+      P("h").map(_ => CharacterClasses.horizontalWhitespaceCharMatches.map(_.negate))
 
   /**
    * Standard characters to match like `a` or `%`.
