@@ -31,15 +31,21 @@ object RegexPrettyPrinter {
   val charsToEscape: Set[Char] = Set('<', '(', '[', '{', '\\', '^', '-', '=', '$', '!', '|', ']',
     '}', ')', '?', '*', '+', '.', '>')
 
-  val charMappings: Map[Char, String] =
-    charsToEscape.map(c => (c, "\\" + c.toString)).toMap ++
-    Map(
-      '\t' -> "\\t",
-      '\n' -> "\\n",
-      '\r' -> "\\r",
-      '\f' -> "\\f")
+  val whitespaceCharMappings: Map[Char, Char] = Map(
+    't' -> '\t',
+    'n' -> '\n',
+    'r' -> '\r',
+    'f' -> '\f')
 
-  val showChar: Char => String = c => charMappings.get(c).getOrElse(c.toString)
+  val specialCharToLit: Map[Char, Char] =
+    whitespaceCharMappings ++ charsToEscape.map(x => (x, x))
+
+  val charToEscapedChar: Map[Char, String] =
+    specialCharToLit.map { case (special, lit) =>
+      (lit, "\\" + special)
+    }
+
+  val showChar: Char => String = c => charToEscapedChar.get(c).getOrElse(c.toString)
 
   def parensMaybe(currentPrecedence: Int, value: (Int, String), parensForEqualPrecedence: Boolean): String =
     //if (value._1 > currentPrecedence) s"(${value._2})" else value._2

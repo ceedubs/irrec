@@ -1,7 +1,7 @@
 package ceedubs.irrec
 package parse
 
-import ceedubs.irrec.regex.RegexPrettyPrinter.charsToEscape
+import ceedubs.irrec.regex.RegexPrettyPrinter.{charsToEscape, specialCharToLit}
 
 import cats.data.NonEmptyList
 import cats.implicits._
@@ -29,14 +29,15 @@ object Parser {
     final case class Range(lowerInclusive: Int, upperInclusive: Option[Int]) extends RepeatCount
   }
 
+
   /**
    * Matches on special characters that should be escaped like `*` and `{`.
    */
   def specialChar[_: P]: P[Char] =
     P(
-      CharPred(charsToEscape.contains(_))
-        .opaque(s"special regular expression character that should be escaped such as '(', '}', '*', etc")
-        .!.map(_.head))
+      CharPred(specialCharToLit.contains(_))
+      .!.map(s => specialCharToLit(s.head))
+      .opaque(s"special regular expression character that should be escaped such as '(', '}', '*', etc"))
 
   /**
    * A shorthand class such as `\d` or `\w`. This parser itself doesn't look for the `\`; it starts
