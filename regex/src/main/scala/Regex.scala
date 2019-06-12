@@ -104,6 +104,22 @@ object Regex {
     Coattr.pure(Match.NoneOf(CharacterClasses.wordCharMatches.map(_.negate)))
 
   /**
+   * A single horizontal whitespace character `[\t ]`. Could be represented in a regular expression
+   * as `\h`.
+   */
+  val horizontalWhitespaceCharacter: Regex[Char] = oneOfFR[NonEmptyList, Match[Char]](
+    CharacterClasses.horizontalWhitespaceCharMatches
+      .widen[Match[Char]]
+      .map(Coattr.pure(_)))
+
+  /**
+   * Opposite of [[horizontalWhitespaceCharacter]]; this matches on any character that is not a tab
+   * or a space. Could be represented in a regular expression as `\H`.
+   */
+  val notHorizontalWhitespaceCharacter: Regex[Char] =
+    Coattr.pure(Match.NoneOf(CharacterClasses.horizontalWhitespaceCharMatches.map(_.negate)))
+
+  /**
    * A single whitespace character `[\t\n\f\r ]`. Could be represented in a regular expression as
    * `\s`.
    */

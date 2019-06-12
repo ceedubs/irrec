@@ -190,10 +190,10 @@ class ParserTests extends IrrecSuite {
       NoneOf(NonEmptyList.of(
         Negated.NegatedLiteral(Literal('b')),
         Negated.NegatedLiteral(Literal('\t')),
+        Negated.NegatedLiteral(Literal(' ')),
         Negated.NegatedLiteral(Literal('\n')),
         Negated.NegatedLiteral(Literal('\f')),
         Negated.NegatedLiteral(Literal('\r')),
-        Negated.NegatedLiteral(Literal(' ')),
         Negated.NegatedLiteral(Literal('c'))
       )))
     val r = parse("""a[^b\sc]""")
@@ -203,6 +203,18 @@ class ParserTests extends IrrecSuite {
   test("regex parsing handles non-whitespace classes") {
     val expected = lit('a') * Regex.nonWhitespaceCharacter * lit('c')
     val r = parse("""a\Sc""")
+    sameRegex(r, expected)
+  }
+
+  test("regex parsing handles horizontal whitespace classes") {
+    val expected = lit('a') * (lit('b') | Regex.horizontalWhitespaceCharacter | lit('c'))
+    val r = parse("""a[b\hc]""")
+    sameRegex(r, expected)
+  }
+
+  test("regex parsing handles non-horizontal-whitespace classes") {
+    val expected = lit('a') * Regex.notHorizontalWhitespaceCharacter * lit('c')
+    val r = parse("""a\Hc""")
     sameRegex(r, expected)
   }
 
