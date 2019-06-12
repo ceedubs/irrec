@@ -154,6 +154,12 @@ class ParserTests extends IrrecSuite {
     sameRegex(r, expected)
   }
 
+  test("regex parsing supports optional elements") {
+    val expected = lit('a') * lit('b').optional * lit('e')
+    val r = parse("ab?e")
+    sameRegex(r, expected)
+  }
+
   test("regex parsing handles complex nested expressions") {
     val expected = (lit('a') | (lit('b') * wildcard.star)) * lit('d')
     val r = parse("(a|b.*)d")

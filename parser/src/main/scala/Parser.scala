@@ -144,6 +144,7 @@ object Parser {
     base.flatMap { r =>
       P("*").map(_ => r.star) |
         P("+").map(_ => r.oneOrMore) |
+        P("?").map(_ => r.optional) |
         repeatCount.map(count => r.repeat(count.min, count.max)) |
         Pass(r)
     }
