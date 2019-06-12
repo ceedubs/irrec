@@ -197,6 +197,12 @@ class ParserTests extends IrrecSuite {
     sameRegex(r, expected)
   }
 
+  test("regex parsing handles non-whitespace classes"){
+    val expected = lit('a') * Regex.nonWhitespaceCharacter * lit('c')
+    val r = parse("""a\Sc""")
+    sameRegex(r, expected)
+  }
+
   test("regex parsing rejects ranges on character class shorthands"){
     assert(!parseRegex("""a[b\d-df]""").isSuccess)
   }
