@@ -47,6 +47,8 @@ object Parser {
         P("D").map(_ => Regex.nonDigit) |
         P("w").map(_ => Regex.wordCharacter) |
         P("W").map(_ => Regex.nonWordCharacter) |
+        P("h").map(_ => Regex.horizontalWhitespaceCharacter) |
+        P("H").map(_ => Regex.notHorizontalWhitespaceCharacter) |
         P("s").map(_ => Regex.whitespaceCharacter) |
         P("S").map(_ => Regex.nonWhitespaceCharacter)
     ).opaque("""character class such as \w, \d, \s, \S, etc""")
