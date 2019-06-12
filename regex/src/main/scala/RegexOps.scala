@@ -16,6 +16,8 @@ final class KleeneOps[A](private val r: Kleene[A]) extends AnyVal {
 
   def count(n: Int): Kleene[A] = Regex.count(n, r)
 
+  def optional: Kleene[A] = Regex.optional(r)
+
   def repeat(minInclusive: Int, maxInclusive: Option[Int]): Kleene[A] =
     Regex.repeat(minInclusive, maxInclusive, r)
 

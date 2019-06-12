@@ -110,6 +110,14 @@ class GlushkovTests extends IrrecSuite {
 
   test("seq non-match") { assert(!seq("abc").stringMatcher("bcd")) }
 
+  test("optional match present") {
+    assert((lit('a') * lit('b').optional * lit('c')).stringMatcher("abc"))
+  }
+
+  test("optional match not present") {
+    assert((lit('a') * lit('b').optional * lit('c')).stringMatcher("ac"))
+  }
+
   test("character class literal match beginning") {
     assert(parse("a[bd-fh]j").stringMatcher("abj"))
   }

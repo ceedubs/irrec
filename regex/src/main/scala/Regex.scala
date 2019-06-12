@@ -58,6 +58,9 @@ object Regex {
     count(minInclusive, r) * maxInclusive.fold(star(r))(max =>
       (1 to (max - minInclusive)).foldLeft(empty[A])((acc, i) => or(acc, r.count(i))))
 
+  def optional[A](r: Kleene[A]): Kleene[A] =
+    r | empty
+
   /**
    * A match on the empty string (this should always succeed and consume no input).
    */
