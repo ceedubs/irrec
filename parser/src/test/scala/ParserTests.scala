@@ -12,8 +12,11 @@ import ceedubs.irrec.regex.Regex._
 import org.scalatest.compatible.Assertion
 import fastparse.Parsed.Failure
 import fastparse.Parsed.Success
+import java.util.regex.Pattern
 
 class ParserTests extends IrrecSuite {
+  import ParserTests._
+
   def parseRegex(regex: String): Parsed[Regex[Char]] =
     fastparse.parse(regex, Parser.regexExpr(_), verboseFailures = true)
 
@@ -168,8 +171,8 @@ class ParserTests extends IrrecSuite {
 
   test("regex parsing handles digit classes") {
     val expected = lit('a') * (lit('b') | Regex.digit | lit('c'))
-    val r = parse("""a[b\dc]""")
-    sameRegex(r, expected)
+    sameRegex(parse("""a[b\dc]"""), expected)
+    sameRegex(parse("""a[b[:digit:]c]"""), expected)
   }
 
   test("regex parsing handles negative digit classes") {
@@ -180,51 +183,44 @@ class ParserTests extends IrrecSuite {
           Negated.NegatedLiteral(Literal('b')),
           Negated.NegatedRange(Range('0', '9')),
           Negated.NegatedLiteral(Literal('c')))))
-    val r = parse("""a[^b\dc]""")
-    sameRegex(r, expected)
+    sameRegex(parse("""a[^b\dc]"""), expected)
+    sameRegex(parse("""a[^b[:digit:]c]"""), expected)
   }
 
   test("regex parsing handles whitespace classes") {
-    val expected = lit('a') * (lit('b') | Regex.whitespaceCharacter | lit('c'))
-    val r = parse("""a[b\sc]""")
-    sameRegex(r, expected)
+    val expected = lit('a') * (lit('b') | Regex.whitespaceChar | lit('c'))
+    sameRegex(parse("""a[b\sc]"""), expected)
+    sameRegex(parse("""a[b[:space:]c]"""), expected)
   }
 
   test("regex parsing handles negative whitespace classes") {
     import Match.{lit => _, _}
     val expected = lit('a') * Coattr.pure(
-      NoneOf(NonEmptyList.of(
-        Negated.NegatedLiteral(Literal('b')),
-        Negated.NegatedLiteral(Literal('\t')),
-        Negated.NegatedLiteral(Literal(' ')),
-        Negated.NegatedLiteral(Literal('\n')),
-        Negated.NegatedLiteral(Literal('\f')),
-        Negated.NegatedLiteral(Literal('\r')),
-        Negated.NegatedLiteral(Literal('c'))
-      )))
-    val r = parse("""a[^b\sc]""")
-    sameRegex(r, expected)
+      NoneOf(
+        Literal('b').negate :: (CharacterClasses.nonWhitespaceCharMatches :+ Literal('c').negate)))
+    sameRegex(parse("""a[^b\sc]"""), expected)
+    sameRegex(parse("""a[^b[:space:]c]"""), expected)
   }
 
   test("regex parsing handles non-whitespace classes") {
-    val expected = lit('a') * Regex.nonWhitespaceCharacter * lit('c')
+    val expected = lit('a') * Regex.nonWhitespaceChar * lit('c')
     val r = parse("""a\Sc""")
     sameRegex(r, expected)
   }
 
   test("regex parsing handles horizontal whitespace classes") {
-    val expected = lit('a') * (lit('b') | Regex.horizontalWhitespaceCharacter | lit('c'))
-    val r = parse("""a[b\hc]""")
-    sameRegex(r, expected)
+    val expected = lit('a') * (lit('b') | Regex.horizontalWhitespaceChar | lit('c'))
+    sameRegex(parse("""a[b\hc]"""), expected)
+    sameRegex(parse("""a[b[:blank:]c]"""), expected)
   }
 
   test("regex parsing handles non-horizontal-whitespace classes") {
-    val expected = lit('a') * Regex.notHorizontalWhitespaceCharacter * lit('c')
+    val expected = lit('a') * Regex.nonHorizontalWhitespaceChar * lit('c')
     val r = parse("""a\Hc""")
     sameRegex(r, expected)
   }
 
-  test("regex parsing handles horizontal whitespace classes in a character class") {
+  test("regex parsing handles horizontal whitespace classes in a negated character class") {
     import Match.{lit => _, _}
     val expected = lit('a') * Coattr.pure(
       NoneOf(
@@ -234,12 +230,48 @@ class ParserTests extends IrrecSuite {
           Negated.NegatedLiteral(Literal(' ')),
           Negated.NegatedLiteral(Literal('c'))
         )))
-    val r = parse("""a[^b\hc]""")
-    sameRegex(r, expected)
+    sameRegex(parse("""a[^b\hc]"""), expected)
+    sameRegex(parse("""a[^b[:blank:]c]"""), expected)
   }
 
   test("regex parsing rejects ranges on character class shorthands") {
     assert(!parseRegex("""a[b\d-df]""").isSuccess)
+  }
+
+  test("regex parsing handles ascii classes") {
+    val expected = lit('a') * (lit('b') | Regex.asciiChar | lit('c'))
+    val r = parse("""a[b[:ascii:]c]""")
+    sameRegex(r, expected)
+  }
+
+  test("regex parsing handles negative ascii classes") {
+    val expected = lit('a') * Regex.nonAsciiChar * lit('c')
+    val r = parse("""a[^[:ascii:]]c""")
+    sameRegex(r, expected)
+  }
+
+  test("regex parsing handles alpha classes") {
+    val expected = lit('a') * (lit('b') | Regex.alphaChar | lit('c'))
+    val r = parse("""a[b[:alpha:]c]""")
+    sameRegex(r, expected)
+  }
+
+  test("regex parsing handles negative alpha classes") {
+    val expected = lit('a') * Regex.nonAlphaChar * lit('c')
+    val r = parse("""a[^[:alpha:]]c""")
+    sameRegex(r, expected)
+  }
+
+  test("regex parsing handles alnum classes") {
+    val expected = lit('a') * (lit('b') | Regex.alphaNumericChar | lit('c'))
+    val r = parse("""a[b[:alnum:]c]""")
+    sameRegex(r, expected)
+  }
+
+  test("regex parsing handles negative alnum classes") {
+    val expected = lit('a') * Regex.nonAlphaNumericChar * lit('c')
+    val r = parse("""a[^[:alnum:]]c""")
+    sameRegex(r, expected)
   }
 
   test("pretty print parser round trip") {
@@ -252,6 +284,40 @@ class ParserTests extends IrrecSuite {
             sameRegex(parsed, r)
             withClue(clue)(r.matcher[Stream].apply(s) should ===(parsed.matcher[Stream].apply(s)))
         }
+    }
+  }
+
+  test("POSIX positive class consistency with Pattern") {
+    forAll { c: Char =>
+      val s = c.toString
+      posixClassNames foreach { className =>
+        val javaClass = posixClassToJavaClass(className)
+        val clue = s"posix class: $className, candidate: (${c.toInt.toHexString})"
+        val irrecRegex = s"""[a[:$className:]c]"""
+        val pattern = Pattern.compile(s"""^[a${javaClass}c]$$""", Pattern.DOTALL)
+        parseRegex(irrecRegex) match {
+          case Failure(label, _, _) => withClue(clue)(fail(s"parsing failure: $label"))
+          case Success(parsed, _) =>
+            withClue(clue)(parsed.stringMatcher.apply(s) should ===(pattern.matcher(s).matches))
+        }
+      }
+    }
+  }
+
+  test("POSIX negative class consistency with Pattern") {
+    forAll { c: Char =>
+      val s = c.toString
+      posixClassNames foreach { className =>
+        val javaClass = posixClassToJavaClass(className)
+        val clue = s"posix class: $className, candidate: (${c.toInt.toHexString})"
+        val irrecRegex = s"""[^a[:$className:]c]"""
+        val pattern = Pattern.compile(s"""^[^a${javaClass}c]$$""", Pattern.DOTALL)
+        parseRegex(irrecRegex) match {
+          case Failure(label, _, _) => withClue(clue)(fail(s"parsing failure: $label"))
+          case Success(parsed, _) =>
+            withClue(clue)(parsed.stringMatcher.apply(s) should ===(pattern.matcher(s).matches))
+        }
+      }
     }
   }
 
@@ -306,5 +372,33 @@ class ParserTests extends IrrecSuite {
       // well.
       actual.optimize.pprint should ===(expected.optimize.pprint)
     }
+  }
+}
+
+object ParserTests {
+
+  val posixClassNames: Set[String] = Set(
+    "alnum",
+    "alpha",
+    "ascii",
+    "blank",
+    "cntrl",
+    "digit",
+    "graph",
+    "lower",
+    "print",
+    "punct",
+    "space",
+    "upper",
+    "word",
+    "xdigit")
+
+  def posixClassToJavaClass(posixClassName: String): String = posixClassName match {
+    case "word" => "\\w"
+    case "ascii" => "\\p{ASCII}"
+    case "xdigit" => "\\p{XDigit}"
+    case s =>
+      val (firstChar, rest) = s.splitAt(1)
+      s"\\p{${firstChar.toUpperCase}$rest}"
   }
 }
