@@ -45,12 +45,12 @@ object Parser {
     (
       P("d").map(_ => Regex.digit) |
         P("D").map(_ => Regex.nonDigit) |
-        P("w").map(_ => Regex.wordCharacter) |
-        P("W").map(_ => Regex.nonWordCharacter) |
-        P("h").map(_ => Regex.horizontalWhitespaceCharacter) |
-        P("H").map(_ => Regex.notHorizontalWhitespaceCharacter) |
-        P("s").map(_ => Regex.whitespaceCharacter) |
-        P("S").map(_ => Regex.nonWhitespaceCharacter)
+        P("w").map(_ => Regex.wordChar) |
+        P("W").map(_ => Regex.nonWordChar) |
+        P("h").map(_ => Regex.horizontalWhitespaceChar) |
+        P("H").map(_ => Regex.nonHorizontalWhitespaceChar) |
+        P("s").map(_ => Regex.whitespaceChar) |
+        P("S").map(_ => Regex.nonWhitespaceChar)
     ).opaque("""character class such as \w, \d, \s, \S, etc""")
 
   def negatedShorthandClass[_: P]: P[NonEmptyList[Match.Negated[Char]]] =
@@ -108,17 +108,55 @@ object Parser {
     (matchCharRange.map(Match.Negated.NegatedRange(_)) | matchLitChar.map(
       Match.Negated.NegatedLiteral(_)))
 
+  def negatedPOSIXClass[_: P]: P[NonEmptyList[Match.Negated[Char]]] =
+    P("alnum").map(_ => CharacterClasses.nonAlphaNumericMatches) |
+      P("alpha").map(_ => CharacterClasses.nonAlphaMatches) |
+      P("ascii").map(_ => NonEmptyList.one(CharacterClasses.nonAsciiMatch)) |
+      P("blank").map(_ => CharacterClasses.nonHorizontalWhitespaceCharMatches) |
+      P("cntrl").map(_ => CharacterClasses.nonControlCharMatches) |
+      P("digit").map(_ => NonEmptyList.one(CharacterClasses.nonDigitMatch)) |
+      P("graph").map(_ => NonEmptyList.one(CharacterClasses.nonGraphCharMatch)) |
+      P("lower").map(_ => NonEmptyList.one(CharacterClasses.nonLowerAlphaMatch)) |
+      P("print").map(_ => NonEmptyList.one(CharacterClasses.nonPrintableCharMatch)) |
+      P("punct").map(_ => CharacterClasses.nonPunctuationCharMatches) |
+      P("space").map(_ => CharacterClasses.nonWhitespaceCharMatches) |
+      P("upper").map(_ => NonEmptyList.one(CharacterClasses.nonUpperAlphaMatch)) |
+      P("word").map(_ => CharacterClasses.nonWordCharMatches) |
+      P("xdigit").map(_ => CharacterClasses.nonHexDigitMatches)
+
   def negatedCharClassContent[_: P]: P[Match.NoneOf[Char]] =
-    (negatedCharOrRange.map(NonEmptyList.one(_)) | ("\\" ~/ negatedShorthandClass))
+    (
+      negatedCharOrRange.map(NonEmptyList.one(_)) |
+        ("\\" ~/ negatedShorthandClass) |
+        ("[:" ~/ negatedPOSIXClass ~ ":]")
+    ).opaque(
+        """literal character to match (ex: 'a'), escaped special character literal (ex: '\*'), a shorthand class (ex: '\w'), or a POSIX class (ex: '[:alpha:]')""")
       .rep(1)
       .map(xs => Match.NoneOf(xs.reduceOption(_ |+| _).get)) // .get is safe because of .rep(1)
+
+  def positivePOSIXCharClass[_: P]: P[Regex[Char]] =
+    P("alnum").map(_ => Regex.alphaNumericChar) |
+      P("alpha").map(_ => Regex.alphaChar) |
+      P("ascii").map(_ => Regex.asciiChar) |
+      P("blank").map(_ => Regex.horizontalWhitespaceChar) |
+      P("cntrl").map(_ => Regex.controlChar) |
+      P("digit").map(_ => Regex.digit) |
+      P("graph").map(_ => Regex.graphChar) |
+      P("lower").map(_ => Regex.lowerAlphaChar) |
+      P("print").map(_ => Regex.printableChar) |
+      P("punct").map(_ => Regex.punctuationChar) |
+      P("space").map(_ => Regex.whitespaceChar) |
+      P("upper").map(_ => Regex.upperAlphaChar) |
+      P("word").map(_ => Regex.wordChar) |
+      P("xdigit").map(_ => Regex.hexDigitChar)
 
   def positiveCharClassContent[_: P]: P[Regex[Char]] =
     (
       (matchCharRange | matchLitChar).map(Coattr.pure[KleeneF, Match[Char]](_)) |
-        ("\\" ~/ shorthandClass)
+        ("\\" ~/ shorthandClass) |
+        ("[:" ~/ positivePOSIXCharClass ~ ":]")
     ).opaque(
-        """literal character to match (ex: 'a'), escaped special character literal (ex: '\*'), or shorthand class (ex: '\w')""")
+        """literal character to match (ex: 'a'), escaped special character literal (ex: '\*'), a shorthand class (ex: '\w'), or a POSIX class (ex: '[:alpha:]')""")
       .rep(1)
       .map(matches => Regex.oneOfR(matches.head, matches.tail: _*)) // .head is safe because of .rep(1)
 
