@@ -38,7 +38,6 @@ object Glushkov {
     case KleeneF.Zero => List.empty
   }
 
-  // TODO ceedubs formatting
   def kleeneLocalTransitions[I, A](k: KleeneF[LocalLanguage[I, A]])(
     implicit orderingI: Ordering[I]): SortedMap[I, List[(I, A)]] = {
     implicit val orderI: Order[I] = Order.fromOrdering(orderingI)
