@@ -92,7 +92,7 @@ object Regex {
 
   /**
    * Matches a single lowercase character ('a', 'z', etc). Could be represented in a regular
-   * expression as `[a-z]` or `[[:lower:]]`.
+   * expression as `[a-z]` or `[:lower:]`.
    */
   val lowerAlphaChar: Regex[Char] = Coattr.pure(CharacterClasses.lowerAlphaMatch)
 
@@ -105,7 +105,7 @@ object Regex {
 
   /**
    * Matches a single uppercase character ('a', 'z', etc). Could be represented in a regular
-   * expression as `[a-z]` or `[[:upper:]]`.
+   * expression as `[a-z]` or `[:upper:]`.
    */
   val upperAlphaChar: Regex[Char] = Coattr.pure(CharacterClasses.upperAlphaMatch)
 
@@ -118,7 +118,7 @@ object Regex {
 
   /**
    * Matches a single alphabetic character ('a', 'A', etc). Could be represented in a regular
-   * expression as `[[:alpha:]]`.
+   * expression as `[:alpha:]`.
    */
   val alphaChar: Regex[Char] = oneOfFR[NonEmptyList, Match[Char]](
     CharacterClasses.alphaMatches
@@ -134,7 +134,7 @@ object Regex {
 
   /**
    * Matches a single alphanumeric character ('0', 'a', 'A', etc). Could be represented in a regular
-   * expression as `[[:alnum:]]`.
+   * expression as `[:alnum:]`.
    */
   val alphaNumericChar: Regex[Char] = oneOfFR[NonEmptyList, Match[Char]](
     CharacterClasses.alphaNumericMatches
@@ -150,7 +150,7 @@ object Regex {
 
   /**
    * Matches a single hexadecimal digit ('0', '1', 'A', 'F', 'a', 'f', etc). Could be represented in
-   * a regular expression as `[[:xdigit:]]`.
+   * a regular expression as `[:xdigit:]`.
    */
   val hexDigitChar: Regex[Char] = oneOfFR[NonEmptyList, Match[Char]](
     CharacterClasses.hexDigitMatches
@@ -214,7 +214,7 @@ object Regex {
 
   /**
    * A single ASCII character `[ -~]`. Could be represented in a regular expression as
-   * `[[:ascii:]]`.
+   * `[:ascii:]`.
    */
   val asciiChar: Regex[Char] = Coattr.pure(CharacterClasses.asciiMatch)
 
@@ -227,7 +227,7 @@ object Regex {
 
   /**
    * A single control character `[\x00-\x1F\x7F]`. Could be represented in a regular expression as
-   * `[[:cntrl:]]`.
+   * `[:cntrl:]`.
    */
   val controlChar: Regex[Char] = oneOfFR[NonEmptyList, Match[Char]](
     CharacterClasses.controlCharMatches
@@ -243,7 +243,7 @@ object Regex {
 
   /**
    * A single visible (graphical) character `[\x21-\x7E]`. Could be represented in a regular
-   * expression as `[[:graph:]]`.
+   * expression as `[:graph:]`.
    */
   val graphChar: Regex[Char] = Coattr.pure(CharacterClasses.graphCharMatch)
 
@@ -255,7 +255,7 @@ object Regex {
 
   /**
    * A single printable character (visible character or space). Could be represented in a regular
-   * expression as `[[:print:]]` or `\x20-\x7E`.
+   * expression as `[:print:]` or `\x20-\x7E`.
    */
   val printableChar: Regex[Char] = Coattr.pure(CharacterClasses.printableCharMatch)
 
@@ -267,7 +267,7 @@ object Regex {
 
   /**
    * A single punctuation character (`;`, `!`, etc).. Could be represented in a regular expression
-   * as `[[:punct:]]`.
+   * as `[:punct:]`.
    */
   val punctuationChar: Regex[Char] = oneOfFR[NonEmptyList, Match[Char]](
     CharacterClasses.punctuationCharMatches

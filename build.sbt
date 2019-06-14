@@ -168,4 +168,4 @@ val noPublishSettings = Seq(
 
 addCommandAlias("format", ";scalafmtSbt;scalafmtAll")
 addCommandAlias("lint", ";scalafmtSbtCheck;scalafmtCheckAll")
-addCommandAlias("validate", ";lint;test;docs/mdoc")
+addCommandAlias("validate", ";lint;doc;test;docs/mdoc")
