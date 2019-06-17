@@ -1,6 +1,21 @@
-import dependencies._
+// shadow sbt-scalajs' crossProject and CrossType from Scala.js 0.6.x
+import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
 val stableVersion = "0.2.1"
+
+val catsVersion = "1.4.0"
+val scalacheckVersion = "1.13.5"
+val drosteVersion = "0.6.0"
+val fastParseVersion = "2.1.0"
+
+val catsOrg = "org.typelevel"
+
+val scalacheckOrg = "org.scalacheck"
+
+val drosteOrg = "io.higherkindness"
+
+val isTravisBuild =
+  settingKey[Boolean]("Flag indicating whether the current build is running under Travis")
 
 inThisBuild(
   List(
@@ -14,46 +29,61 @@ inThisBuild(
         "ceedubs@gmail.com",
         url("https://github.com/ceedubs")
       )
-    )
+    ),
+    isTravisBuild := sys.env.get("TRAVIS").isDefined
   ))
 
 coverageExcludedPackages in ThisBuild := "ceedubs.irrec.bench"
 
-lazy val kleene = (project in file("kleene"))
+lazy val kleene = crossProject(JSPlatform, JVMPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("kleene"))
   .settings(
     moduleName := "irrec-kleene",
-    libraryDependencies ++= Seq(cats.core, cats.testkit % Test))
+    libraryDependencies += catsOrg %%% "cats-core" % catsVersion)
   .settings(commonSettings)
 
-lazy val regex = (project in file("regex"))
-  .settings(moduleName := "irrec-regex", libraryDependencies ++= Seq(droste, cats.testkit % Test))
-  .settings(commonSettings)
-  // see https://github.com/sbt/sbt/issues/2698#issuecomment-311417188
+lazy val regex = crossProject(JSPlatform, JVMPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("regex"))
+  .dependsOn(kleene)
   .settings(
-    unmanagedClasspath in Test ++=
-      (fullClasspath in (regexGenRef, Compile)).value ++
-        (fullClasspath in (parserRef, Compile)).value)
-  .dependsOn(kleene % "test->test;compile->compile")
+    moduleName := "irrec-regex",
+    libraryDependencies += drosteOrg %%% "droste-core" % drosteVersion)
+  .settings(commonSettings)
 
-lazy val regexGen = (project in file("regex-gen"))
+lazy val tests = crossProject(JSPlatform, JVMPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("tests"))
+  .dependsOn(regexGen, parser)
+  .settings(
+    moduleName := "irrec-tests",
+    libraryDependencies += catsOrg %%% "cats-testkit" % catsVersion % Test)
+  .settings(commonSettings)
+  .settings(noPublishSettings)
+
+lazy val regexGen = crossProject(JSPlatform, JVMPlatform)
+  .crossType(CrossType.Pure)
+  .dependsOn(kleene, regex)
+  .in(file("regex-gen"))
   .settings(
     moduleName := "irrec-regex-gen",
-    libraryDependencies ++= Seq(scalacheck, cats.testkit % Test))
+    libraryDependencies += scalacheckOrg %%% "scalacheck" % scalacheckVersion)
   .settings(commonSettings)
-  .dependsOn(regex % "test->test;compile->compile")
 
-lazy val regexGenRef = LocalProject("regexGen")
-
-lazy val parser = (project in file("parser"))
-  .settings(moduleName := "irrec-parser", libraryDependencies += fastparse)
+lazy val parser = crossProject(JSPlatform, JVMPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("parser"))
+  .settings(
+    moduleName := "irrec-parser",
+    libraryDependencies += "com.lihaoyi" %%% "fastparse" % fastParseVersion)
   .settings(commonSettings)
-  .dependsOn(regex % "test->test;compile->compile", regexGen % Test)
+  .dependsOn(kleene, regex)
 
-lazy val parserRef = LocalProject("parser")
-
-lazy val docs = (project in file("irrec-docs"))
+lazy val docs = project
+  .in(file("irrec-docs"))
   .enablePlugins(MdocPlugin)
-  .dependsOn(regex, regexGen, parser)
+  .dependsOn(regex.jvm, regexGen.jvm, parser.jvm)
   .settings(
     mdocOut := (baseDirectory in LocalRootProject).value,
     mdocVariables := Map(
@@ -63,18 +93,35 @@ lazy val docs = (project in file("irrec-docs"))
   )
   .settings(noPublishSettings)
 
-lazy val benchmarks = (project in file("benchmarks"))
+lazy val benchmarks = project
+  .in(file("benchmarks"))
   .settings(moduleName := "irrec-benchmarks")
   .enablePlugins(JmhPlugin)
   .settings(commonSettings)
   .settings(noPublishSettings)
-  .dependsOn(regex)
+  .dependsOn(regex.jvm)
+
+lazy val jvm = project
+  .settings(
+    moduleName := "irrec-root-jvm"
+  )
+  .aggregate(kleene.jvm, regex.jvm, regexGen.jvm, parser.jvm, tests.jvm, benchmarks)
+  .settings(commonSettings)
+  .settings(noPublishSettings)
+
+lazy val js = project
+  .settings(
+    moduleName := "irrec-root-js"
+  )
+  .aggregate(kleene.js, regex.js, regexGen.js, parser.js, tests.js)
+  .settings(commonSettings)
+  .settings(noPublishSettings)
 
 lazy val root = project
   .settings(
     moduleName := "irrec-root"
   )
-  .aggregate(kleene, regex, regexGen, parser)
+  .aggregate(jvm, js)
   .settings(commonSettings)
   .settings(noPublishSettings)
 
@@ -159,6 +206,12 @@ val commonSettings: Seq[Setting[_]] = Seq(
   scalaVersion := "2.12.8",
   crossScalaVersions := List("2.11.12", "2.12.8")
 ) ++ scalacOptionSettings
+
+val commonJsSettings: Seq[Setting[_]] = Seq(
+  parallelExecution := false,
+  // batch mode decreases the amount of memory needed to compile Scala.js code
+  scalaJSOptimizerOptions := scalaJSOptimizerOptions.value.withBatchMode(isTravisBuild.value)
+)
 
 val noPublishSettings = Seq(
   publish := {},
