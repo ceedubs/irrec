@@ -8,7 +8,24 @@ import scala.collection.immutable.{SortedMap, SortedSet}
 final case class NFA[I, A](
   initStates: SortedSet[I],
   finalStates: SortedSet[I],
-  transitions: SortedMap[I, List[(I, A)]])
+  transitions: SortedMap[I, List[(I, A)]]) {
+
+  // TODO ceedubs find a better place for this
+  // TODO ceedubs escaping
+  def toGraphvizDigraph(showI: I => String, showA: A => String): String = {
+    val nodes: SortedSet[I] = initStates.keySet ++ transitions.keySet ++ transitions.values.flatMap(_.map(_._1))
+    val nodesWithLabels: List[String] = nodes.toList.map(i => s"""${showI(i)} [label=""]""")
+    val edgesWithLabels: List[String] = transitions.toList.flatMap{ case (start, next) =>
+      next.map { case (nextIndex, nextValue) =>
+        s""""${showI(start)}" -> "${showI(nextIndex)}" [label="${showA(nextValue)}"]"""
+      }
+    }
+    s"""strict digraph G {
+       |  ${nodesWithLabels.mkString("\n  ")}
+       |  ${edgesWithLabels.mkString("\n  ")}
+       |}""".stripMargin
+  }
+}
 
 object NFA {
 
