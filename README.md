@@ -53,9 +53,9 @@ val phraseGen: Gen[String] = regexMatchingStringGen(arbitrary[Char])(phrase)
 ```
 
 ```scala
-Gen.listOfN(3, phraseGen).apply(Gen.Parameters.default, Seed(1046527L))
+Gen.listOfN(3, phraseGen).apply(Gen.Parameters.default, Seed(79817L))
 // res3: Option[List[String]] = Some(
-//   List("6 happy cats", "5 feisty bats", "2 tired gnats")
+//   List("8 feisty rats", "9 happy bats", "4 tired gnats")
 // )
 ```
 
@@ -181,9 +181,9 @@ animal.toPattern
 Irrec provides support for creating [Scalacheck](https://www.scalacheck.org/) generators that produce values that match a regular expression. This generation is done efficiently as opposed to generating a bunch of random values and then filtering the ones that don't match the regular expression (which would quickly lead to Scalacheck giving up on generating matching values).
 
 ```scala
-Gen.listOfN(3, phraseGen).apply(Gen.Parameters.default, Seed(1046527L))
+Gen.listOfN(3, phraseGen).apply(Gen.Parameters.default, Seed(79817L))
 // res11: Option[List[String]] = Some(
-//   List("6 happy cats", "5 feisty bats", "2 tired gnats")
+//   List("8 feisty rats", "9 happy bats", "4 tired gnats")
 // )
 ```
 
@@ -221,8 +221,8 @@ regexesAndMatches.map(x =>
 // res13: List[(String, String)] = List(
 //   (".S[o-x]", "pSx"),
 //   ("7(Y|[e-k])u", "7iu"),
-//   ("sbb0(s|[7-n]*|[l-t]s).B.", "sbb0rszBG"),
-//   ("[a-j]", "i")
+//   ("sbb0(s|[7-n]*|[l-t]s).B.", "sbb0sxBf"),
+//   ("[a-j]|y.[j-q]*", "i")
 // )
 ```
 

@@ -11,6 +11,7 @@ import qq.droste.data.prelude._
 import org.scalacheck.{Arbitrary, Gen}, Gen.Choose
 
 object RegexGen {
+  final case class Weighted[A](weight: Int, value: A)
 
   def matchingGen[A](m: Match[A], genA: Gen[A])(
     implicit chooseA: Choose[A],
@@ -21,26 +22,35 @@ object RegexGen {
     case m @ Match.NoneOf(_) => genA.filter(m.matches(_))
   }
 
-  def kleeneFStreamAlgebra[A]: Algebra[KleeneF, Gen[Stream[A]]] = Algebra {
-    case KleeneF.Plus(l, r) => Gen.oneOf(l, r)
-    case KleeneF.Times(l, r) => l.flatMap(ls => r.map(rs => ls ++ rs))
-    // TODO ceedubs probably need to do something fancier so we don't get large nested structures
-    case KleeneF.Star(g) => Gen.containerOf[Stream, Stream[A]](g).map(_.flatten)
-    case KleeneF.Zero => Gen.fail
-    case KleeneF.One => Gen.const(Stream.empty)
+  /**
+   * A recursive KleeneF structure is roughly an unbalanced binary tree. For a regular expression
+   * like `a|b|c|d|e`, if we were to pick each immediate branch of the tree with equal probability,
+   * we would end up favoring the characters toward the top of the tree. We work around this by
+   * assigning a weight to each node which corresponds to the number of alternations represented by
+   * its entire subtree.
+   */
+  def kleeneFStreamAlgebra[A]: Algebra[KleeneF, Weighted[Gen[Stream[A]]]] = Algebra {
+    case KleeneF.Plus(l, r) =>
+      Weighted(l.weight + r.weight, Gen.frequency(l.weight -> l.value, r.weight -> r.value))
+    case KleeneF.Times(l, r) =>
+      Weighted(math.max(l.weight, r.weight), l.value.flatMap(ls => r.value.map(rs => ls ++ rs)))
+    case KleeneF.Star(g) =>
+      Weighted(g.weight, Gen.containerOf[Stream, Stream[A]](g.value).map(_.flatten))
+    case KleeneF.Zero => Weighted(0, Gen.fail)
+    case KleeneF.One => Weighted(1, Gen.const(Stream.empty))
   }
 
   def regexMatchingStreamAlgebra[A: Choose: Order](
-    genA: Gen[A]): Algebra[CoattrF[KleeneF, Match[A], ?], Gen[Stream[A]]] =
-    Algebra[CoattrF[KleeneF, Match[A], ?], Gen[Stream[A]]] {
+    genA: Gen[A]): Algebra[CoattrF[KleeneF, Match[A], ?], Weighted[Gen[Stream[A]]]] =
+    Algebra[CoattrF[KleeneF, Match[A], ?], Weighted[Gen[Stream[A]]]] {
       CoattrF.un(_) match {
-        case Left(ma) => matchingGen(ma, genA).map(Stream(_))
+        case Left(ma) => Weighted(1, matchingGen(ma.value, genA).map(Stream(_)))
         case Right(kf) => kleeneFStreamAlgebra(kf)
       }
     }
 
   def regexMatchingStreamGen[A: Choose: Order](genA: Gen[A]): Regex[A] => Gen[Stream[A]] =
-    scheme.cata(regexMatchingStreamAlgebra(genA))
+    scheme.cata(regexMatchingStreamAlgebra(genA)) andThen (_.value)
 
   def regexMatchingStringGen(genChar: Gen[Char]): Regex[Char] => Gen[String] = {
     val streamGen = regexMatchingStreamGen(genChar)
