@@ -12,13 +12,9 @@ import ceedubs.irrec.regex.Regex._
 import org.scalatest.compatible.Assertion
 import fastparse.Parsed.Failure
 import fastparse.Parsed.Success
-import java.util.regex.Pattern
 
 class ParserTests extends IrrecSuite {
   import ParserTests._
-
-  def parseRegex(regex: String): Parsed[Regex[Char]] =
-    fastparse.parse(regex, Parser.regexExpr(_), verboseFailures = true)
 
   test("regex parsing works for single literal") {
     val expected = Regex.lit('a')
@@ -287,40 +283,6 @@ class ParserTests extends IrrecSuite {
     }
   }
 
-  test("POSIX positive class consistency with Pattern") {
-    forAll { c: Char =>
-      val s = c.toString
-      posixClassNames foreach { className =>
-        val javaClass = posixClassToJavaClass(className)
-        val clue = s"posix class: $className, candidate: (${c.toInt.toHexString})"
-        val irrecRegex = s"""[a[:$className:]c]"""
-        val pattern = Pattern.compile(s"""^[a${javaClass}c]$$""", Pattern.DOTALL)
-        parseRegex(irrecRegex) match {
-          case Failure(label, _, _) => withClue(clue)(fail(s"parsing failure: $label"))
-          case Success(parsed, _) =>
-            withClue(clue)(parsed.stringMatcher.apply(s) should ===(pattern.matcher(s).matches))
-        }
-      }
-    }
-  }
-
-  test("POSIX negative class consistency with Pattern") {
-    forAll { c: Char =>
-      val s = c.toString
-      posixClassNames foreach { className =>
-        val javaClass = posixClassToJavaClass(className)
-        val clue = s"posix class: $className, candidate: (${c.toInt.toHexString})"
-        val irrecRegex = s"""[^a[:$className:]c]"""
-        val pattern = Pattern.compile(s"""^[^a${javaClass}c]$$""", Pattern.DOTALL)
-        parseRegex(irrecRegex) match {
-          case Failure(label, _, _) => withClue(clue)(fail(s"parsing failure: $label"))
-          case Success(parsed, _) =>
-            withClue(clue)(parsed.stringMatcher.apply(s) should ===(pattern.matcher(s).matches))
-        }
-      }
-    }
-  }
-
   test("regex parsing handles empty strings") {
     val expected = Regex.empty[Match[Char]]
     val r = parse("")
@@ -377,28 +339,6 @@ class ParserTests extends IrrecSuite {
 
 object ParserTests {
 
-  val posixClassNames: Set[String] = Set(
-    "alnum",
-    "alpha",
-    "ascii",
-    "blank",
-    "cntrl",
-    "digit",
-    "graph",
-    "lower",
-    "print",
-    "punct",
-    "space",
-    "upper",
-    "word",
-    "xdigit")
-
-  def posixClassToJavaClass(posixClassName: String): String = posixClassName match {
-    case "word" => "\\w"
-    case "ascii" => "\\p{ASCII}"
-    case "xdigit" => "\\p{XDigit}"
-    case s =>
-      val (firstChar, rest) = s.splitAt(1)
-      s"\\p{${firstChar.toUpperCase}$rest}"
-  }
+  def parseRegex(regex: String): Parsed[Regex[Char]] =
+    fastparse.parse(regex, Parser.regexExpr(_), verboseFailures = true)
 }
