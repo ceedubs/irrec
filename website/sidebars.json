@@ -1,0 +1,7 @@
+{
+  "docs": {
+    "getting started": ["overview", "getting-irrec"],
+    "usage": ["usage", "regex-explorer"],
+    "more information": ["limitations", "performance", "credits"]
+  }
+}
