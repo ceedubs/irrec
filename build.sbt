@@ -7,12 +7,12 @@ val catsVersion = "1.4.0"
 val scalacheckVersion = "1.13.5"
 val drosteVersion = "0.6.0"
 val fastParseVersion = "2.1.0"
+val scalaJsDomVersion = "0.9.6"
 
 val catsOrg = "org.typelevel"
-
 val scalacheckOrg = "org.scalacheck"
-
 val drosteOrg = "io.higherkindness"
+val scalaJsOrg = "org.scala-js"
 
 val isTravisBuild =
   settingKey[Boolean]("Flag indicating whether the current build is running under Travis")
@@ -80,12 +80,21 @@ lazy val parser = crossProject(JSPlatform, JVMPlatform)
   .settings(commonSettings)
   .dependsOn(kleene, regex)
 
+lazy val jsDocs = project
+  .in(file("irrec-js-docs"))
+  .settings(
+    moduleName := "irrec-js-docs",
+    libraryDependencies += scalaJsOrg %%% "scalajs-dom" % scalaJsDomVersion
+  )
+  .enablePlugins(ScalaJSPlugin)
+  .dependsOn(regexGen.js, parser.js)
+
 lazy val docs = project
   .in(file("irrec-docs"))
-  .enablePlugins(MdocPlugin)
+  .enablePlugins(MdocPlugin, DocusaurusPlugin)
   .dependsOn(regex.jvm, regexGen.jvm, parser.jvm)
   .settings(
-    mdocOut := (baseDirectory in LocalRootProject).value,
+    mdocJS := Some(jsDocs),
     mdocVariables := Map(
       "ORG" -> organization.value,
       "VERSION" -> stableVersion

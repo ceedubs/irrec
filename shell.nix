@@ -29,5 +29,6 @@ in
       git # used by sbt-dynver
       graphviz # used for ScalaDoc diagrams
       nodejs # used by scala.js
+      yarn # used by docusaurus for doc site
     ];
   }
