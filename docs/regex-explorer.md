@@ -19,7 +19,7 @@ Here are some strings that match your regular expression:
 ---
 
 {
-import ceedubs.irrec.regex._, Regex._
+import ceedubs.irrec.regex._
 import ceedubs.irrec.parse.Parser
 import org.scalajs.dom
 import org.scalajs.dom.html.Input
@@ -53,7 +53,7 @@ def update(): Unit = {
   val matchValue = matchInput.value
   val seed = Either.catchNonFatal(seedInput.value.toLong)
     .fold(
-      { err =>
+      { _ =>
         seedInput.classList.add("invalid")
         Seed(1046527L)
       },
@@ -71,7 +71,7 @@ def update(): Unit = {
       regexErrorText.textContent = ""
       val isMatch = r.stringMatcher(matchValue)
       if (isMatch) matchInput.classList.remove("invalid") else matchInput.classList.add("invalid")
-      val matches = genMatches(r, seed).foreach{ s =>
+      genMatches(r, seed).foreach{ s =>
         val li = dom.document.createElement("li")
         li.textContent = s
         regexMatchesList.appendChild(li)

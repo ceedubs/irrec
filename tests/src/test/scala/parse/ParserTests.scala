@@ -270,6 +270,19 @@ class ParserTests extends IrrecSuite {
     sameRegex(r, expected)
   }
 
+  test("regex parsing handles characters that can only be unescaped inside character classes") {
+    val expected = lit('a') * Regex.oneOf('*', '[', '<', '(', '{', '|')
+    val r = parse("""a[*[<({|]""")
+    sameRegex(r, expected)
+  }
+
+  test(
+    "regex parsing handles characters that can only be unescaped inside character classes in negative classes") {
+    val expected = lit('a') * Regex.noneOf('*', '[', '<', '(', '{', '|')
+    val r = parse("""a[^*[<({|]""")
+    sameRegex(r, expected)
+  }
+
   test("pretty print parser round trip") {
     forAll(genCharRegexAndCandidate) {
       case RegexAndCandidate(r, s) =>
