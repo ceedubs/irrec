@@ -69,6 +69,8 @@ const siteConfig = {
   // Open Graph and Twitter card images.
   ogImage: 'img/undraw_online.svg',
 
+  separateCss: ["api"],
+
   // Show documentation's last contributor's name.
   // enableUpdateBy: true,
 
