@@ -92,7 +92,7 @@ lazy val jsDocs = project
 
 lazy val docs = project
   .in(file("irrec-docs"))
-  .enablePlugins(MdocPlugin, DocusaurusPlugin)
+  .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
   .dependsOn(regex.jvm, regexGen.jvm, parser.jvm)
   .settings(commonSettings)
   .settings(
@@ -100,7 +100,9 @@ lazy val docs = project
     mdocVariables := Map(
       "ORG" -> organization.value,
       "VERSION" -> stableVersion
-    )
+    ),
+    target in (ScalaUnidoc, unidoc) := (baseDirectory in LocalRootProject).value / "website" / "static" / "api",
+    unidocProjectFilter in (ScalaUnidoc, unidoc) := inProjects(regex.jvm, regexGen.jvm, parser.jvm)
   )
   .settings(noPublishSettings)
 
@@ -215,7 +217,8 @@ val scalacOptionSettings: Seq[Setting[_]] = {
 val commonSettings: Seq[Setting[_]] = Seq(
   addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.7"),
   scalaVersion := "2.12.8",
-  crossScalaVersions := List("2.11.12", "2.12.8")
+  crossScalaVersions := List("2.11.12", "2.12.8"),
+  autoAPIMappings := true
 ) ++ scalacOptionSettings
 
 val commonJsSettings: Seq[Setting[_]] = Seq(
@@ -233,3 +236,4 @@ val noPublishSettings = Seq(
 addCommandAlias("format", ";scalafmtSbt;scalafmtAll")
 addCommandAlias("lint", ";scalafmtSbtCheck;scalafmtCheckAll")
 addCommandAlias("validate", ";lint;doc;test;docs/mdoc")
+addCommandAlias("makeSite", ";docs/clean;docs/docusaurusCreateSite;docs/unidoc")
