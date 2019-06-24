@@ -1,6 +1,7 @@
 package ceedubs.irrec
 package regex
 
+import ceedubs.irrec.parse.{regex => parse}
 import Regex._
 
 class RegexPrettyPrinterTests extends IrrecSuite {
@@ -13,6 +14,14 @@ class RegexPrettyPrinterTests extends IrrecSuite {
     (lit('a') | lit('b')).pprint should ===("a|b")
     (lit('a') | lit('b')).star.pprint should ===("(a|b)*")
     (lit('a') * lit('b') * (lit('c') | lit('d')).star).pprint should ===("ab(c|d)*")
+  }
+
+  test("char regex pretty print shouldn't escape characters that don't need it in character classes") {
+    range('!', '*').pprint should ===("[!-*]")
+  }
+
+  test("char regex pretty print shouldn't escape characters that don't need it in negative character classes") {
+    parse("[^!*]").pprint should ===("[^!*]")
   }
 
   test("char regex pretty print should handle Zero") {
