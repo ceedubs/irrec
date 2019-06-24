@@ -1,7 +1,11 @@
 package ceedubs.irrec
 package parse
 
-import ceedubs.irrec.regex.RegexPrettyPrinter.{charsToEscape, specialCharToLit}
+import ceedubs.irrec.regex.RegexPrettyPrinter.{
+  charClassCharsToEscape,
+  nonCharClassCharsToEscape,
+  specialNonCharClassCharToLit
+}
 
 import cats.data.NonEmptyList
 import cats.implicits._
@@ -33,7 +37,8 @@ object Parser {
    * Matches on special characters that should be escaped like `*` and `{`.
    */
   def specialChar[_: P]: P[Char] =
-    P(CharPred(specialCharToLit.contains(_)).!.map(s => specialCharToLit(s.head))
+    P(CharPred(specialNonCharClassCharToLit.contains(_)).!.map(s =>
+      specialNonCharClassCharToLit(s.head))
       .opaque(
         s"special regular expression character that should be escaped such as '(', '}', '*', etc"))
 
@@ -63,7 +68,14 @@ object Parser {
    * Standard characters to match like `a` or `%`.
    */
   def standardMatchChar[_: P]: P[Char] =
-    P(CharPred(c => !charsToEscape.contains(c)).!.map(s => s.head))
+    P(CharPred(c => !nonCharClassCharsToEscape.contains(c)).!.map(s => s.head))
+
+  /**
+   * Standard characters to match like `a` or `%` but also characters that aren't special within
+   * character classes such as `*` (ex: `[*+]` matches on literal `*` and `+`).
+   */
+  def charClassStandardMatchChar[_: P]: P[Char] =
+    P(CharPred(c => !charClassCharsToEscape.contains(c)).!.map(s => s.head))
 
   /**
    * Matches the wildcard character `.`.
@@ -91,21 +103,27 @@ object Parser {
   def singleLitChar[_: P]: P[Char] =
     P(("\\" ~ specialChar | standardMatchChar))
 
+  def singleLitCharClassChar[_: P]: P[Char] =
+    P(("\\" ~ specialChar | charClassStandardMatchChar))
+
   def matchLitChar[_: P]: P[Match.Literal[Char]] =
     P(singleLitChar.map(Match.Literal(_)))
+
+  def matchLitCharClassChar[_: P]: P[Match.Literal[Char]] =
+    P(singleLitCharClassChar.map(Match.Literal(_)))
 
   /**
    * Character range like `a-z`.
    */
   def matchCharRange[_: P]: P[Match.Range[Char]] = P(
-    (singleLitChar ~ "-" ~/ singleLitChar).map {
+    (singleLitCharClassChar ~ "-" ~/ singleLitCharClassChar).map {
       case (l, h) =>
         Match.Range(l, h)
     }
   )
 
   def negatedCharOrRange[_: P]: P[Match.Negated[Char]] =
-    (matchCharRange.map(Match.Negated.NegatedRange(_)) | matchLitChar.map(
+    (matchCharRange.map(Match.Negated.NegatedRange(_)) | matchLitCharClassChar.map(
       Match.Negated.NegatedLiteral(_)))
 
   def negatedPOSIXClass[_: P]: P[NonEmptyList[Match.Negated[Char]]] =
@@ -126,9 +144,9 @@ object Parser {
 
   def negatedCharClassContent[_: P]: P[Match.NoneOf[Char]] =
     (
-      negatedCharOrRange.map(NonEmptyList.one(_)) |
-        ("\\" ~/ negatedShorthandClass) |
-        ("[:" ~/ negatedPOSIXClass ~ ":]")
+      ("\\" ~/ negatedShorthandClass) |
+        ("[:" ~/ negatedPOSIXClass ~ ":]") |
+        negatedCharOrRange.map(NonEmptyList.one(_))
     ).opaque(
         """literal character to match (ex: 'a'), escaped special character literal (ex: '\*'), a shorthand class (ex: '\w'), or a POSIX class (ex: '[:alpha:]')""")
       .rep(1)
@@ -152,9 +170,9 @@ object Parser {
 
   def positiveCharClassContent[_: P]: P[Regex[Char]] =
     (
-      (matchCharRange | matchLitChar).map(Coattr.pure[KleeneF, Match[Char]](_)) |
-        ("\\" ~/ shorthandClass) |
-        ("[:" ~/ positivePOSIXCharClass ~ ":]")
+      ("\\" ~/ shorthandClass) |
+        ("[:" ~/ positivePOSIXCharClass ~ ":]") |
+        (matchCharRange | matchLitCharClassChar).map(Coattr.pure[KleeneF, Match[Char]](_))
     ).opaque(
         """literal character to match (ex: 'a'), escaped special character literal (ex: '\*'), a shorthand class (ex: '\w'), or a POSIX class (ex: '[:alpha:]')""")
       .rep(1)

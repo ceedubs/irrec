@@ -32,6 +32,11 @@ object Regex {
   def oneOfFR[F[_], A](values: F[Kleene[A]])(implicit reducibleF: Reducible[F]): Kleene[A] =
     reducibleF.reduceLeft(values)((acc, r) => or(acc, r))
 
+  def noneOf[A](a1: A, as: A*): Regex[A] =
+    Coattr.pure(
+      Match.NoneOf(
+        NonEmptyList.of(a1, as: _*).map(a => Match.Negated.NegatedLiteral(Match.Literal(a)))))
+
   /**
    * AKA `+` in regular expressions, but I avoided confusion with `Plus` corresponding to "or".
    */

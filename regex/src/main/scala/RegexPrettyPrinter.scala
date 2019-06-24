@@ -28,28 +28,40 @@ object RegexPrettyPrinter {
     }
   }
 
-  val charsToEscape: Set[Char] = Set('<', '(', '[', '{', '\\', '^', '-', '=', '$', '!', '|', ']',
-    '}', ')', '?', '*', '+', '.', '>')
+  val nonCharClassCharsToEscape: Set[Char] = Set('<', '(', '[', '{', '\\', '^', '-', '=', '$', '!',
+    '|', ']', '}', ')', '?', '*', '+', '.', '>')
+
+  val charClassCharsToEscape: Set[Char] = Set(']', '\\', '^', '-')
 
   val whitespaceCharMappings: Map[Char, Char] =
     Map('t' -> '\t', 'n' -> '\n', 'r' -> '\r', 'f' -> '\f')
 
-  val specialCharToLit: Map[Char, Char] =
-    whitespaceCharMappings ++ charsToEscape.map(x => (x, x))
+  val specialNonCharClassCharToLit: Map[Char, Char] =
+    whitespaceCharMappings ++ nonCharClassCharsToEscape.map(x => (x, x))
 
-  val charToEscapedChar: Map[Char, String] =
-    specialCharToLit.map {
+  val specialCharClassCharToLit: Map[Char, Char] =
+    whitespaceCharMappings ++ charClassCharsToEscape.map(x => (x, x))
+
+  val nonCharClassCharToEscapedChar: Map[Char, String] =
+    specialNonCharClassCharToLit.map {
       case (special, lit) =>
         (lit, "\\" + special)
     }
 
-  val showChar: Char => String = c => charToEscapedChar.get(c).getOrElse(c.toString)
+  val charClassCharToEscapedChar: Map[Char, String] =
+    specialCharClassCharToLit.map {
+      case (special, lit) =>
+        (lit, "\\" + special)
+    }
+
+  def showChar(inCharacterClass: Boolean): Char => String =
+    if (inCharacterClass) c => charClassCharToEscapedChar.get(c).getOrElse(c.toString)
+    else c => nonCharClassCharToEscapedChar.get(c).getOrElse(c.toString)
 
   def parensMaybe(
     currentPrecedence: Int,
     value: (Int, String),
     parensForEqualPrecedence: Boolean): String =
-    //if (value._1 > currentPrecedence) s"(${value._2})" else value._2
     if (value._1 > currentPrecedence || parensForEqualPrecedence && value._1 === currentPrecedence)
       s"(${value._2})"
     else value._2
@@ -66,15 +78,19 @@ object RegexPrettyPrinter {
     case KleeneF.One => ""
   }
 
-  def showMatch[A](f: A => String)(m: Match[A]): String = {
+  /**
+   * @param f a function that takes an `A` value and a boolean indicating whether or not the `A` is
+   * appearing within a range and formats it as a string.
+   */
+  def showMatch[A](f: (Boolean, A) => String)(m: Match[A]): String = {
     import Match._
     m match {
-      case Literal(a) => f(a)
-      case Range(l, r) => s"[${f(l)}-${f(r)}]"
+      case Literal(a) => f(false, a)
+      case Range(l, r) => s"[${f(true, l)}-${f(true, r)}]"
       case NoneOf(l) =>
         l.map {
-            case Negated.NegatedRange(Range(l, h)) => s"${f(l)}-${f(h)}"
-            case Negated.NegatedLiteral(Literal(a)) => f(a)
+            case Negated.NegatedRange(Range(l, h)) => s"${f(true, l)}-${f(true, h)}"
+            case Negated.NegatedLiteral(Literal(a)) => f(true, a)
           }
           .toList
           .mkString("[^", "", "]")
@@ -82,7 +98,7 @@ object RegexPrettyPrinter {
     }
   }
 
-  def showCharMatch: Match[Char] => String = showMatch(showChar)
+  def showCharMatch: Match[Char] => String = showMatch((inRange, c) => showChar(inRange)(c))
 
   def pprintCharAlgebra: RAlgebra[Int, CoattrF[KleeneF, Match[Char], ?], String] = RAlgebra {
     CoattrF.un(_) match {

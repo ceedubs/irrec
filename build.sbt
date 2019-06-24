@@ -82,6 +82,7 @@ lazy val parser = crossProject(JSPlatform, JVMPlatform)
 
 lazy val jsDocs = project
   .in(file("irrec-js-docs"))
+  .settings(commonSettings)
   .settings(
     moduleName := "irrec-js-docs",
     libraryDependencies += scalaJsOrg %%% "scalajs-dom" % scalaJsDomVersion
@@ -93,6 +94,7 @@ lazy val docs = project
   .in(file("irrec-docs"))
   .enablePlugins(MdocPlugin, DocusaurusPlugin)
   .dependsOn(regex.jvm, regexGen.jvm, parser.jvm)
+  .settings(commonSettings)
   .settings(
     mdocJS := Some(jsDocs),
     mdocVariables := Map(
