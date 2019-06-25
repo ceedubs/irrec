@@ -12,11 +12,13 @@
 const users = [
 ];
 
+const baseUrl = '/irrec/' // Base URL for your project */
+
 const siteConfig = {
   title: 'irrec', // Title for your website.
   tagline: 'composable regular expressions',
   url: 'https://github.com/ceedubs/irrec', // Your website URL
-  baseUrl: '/irrec/', // Base URL for your project */
+  baseUrl: baseUrl,
   // For github.io type URLs, you would set the url and baseUrl like:
   //   url: 'https://facebook.github.io',
   //   baseUrl: '/test-site/',
@@ -32,8 +34,8 @@ const siteConfig = {
 
   // For no header links in the top nav bar -> headerLinks: [],
   headerLinks: [
-    {doc: 'overview', label: 'Docs'},
-    {doc: 'usage', label: 'API'},
+    { doc: 'overview', label: 'Docs'},
+    { href: `${baseUrl}api/ceedubs/irrec/regex/index.html`, label: 'API'},
     { href: 'https://github.com/ceedubs/irrec', label: 'GitHub' },
   ],
 
@@ -44,10 +46,6 @@ const siteConfig = {
 
   /* Colors for website */
   colors: {
-    //primaryColor: '#02991d',
-    //secondaryColor: '#016b14',
-    //primaryColor: '#006DAA',
-    //secondaryColor: '#FBB13C',
     primaryColor: '#17B890',
     secondaryColor: '#5E807F',
   },
@@ -71,15 +69,14 @@ const siteConfig = {
   // Open Graph and Twitter card images.
   ogImage: 'img/undraw_online.svg',
 
+  separateCss: ["api"],
+
   // Show documentation's last contributor's name.
   // enableUpdateBy: true,
 
   // Show documentation's last update time.
   // enableUpdateTime: true,
 
-  // You may provide arbitrary config keys to be used as needed by your
-  // template. For example, if you need your repo's URL...
-  //   repoUrl: 'https://github.com/facebook/test-site',
 };
 
 module.exports = siteConfig;
