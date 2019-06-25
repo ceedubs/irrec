@@ -96,15 +96,16 @@ lazy val docs = project
   .dependsOn(regex.jvm, regexGen.jvm, parser.jvm)
   .settings(commonSettings)
   .settings(
+    scalacOptions in (ScalaUnidoc, unidoc) += "-diagrams",
+    unidocProjectFilter in (ScalaUnidoc, unidoc) := inProjects(regex.jvm, regexGen.jvm, parser.jvm),
+    target in (ScalaUnidoc, unidoc) := (baseDirectory in LocalRootProject).value / "website" / "static" / "api",
+    cleanFiles += (target in (ScalaUnidoc, unidoc)).value,
+    docusaurusCreateSite := docusaurusCreateSite.dependsOn(unidoc in Compile).value,
     mdocJS := Some(jsDocs),
     mdocVariables := Map(
       "ORG" -> organization.value,
       "VERSION" -> stableVersion
-    ),
-    unidocProjectFilter in (ScalaUnidoc, unidoc) := inProjects(regex.jvm, regexGen.jvm, parser.jvm),
-    target in (ScalaUnidoc, unidoc) := (baseDirectory in LocalRootProject).value / "website" / "static" / "api",
-    cleanFiles += (target in (ScalaUnidoc, unidoc)).value,
-    scalacOptions in (ScalaUnidoc, unidoc) += "-diagrams"
+    )
   )
   .settings(noPublishSettings)
 
@@ -236,7 +237,6 @@ val noPublishSettings = Seq(
 )
 
 addCommandAlias("format", ";scalafmtSbt;scalafmtAll")
-addCommandAlias("docs", ";docs/clean;docs/unidoc;docs/mdoc")
 addCommandAlias("lint", ";scalafmtSbtCheck;scalafmtCheckAll")
 addCommandAlias("validate", ";lint;docs;test")
-addCommandAlias("makeSite", ";docs/clean;docs/unidoc;docs/docusaurusCreateSite")
+addCommandAlias("docs", ";docs/clean;docs/docusaurusCreateSite")
