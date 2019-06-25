@@ -7,10 +7,13 @@ set -euxo pipefail
 
 case "$1" in
     "docs")
-        sbt 'docs/mdoc'
+        sbt 'docs'
         ;;
     "lint")
         sbt 'lint'
+        ;;
+    "validate")
+        sbt 'validate'
         ;;
     "testJVM")
         sbt '+jvm/test'
