@@ -99,6 +99,18 @@ class ParserTests extends IrrecSuite {
     sameRegex(r, expected)
   }
 
+  test("regex parsing supports escaped special characters within character classes") {
+    val expected = lit('a') * Regex.oneOf('*') * lit('e')
+    val r = parse("""a[\*]e""")
+    sameRegex(r, expected)
+  }
+
+  test("regex parsing supports escaped special characters within negative character classes") {
+    val expected = lit('a') * Regex.noneOf('*') * lit('e')
+    val r = parse("""a[^\*]e""")
+    sameRegex(r, expected)
+  }
+
   test("regex parsing supports ranges") {
     val expected = lit('a') * range('b', 'd') * lit('e')
     val r = parse("a[b-d]e")
