@@ -37,10 +37,10 @@ object Parser {
    * Matches on special characters that should be escaped like `*` and `{`.
    */
   def specialChar[_: P]: P[Char] =
-    P(CharPred(specialNonCharClassCharToLit.contains(_)).!.map(s =>
+    CharPred(specialNonCharClassCharToLit.contains(_)).!.map(s =>
       specialNonCharClassCharToLit(s.head))
       .opaque(
-        s"special regular expression character that should be escaped such as '(', '}', '*', etc"))
+        s"special regular expression character that should be escaped such as '(', '}', '*', etc")
 
   /**
    * A shorthand class such as `\d` or `\w`. This parser itself doesn't look for the `\`; it starts
@@ -68,7 +68,8 @@ object Parser {
    * Standard characters to match like `a` or `%`.
    */
   def standardMatchChar[_: P]: P[Char] =
-    P(CharPred(c => !nonCharClassCharsToEscape.contains(c)).!.map(s => s.head))
+    CharPred(c => !nonCharClassCharsToEscape.contains(c)).!.map(s => s.head)
+      .opaque("""standard charact to match like `a` or `%`""")
 
   /**
    * Standard characters to match like `a` or `%` but also characters that aren't special within
@@ -100,14 +101,8 @@ object Parser {
           posInt.map(RepeatCount.Exact(_))
       ) ~ "}").opaque("repeat count such as '{3}', '{1,4}', or '{3,}'")
 
-  def singleLitChar[_: P]: P[Char] =
-    P(("\\" ~ specialChar | standardMatchChar))
-
   def singleLitCharClassChar[_: P]: P[Char] =
     P(("\\" ~ specialChar | charClassStandardMatchChar))
-
-  def matchLitChar[_: P]: P[Match.Literal[Char]] =
-    P(singleLitChar.map(Match.Literal(_)))
 
   def matchLitCharClassChar[_: P]: P[Match.Literal[Char]] =
     P(singleLitCharClassChar.map(Match.Literal(_)))
@@ -144,7 +139,7 @@ object Parser {
 
   def negatedCharClassContent[_: P]: P[Match.NoneOf[Char]] =
     (
-      ("\\" ~/ negatedShorthandClass) |
+      ("\\" ~ negatedShorthandClass) |
         ("[:" ~/ negatedPOSIXClass ~ ":]") |
         negatedCharOrRange.map(NonEmptyList.one(_))
     ).opaque(
@@ -170,7 +165,7 @@ object Parser {
 
   def positiveCharClassContent[_: P]: P[Regex[Char]] =
     (
-      ("\\" ~/ shorthandClass) |
+      ("\\" ~ shorthandClass) |
         ("[:" ~/ positivePOSIXCharClass ~ ":]") |
         (matchCharRange | matchLitCharClassChar).map(Coattr.pure[KleeneF, Match[Char]](_))
     ).opaque(
