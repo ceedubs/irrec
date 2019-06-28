@@ -44,7 +44,7 @@ object RegexGen {
     genA: Gen[A]): Algebra[CoattrF[KleeneF, Match[A], ?], Weighted[Gen[Stream[A]]]] =
     Algebra[CoattrF[KleeneF, Match[A], ?], Weighted[Gen[Stream[A]]]] {
       CoattrF.un(_) match {
-        case Left(ma) => Weighted(1, matchingGen(ma.value, genA).map(Stream(_)))
+        case Left(ma) => Weighted(1, matchingGen(ma, genA).map(Stream(_)))
         case Right(kf) => kleeneFStreamAlgebra(kf)
       }
     }
