@@ -1,11 +1,13 @@
 package ceedubs.irrec
 package regex
 
-import RegexGen.{genRangeMatch, genRegex}
-import RegexAndCandidate.{genRegexAndCandidate, genRegexAndMatch}
+// TODO ceedubs
+//import RegexGen.{genRangeMatch, genRegex}
+//import RegexAndCandidate.{genRegexAndCandidate, genRegexAndMatch}
 
 import cats.implicits._
-import org.scalacheck.Gen
+import org.scalacheck.{Arbitrary, Gen}
+import cats.collections.{Diet, Range}
 
 /**
  * This providex support for generation of `Char` regular expressions.
@@ -17,59 +19,83 @@ object CharRegexGen {
 
   val supportedCharRangesInclusive: List[(Char, Char)] = List((0x0000, 0xD7FF), (0xF900, 0xFFFD))
 
+  // TODO ceedubs should something like this go into CharacterClasses?
+  // TODO ceedubs remove explicit Char params when using a different version of cats-collections
+  val supportedCharacters: Diet[Char] =
+    Diet
+      .empty[Char]
+      .addRange[Char](Range(0x0000, 0xD7FF))
+      .addRange[Char](Range(0xF900, 0xFFFD))
+
   /**
    * Adapted from code in Scalacheck.
    */
-  private val genSupportedCharRangeBounds: Gen[(Char, Char)] =
-    Gen.frequency((supportedCharRangesInclusive.map {
-      case (first, last) => (last + 1 - first, Gen.const((first, last)))
-    }: List[(Int, Gen[(Char, Char)])]): _*)
+  //private val genSupportedCharRangeBounds: Gen[(Char, Char)] =
+  //  Gen.frequency((supportedCharRangesInclusive.map {
+  //    case (first, last) => (last + 1 - first, Gen.const((first, last)))
+  //  }: List[(Int, Gen[(Char, Char)])]): _*)
 
-  val genSupportedChar: Gen[Char] =
-    for {
-      bounds <- genSupportedCharRangeBounds
-      (min, max) = bounds
-      c <- Gen.choose(min, max)
-    } yield c
+  // TODO ceedubs is this needed?
+  //val genSupportedChar: Gen[Char] =
+  //  RegexGen.dietMatchingGen[Char](supportedCharacters, RegexGen.rangeLength(_))
 
-  val genSupportedCharMatchRange: Gen[Match.Range[Char]] =
-    for {
-      bounds <- genSupportedCharRangeBounds
-      (min, max) = bounds
-      lower <- Gen.choose(min, max)
-      upper <- Gen.choose(lower, max)
-    } yield Match.Range(lower, upper)
+  //val genSupportedCharMatchRange: Gen[Match.Range[Char]] =
+  //  for {
+  //    bounds <- genSupportedCharRangeBounds
+  //    (min, max) = bounds
+  //    lower <- Gen.choose(min, max)
+  //    upper <- Gen.choose(lower, max)
+  //  } yield Match.Range(lower, upper)
 
-  def genRegexChar(includeZero: Boolean, includeOne: Boolean): Gen[Regex[Char]] =
-    genRegex(
-      genSupportedChar,
-      genSupportedCharMatchRange,
-      includeZero = includeZero,
-      includeOne = includeOne)
+  def regexMatchingStringGen(available: Diet[Char]): Regex[Char] => Gen[String] = {
+    val streamGen = RegexMatchGen.dietRegexMatchingStreamGen(available)
+    r => streamGen(r).map(_.mkString)
+  }
 
-  val genStandardRegexChar: Gen[Regex[Char]] = genRegexChar(includeZero = false, includeOne = false)
+  // TODO ceedubs naming
+  val regexMatchingStandardStringGen: Regex[Char] => Gen[String] =
+    regexMatchingStringGen(supportedCharacters)
 
-  val genAlphaNumCharRegex: Gen[Regex[Char]] = genRegex(
-    Gen.alphaNumChar,
-    genRangeMatch(Gen.alphaNumChar),
-    includeZero = false,
-    includeOne = false)
+  // TODO ceedubs is this useful?
+  val standardCharRegexGenConfig: RegexGen.Config[Char] =
+    RegexGen.Config
+      .fromIntegralDiet(supportedCharacters)
 
+  // TODO ceedubs do I have unnecssary RegeGen. prefixes in this file?
+  //def genRegexChar(includeZero: Boolean, includeOne: Boolean): Gen[Regex[Char]] =
+  //  RegexGen.genRegex()
+
+  // TODO ceedubs write helper methods that make some of these irrelephant
+  val genStandardRegexChar: Gen[Regex[Char]] = RegexGen.genRegex(standardCharRegexGenConfig)
+
+  // TODO ceedubs is there a better way?
+  val genAlphaNumCharRegex: Gen[Regex[Char]] =
+    RegexGen.genRegex(RegexGen.Config.fromIntegralDiet(CharacterClasses.alphaNumericMatches.diet))
+
+  // TODO ceedubs should any of this be extracted?
   val genCharRegexAndMatch: Gen[RegexAndCandidate[Char]] =
-    genRegexAndMatch(includeOne = false, genSupportedChar, genSupportedCharMatchRange)
+    RegexAndCandidate.genRegexAndMatch(
+      standardCharRegexGenConfig,
+      RegexMatchGen.dietMatchToGen[Char](supportedCharacters, RegexMatchGen.dietMatchingGen(_)))
 
-  val genAlphaNumCharRegexAndMatch: Gen[RegexAndCandidate[Char]] =
-    genRegexAndMatch(includeOne = false, Gen.alphaNumChar, genRangeMatch(Gen.alphaNumChar))
+  // TODO ceedubs
+  //val genAlphaNumCharRegexAndMatch: Gen[RegexAndCandidate[Char]] =
+  //  genRegexAndMatch(includeOne = false, Gen.alphaNumChar, genRangeMatch(Gen.alphaNumChar))
 
-  val genCharRegexAndCandidate: Gen[RegexAndCandidate[Char]] = genRegexAndCandidate(
-    genSupportedChar,
-    genSupportedCharMatchRange,
-    includeZero = false,
-    includeOne = false)
+  // TODO ceedubs can we generate a config for both things at once?
+  // TODO ceedubs
+  //val genCharRegexAndCandidate: Gen[RegexAndCandidate[Char]] = RegexAndCandidate.genRegexAndCandidate(
+  //  standardCharRegexGenConfig, RegexMatchGen.dietMatchingGen(supportedCharacters, RegexMatchGen.integralDietMatchingGen(_)))
+  //  TODO ceedubs make it so this isn't just ASCII
+  val genCharRegexAndCandidate: Gen[RegexAndCandidate[Char]] = RegexAndCandidate.genRegexAndCandidate(
+    RegexGen.Config.fromIntegralDiet(CharacterClasses.asciiMatch.diet), RegexMatchGen.dietMatchToGen(CharacterClasses.asciiMatch.diet, RegexMatchGen.dietMatchingGen(_)))
 
-  val genAlphaNumCharRegexAndCandidate: Gen[RegexAndCandidate[Char]] = genRegexAndCandidate(
-    Gen.alphaNumChar,
-    genRangeMatch(Gen.alphaNumChar),
-    includeZero = false,
-    includeOne = false)
+  // TODO ceedubs
+  //val genAlphaNumCharRegexAndCandidate: Gen[RegexAndCandidate[Char]] = genRegexAndCandidate(
+  //  Gen.alphaNumChar,
+  //  genRangeMatch(Gen.alphaNumChar),
+  //  includeZero = false,
+  //  includeOne = false)
+
+  implicit val arbCharRegex: Arbitrary[Regex[Char]] = Arbitrary(CharRegexGen.genStandardRegexChar)
 }

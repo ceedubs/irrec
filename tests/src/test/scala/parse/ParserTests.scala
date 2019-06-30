@@ -5,13 +5,12 @@ import ceedubs.irrec.regex._
 import CharRegexGen._
 import ceedubs.irrec.parse.{regex => parse}
 
-import qq.droste.data.Coattr
-import cats.data.NonEmptyList
 import fastparse._
 import ceedubs.irrec.regex.Regex._
 import org.scalatest.compatible.Assertion
 import fastparse.Parsed.Failure
 import fastparse.Parsed.Success
+import ceedubs.irrec.regex.Match.MatchSet
 
 class ParserTests extends IrrecSuite {
   import ParserTests._
@@ -124,16 +123,11 @@ class ParserTests extends IrrecSuite {
   }
 
   test("regex parsing supports ranges with negative character classes") {
-    import Match.Negated._
-    import Match.{Literal, Range}
-
-    val negated: Regex[Char] = Coattr.pure(
-      Match.NoneOf(
-        NonEmptyList.of(
-          NegatedRange(Range('b', 'd')),
-          NegatedLiteral(Literal('e')),
-          NegatedLiteral(Literal('g')),
-          NegatedRange(Range('i', 'k')))))
+    val negated = Regex.matching(MatchSet.range('b', 'd')
+      .union(MatchSet.one('e'))
+      .union(MatchSet.one('g'))
+      .union(MatchSet.range('i', 'k'))
+      .negate)
 
     val expected = lit('a') * negated * lit('e')
 
@@ -184,13 +178,13 @@ class ParserTests extends IrrecSuite {
   }
 
   test("regex parsing handles negative digit classes") {
-    import Match.{lit => _, _}
-    val expected = lit('a') * Coattr.pure(
-      NoneOf(
-        NonEmptyList.of(
-          Negated.NegatedLiteral(Literal('b')),
-          Negated.NegatedRange(Range('0', '9')),
-          Negated.NegatedLiteral(Literal('c')))))
+    val negated = Regex.matching(
+      MatchSet.one('b')
+      .union(MatchSet.range('0', '9'))
+      .union(MatchSet.one('c'))
+      .negate)
+
+    val expected = lit('a') * negated
     sameRegex(parse("""a[^b\dc]"""), expected)
     sameRegex(parse("""a[^b[:digit:]c]"""), expected)
   }
@@ -203,9 +197,11 @@ class ParserTests extends IrrecSuite {
 
   test("regex parsing handles negative whitespace classes") {
     import Match.{lit => _, _}
-    val expected = lit('a') * Coattr.pure(
-      NoneOf(
-        Literal('b').negate :: (CharacterClasses.nonWhitespaceCharMatches :+ Literal('c').negate)))
+    val negated = Regex.matching(
+      MatchSet.one('b')
+      .union(CharacterClasses.whitespaceCharMatches)
+      .union(MatchSet.one('c')).negate)
+    val expected = lit('a') * negated
     sameRegex(parse("""a[^b\sc]"""), expected)
     sameRegex(parse("""a[^b[:space:]c]"""), expected)
   }
@@ -229,15 +225,7 @@ class ParserTests extends IrrecSuite {
   }
 
   test("regex parsing handles horizontal whitespace classes in a negated character class") {
-    import Match.{lit => _, _}
-    val expected = lit('a') * Coattr.pure(
-      NoneOf(
-        NonEmptyList.of(
-          Negated.NegatedLiteral(Literal('b')),
-          Negated.NegatedLiteral(Literal('\t')),
-          Negated.NegatedLiteral(Literal(' ')),
-          Negated.NegatedLiteral(Literal('c'))
-        )))
+    val expected = lit('a') * Regex.noneOf('b', '\t', ' ', 'c')
     sameRegex(parse("""a[^b\hc]"""), expected)
     sameRegex(parse("""a[^b[:blank:]c]"""), expected)
   }

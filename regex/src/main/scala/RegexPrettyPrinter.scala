@@ -1,6 +1,7 @@
 package ceedubs.irrec
 package regex
 
+import cats.Eq
 import cats.implicits._
 import qq.droste.{scheme, Algebra, Gather, RAlgebra}
 import qq.droste.data.CoattrF
@@ -82,18 +83,21 @@ object RegexPrettyPrinter {
    * @param f a function that takes an `A` value and a boolean indicating whether or not the `A` is
    * appearing within a range and formats it as a string.
    */
-  def showMatch[A](f: (Boolean, A) => String)(m: Match[A]): String = {
+  def showMatch[A](f: (Boolean, A) => String)(implicit eqA: Eq[A]): Match[A] => String = {
     import Match._
-    m match {
+    _ match {
       case Literal(a) => f(false, a)
-      case Range(l, r) => s"[${f(true, l)}-${f(true, r)}]"
-      case NoneOf(l) =>
-        l.map {
-            case Negated.NegatedRange(Range(l, h)) => s"${f(true, l)}-${f(true, h)}"
-            case Negated.NegatedLiteral(Literal(a)) => f(true, a)
-          }
-          .toList
-          .mkString("[^", "", "]")
+      // TODO ceedubs clean up duplicate code
+      case MatchSet(d) =>
+        d.foldLeftRange("["){ case (s, cats.collections.Range(l, h)) =>
+          val current = if (l === h) f(true, l) else s"${f(true, l)}-${f(true, h)}"
+          s + current
+        } + "]"
+      case NegatedMatchSet(d) =>
+        d.foldLeftRange("[^"){ case (s, cats.collections.Range(l, h)) =>
+          val current = if (l === h) f(true, l) else s"${f(true, l)}-${f(true, h)}"
+          s + current
+        } + "]"
       case Match.Wildcard => "."
     }
   }

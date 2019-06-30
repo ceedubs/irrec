@@ -4,78 +4,116 @@ package regex
 import ceedubs.irrec.regex.ScalacheckSupport._
 
 import cats.Order
+import cats.collections.{Diet, Discrete, Range}
 import cats.implicits._
-import qq.droste.{scheme, Algebra, CoalgebraM}
+import qq.droste.{scheme, CoalgebraM}
 import qq.droste.data.CoattrF
 import qq.droste.data.prelude._
 import org.scalacheck.{Arbitrary, Gen}, Gen.Choose
 
 object RegexGen {
-  final case class Weighted[A](weight: Int, value: A)
 
-  def matchingGen[A](m: Match[A], genA: Gen[A])(
-    implicit chooseA: Choose[A],
-    orderA: Order[A]): Gen[A] = m match {
-    case Match.Literal(expected) => Gen.const(expected)
-    case Match.Wildcard => genA
-    case Match.Range(l, r) => chooseA.choose(l, r)
-    case m @ Match.NoneOf(_) => genA.filter(m.matches(_))
-  }
-
+  // TODO ceedubs should this really be a case class? Equality doesn't make sense.
   /**
-   * A recursive KleeneF structure is roughly an unbalanced binary tree. For a regular expression
-   * like `a|b|c|d|e`, if we were to pick each immediate branch of the tree with equal probability,
-   * we would end up favoring the characters toward the top of the tree. We work around this by
-   * assigning a weight to each node which corresponds to the number of alternations represented by
-   * its entire subtree.
+   * Configuration for generating regular expressions.
    */
-  def kleeneFStreamAlgebra[A]: Algebra[KleeneF, Weighted[Gen[Stream[A]]]] = Algebra {
-    case KleeneF.Plus(l, r) =>
-      Weighted(l.weight + r.weight, Gen.frequency(l.weight -> l.value, r.weight -> r.value))
-    case KleeneF.Times(l, r) =>
-      Weighted(math.max(l.weight, r.weight), l.value.flatMap(ls => r.value.map(rs => ls ++ rs)))
-    case KleeneF.Star(g) =>
-      Weighted(g.weight, Gen.containerOf[Stream, Stream[A]](g.value).map(_.flatten))
-    case KleeneF.Zero => Weighted(0, Gen.fail)
-    case KleeneF.One => Weighted(1, Gen.const(Stream.empty))
-  }
+  final case class Config[A](
+    gen: Gen[A],
+    genDiet: Gen[Diet[A]],
+    includeZero: Boolean,
+    includeOne: Boolean)
 
-  def regexMatchingStreamAlgebra[A: Choose: Order](
-    genA: Gen[A]): Algebra[CoattrF[KleeneF, Match[A], ?], Weighted[Gen[Stream[A]]]] =
-    Algebra[CoattrF[KleeneF, Match[A], ?], Weighted[Gen[Stream[A]]]] {
-      CoattrF.un(_) match {
-        case Left(ma) => Weighted(1, matchingGen(ma, genA).map(Stream(_)))
-        case Right(kf) => kleeneFStreamAlgebra(kf)
-      }
+  // TODO ceedubs this tries to use things from the outside scope forcing them to be lazy. Fix.
+  object Config {
+    // TODO ceedubs this is pretty busted
+    //def fromDiscreteRange[A: Choose: Discrete: Order](range: Range[A]): Config[A] =
+    //  Config(
+    //    gen = Gen.choose(range.start, range.end),
+    //    genDiet = genNonEmptyDiet(Gen.const(range)),
+    //    includeZero = false,
+    //    includeOne = false)
+
+    // TODO ceedubs does this need to be integral any more?
+    def fromIntegralDiet[A:Choose:Integral](available: Diet[A]): Config[A] = {
+      // TODO ceedubs is this crazy?
+      // TODO ceedubs do we need Integral?
+      implicit val orderA: Order[A] = Order.fromOrdering(implicitly[Integral[A]])
+      Config(
+        gen = RegexMatchGen.dietMatchingGen(available),
+        genDiet = genNonEmptySubDiet(available),
+        includeZero = false,
+        // TODO ceedubs should this be one?
+        includeOne = false)
     }
 
-  def regexMatchingStreamGen[A: Choose: Order](genA: Gen[A]): Regex[A] => Gen[Stream[A]] =
-    scheme.cata(regexMatchingStreamAlgebra(genA)) andThen (_.value)
-
-  def regexMatchingStringGen(genChar: Gen[Char]): Regex[Char] => Gen[String] = {
-    val streamGen = regexMatchingStreamGen(genChar)
-    r => streamGen(r).map(_.mkString)
   }
 
-  def genRangeMatch[A](genA: Gen[A])(implicit orderingA: Ordering[A]): Gen[Match.Range[A]] =
+  // TODO ceedubs
+  //def matchingGen[A](m: Match[A], genA: Gen[A])(
+  //  implicit chooseA: Choose[A],
+  //  orderA: Order[A]): Gen[A] = m match {
+  //  case Match.Literal(expected) => Gen.const(expected)
+  //  case Match.Wildcard => genA
+  //  case Match.Range(l, r) => chooseA.choose(l, r)
+  //  case m @ Match.NoneOf(_) => genA.filter(m.matches(_))
+  //}
+
+  def genSubrange[A: Choose: Order](range: Range[A]): Gen[Range[A]] =
+    for {
+      x <- Gen.choose(range.start, range.end)
+      y <- Gen.choose(range.start, range.end)
+    } yield if (x < y) Range(x, y) else Range(y, x)
+
+  // TODO ceedubs is this needed?
+  def genNonEmptySubDiet[A: Choose: Discrete: Order](diet: Diet[A]): Gen[Diet[A]] = {
+    val ranges = diet.foldLeftRange(List.empty[Range[A]])((ranges, range) => range :: ranges)
+    val newRanges: Gen[List[Range[A]]] = for {
+      childRangeCount <- Gen.choose(1, ranges.size)
+      filteredRanges <- Gen.pick(childRangeCount, ranges)
+      newSubranges <- Gen.sequence[List[Range[A]], Range[A]](filteredRanges.map(genSubrange(_)))
+    } yield newSubranges
+    // TODO ceedubs use Diet.fromRange when it's available
+    newRanges.map(_.foldMap(r => Diet.empty[A].addRange(r)))
+  }
+
+  // TODO ceedubs document
+  // TODO ceedubs needed?
+  //def rangeWeightedRegexMatchingStreamGen[A: Choose:Order:Integral](available: Diet[A]): Regex[A] => Gen[Stream[A]] =
+  //  scheme.cata(
+  //    regexMatchingStreamAlgebra[A](
+  //      available,
+  //      weight = rangeLength(_))
+  //  ) andThen (_.value)
+
+  // TODO ceedubs is this needed?
+  def genRange[A](genA: Gen[A])(implicit orderingA: Ordering[A]): Gen[Range[A]] =
     for {
       a1 <- genA
       a2 <- genA
-    } yield if (orderingA.lt(a1, a2)) Match.Range(a1, a2) else Match.Range(a2, a1)
+    } yield if (orderingA.lt(a1, a2)) Range(a1, a2) else Range(a2, a1)
 
-  def genMatch[A](genA: Gen[A], genRange: Gen[Match.Range[A]]): Gen[Match[A]] =
-    Gen.frequency(5 -> genA.map(Match.lit(_)), 3 -> genRange, 1 -> Gen.const(Match.wildcard))
+  // TODO ceedubs is this needed?
+  // TODO ceedubs this is being used the wrong way I think. It's being passed in with a Gen.const of
+  // a range and that range is never split up.
+  //def genNonEmptyDiet[A: Order: Discrete](genRange: Gen[Range[A]]): Gen[Diet[A]] =
+  //  Gen.nonEmptyListOf(genRange).map(_.foldLeft(Diet.empty[A])(_ addRange _))
 
-  def genRegexCoalgebraM[A](
-    genA: Gen[A],
-    genRangeA: Gen[Match.Range[A]],
-    includeZero: Boolean,
-    includeOne: Boolean): CoalgebraM[Gen, CoattrF[KleeneF, Match[A], ?], Int] = {
+  def genMatch[A](genA: Gen[A], genDietA: Gen[Diet[A]]): Gen[Match[A]] =
+    Gen.frequency(
+      9 -> genA.map(Match.lit(_)),
+      3 -> genDietA.map(Match.MatchSet(_)),
+      // TODO ceedubs do we need to do anything to make sure that we don't generate diets with no
+      // matches?
+      2 -> genDietA.map(Match.NegatedMatchSet(_)),
+      1 -> Gen.const(Match.wildcard)
+    )
+
+  def genRegexCoalgebraM[A](cfg: Config[A]): CoalgebraM[Gen, CoattrF[KleeneF, Match[A], ?], Int] = {
     val leafGen: Gen[CoattrF[KleeneF, Match[A], Int]] =
       Gen.frequency(
-        10 -> genMatch[A](genA, genRangeA).map(CoattrF.pure),
-        (if (includeOne) 2 else 0) -> Gen.const(CoattrF.roll(KleeneF.One)),
-        (if (includeZero) 1 else 0) -> Gen.const(CoattrF.roll(KleeneF.Zero))
+        10 -> genMatch[A](cfg.gen, cfg.genDiet).map(CoattrF.pure),
+        (if (cfg.includeOne) 2 else 0) -> Gen.const(CoattrF.roll(KleeneF.One)),
+        (if (cfg.includeZero) 1 else 0) -> Gen.const(CoattrF.roll(KleeneF.Zero))
       )
 
     CoalgebraM[Gen, CoattrF[KleeneF, Match[A], ?], Int](
@@ -95,35 +133,37 @@ object RegexGen {
             }))
   }
 
-  def genRegex[A](
-    genA: Gen[A],
-    genRangeA: Gen[Match.Range[A]],
-    includeZero: Boolean,
-    includeOne: Boolean): Gen[Regex[A]] =
-    Gen.sized(
-      maxSize =>
-        scheme
-          .anaM(
-            genRegexCoalgebraM[A](
-              genA,
-              genRangeA,
-              includeZero = includeZero,
-              includeOne = includeOne))
-          .apply(maxSize))
+  // TODO ceedubs do we need both a `Gen[A]` and a `Gen[Diet[A]]`?
+  // Should we just be taking a `Diet[A]` as an arg?
+  def genRegex[A](cfg: Config[A]): Gen[Regex[A]] =
+    Gen.sized(maxSize => scheme.anaM(genRegexCoalgebraM[A](cfg)).apply(maxSize))
 
-  def arbRegex[A](implicit arbA: Arbitrary[A], orderingA: Ordering[A]): Arbitrary[Regex[A]] =
-    Arbitrary(
-      genRegex(
-        arbA.arbitrary,
-        genRangeMatch(arbA.arbitrary),
-        includeZero = true,
-        includeOne = true))
+  // TODO ceedubs we have better ways of generating these
+  //def arbRegex[A](
+  //  implicit arbA: Arbitrary[A],
+  //  discreteA: Discrete[A],
+  //  orderA: Order[A]): Arbitrary[Regex[A]] =
+  //  Arbitrary(
+  //    genRegex(
+  //      arbA.arbitrary,
+  //      genDiet(genRange(arbA.arbitrary)),
+  //      includeZero = true,
+  //      includeOne = true))
 
-  implicit val arbCharRegex: Arbitrary[Regex[Char]] = Arbitrary(CharRegexGen.genStandardRegexChar)
+  // TODO ceedubs where to put these? lazy? Why are things broken?
+  lazy val standardByteConfig: Config[Byte] = Config.fromIntegralDiet(Diet.empty[Byte] addRange Range(Byte.MinValue, Byte.MaxValue))
+  lazy val standardIntConfig: Config[Int] = Config.fromIntegralDiet(Diet.empty[Int] addRange Range(Int.MinValue, Int.MaxValue))
+  lazy val standardLongConfig: Config[Long] = Config.fromIntegralDiet(Diet.empty[Long] addRange Range(Long.MinValue, Long.MaxValue))
 
-  implicit val arbByteRegex: Arbitrary[Regex[Byte]] = arbRegex[Byte]
+  val genByteRegex: Gen[Regex[Byte]] = genRegex(standardByteConfig)
 
-  implicit val arbIntRegex: Arbitrary[Regex[Int]] = arbRegex[Int]
+  implicit val arbByteRegex: Arbitrary[Regex[Byte]] = Arbitrary(genByteRegex)
 
-  implicit val arbLongRegex: Arbitrary[Regex[Long]] = arbRegex[Long]
+  val genIntRegex: Gen[Regex[Int]] = genRegex(standardIntConfig)
+
+  implicit val arbIntRegex: Arbitrary[Regex[Int]] = Arbitrary(genIntRegex)
+
+  val genLongRegex: Gen[Regex[Long]] = genRegex(standardLongConfig)
+
+  implicit val arbLongRegex: Arbitrary[Regex[Long]] = Arbitrary(genLongRegex)
 }
