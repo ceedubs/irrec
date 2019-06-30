@@ -98,7 +98,7 @@ object RegexPrettyPrinter {
           val current = if (l === h) f(true, l) else s"${f(true, l)}-${f(true, h)}"
           s + current
         } + "]"
-      case Match.Wildcard => "."
+      case Match.Wildcard() => "."
     }
   }
 

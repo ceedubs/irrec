@@ -43,7 +43,7 @@ object RegexMatchGen {
     implicit orderA: Order[A],
     discreteA: Discrete[A]): Match[A] => Gen[A] = _ match {
     case Match.Literal(expected) => Gen.const(expected)
-    case Match.Wildcard => dietToGen(available)
+    case Match.Wildcard() => dietToGen(available)
     case Match.MatchSet(diet) => dietToGen(diet)
     case Match.NegatedMatchSet(diet) => dietToGen(available -- diet)
   }
@@ -82,18 +82,15 @@ object RegexMatchGen {
     Gen.frequency(freqs: _*)
   }
 
-  // TODO ceedubs private? Remove?
-  //def rangeLength[A: Integral](range: Range[A]): Int = (range.end - range.start).toInt
-
   val byteMatchingGen: Match[Byte] => Gen[Byte] = dietMatchToGen(
-    Diet.empty[Byte].addRange(Range(Byte.MinValue, Byte.MaxValue)),
+    Diet.fromRange(Range(Byte.MinValue, Byte.MaxValue)),
     dietMatchingGen(_))
 
   val intMatchingGen: Match[Int] => Gen[Int] = dietMatchToGen(
-    Diet.empty[Int].addRange(Range(Int.MinValue, Int.MaxValue)),
+    Diet.fromRange(Range(Int.MinValue, Int.MaxValue)),
     dietMatchingGen(_))
 
   val longMatchingGen: Match[Long] => Gen[Long] = dietMatchToGen(
-    Diet.empty[Long].addRange(Range(Long.MinValue, Long.MaxValue)),
+    Diet.fromRange(Range(Long.MinValue, Long.MaxValue)),
     dietMatchingGen(_))
 }

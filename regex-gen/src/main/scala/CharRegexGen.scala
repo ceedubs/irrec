@@ -24,8 +24,8 @@ object CharRegexGen {
   val supportedCharacters: Diet[Char] =
     Diet
       .empty[Char]
-      .addRange[Char](Range(0x0000, 0xD7FF))
-      .addRange[Char](Range(0xF900, 0xFFFD))
+      .addRange(Range(0x0000, 0xD7FF))
+      .addRange(Range(0xF900, 0xFFFD))
 
   /**
    * Adapted from code in Scalacheck.
