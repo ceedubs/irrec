@@ -17,10 +17,10 @@ object Regex {
 
   def literal[A](value: A): Regex[A] = matching(Match.Literal(value))
 
-  def range[A](l: A, r: A)(implicit discreteA: Discrete[A], orderA: Order[A]): Regex[A] =
+  def range[A](l: A, r: A): Regex[A] =
     matching(Match.range(l, r))
 
-  def wildcard[A]: Regex[A] = matching(Match.Wildcard)
+  def wildcard[A]: Regex[A] = matching(Match.Wildcard())
 
   def or[A](l: Kleene[A], r: Kleene[A]): Kleene[A] = Coattr.roll(KleeneF.Plus(l, r))
 
@@ -38,7 +38,7 @@ object Regex {
 
   def noneOf[A](a1: A, as: A*)(implicit discreteA: Discrete[A], orderA: Order[A]): Regex[A] =
     matching(
-      Match.NegatedMatchSet(NonEmptyList.of(a1, as: _*).reduceLeftTo(Diet.empty[A] + _)(_ + _)))
+      Match.NegatedMatchSet(NonEmptyList.of(a1, as: _*).foldMap(Diet.one(_))))
 
   /**
    * AKA `+` in regular expressions, but I avoided confusion with `Plus` corresponding to "or".

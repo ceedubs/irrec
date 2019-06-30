@@ -22,7 +22,7 @@ object RegexShrink {
   // TODO ceedubs do we actually want to use the Shrink[A]?
   def shrinkMatch[A](implicit discreteA: Discrete[A], orderA: Order[A], shrinkA: Shrink[A]): Match[A] => Stream[Match[A]] = {
     case Match.Literal(expected) => shrinkA.shrink(expected).map(Match.Literal(_))
-    case Match.Wildcard => Stream.empty
+    case Match.Wildcard() => Stream.empty
     case Match.MatchSet(d) => shrinkDiet(d).filterNot(_.isEmpty).map(Match.MatchSet(_))
     case Match.NegatedMatchSet(d) => shrinkDiet(d).filterNot(_.isEmpty).map(Match.NegatedMatchSet(_))
   }
@@ -30,7 +30,7 @@ object RegexShrink {
   def shrinkDiet[A:Discrete:Order](diet: Diet[A]): Stream[Diet[A]] = {
     implicit val rangeShrink: Shrink[Range[A]] = Shrink(shrinkRange(_))
     Shrink.shrink(dietRangeList(diet)).map(ranges =>
-      ranges.foldMap(Diet.empty[A] addRange _))
+      ranges.foldMap(Diet.fromRange _))
   }
 
   // TODO ceedubs add something to cats collections so we don't need this.

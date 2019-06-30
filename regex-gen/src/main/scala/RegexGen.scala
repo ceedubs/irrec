@@ -73,7 +73,7 @@ object RegexGen {
       newSubranges <- Gen.sequence[List[Range[A]], Range[A]](filteredRanges.map(genSubrange(_)))
     } yield newSubranges
     // TODO ceedubs use Diet.fromRange when it's available
-    newRanges.map(_.foldMap(r => Diet.empty[A].addRange(r)))
+    newRanges.map(_.foldMap(Diet.fromRange _))
   }
 
   // TODO ceedubs document
@@ -151,9 +151,10 @@ object RegexGen {
   //      includeOne = true))
 
   // TODO ceedubs where to put these? lazy? Why are things broken?
-  lazy val standardByteConfig: Config[Byte] = Config.fromIntegralDiet(Diet.empty[Byte] addRange Range(Byte.MinValue, Byte.MaxValue))
-  lazy val standardIntConfig: Config[Int] = Config.fromIntegralDiet(Diet.empty[Int] addRange Range(Int.MinValue, Int.MaxValue))
-  lazy val standardLongConfig: Config[Long] = Config.fromIntegralDiet(Diet.empty[Long] addRange Range(Long.MinValue, Long.MaxValue))
+  // TODO ceedubs these still depend on Integral?
+  lazy val standardByteConfig: Config[Byte] = Config.fromIntegralDiet(Diet.fromRange(Range(Byte.MinValue, Byte.MaxValue)))
+  lazy val standardIntConfig: Config[Int] = Config.fromIntegralDiet(Diet.fromRange(Range(Int.MinValue, Int.MaxValue)))
+  lazy val standardLongConfig: Config[Long] = Config.fromIntegralDiet(Diet.fromRange(Range(Long.MinValue, Long.MaxValue)))
 
   val genByteRegex: Gen[Regex[Byte]] = genRegex(standardByteConfig)
 
