@@ -7,13 +7,13 @@ import ceedubs.irrec.regex.RegexPrettyPrinter.{
   specialNonCharClassCharToLit
 }
 
-import cats.data.NonEmptyList
 import cats.implicits._
 import fastparse._, NoWhitespace._
 import ceedubs.irrec.regex.Match
 import ceedubs.irrec.regex.Regex
 import ceedubs.irrec.regex._
 import qq.droste.data.Coattr
+import cats.collections.Diet
 
 object Parser {
   sealed abstract class RepeatCount extends Product with Serializable {
@@ -58,11 +58,12 @@ object Parser {
         P("S").map(_ => Regex.nonWhitespaceChar)
     ).opaque("""character class such as \w, \d, \s, \S, etc""")
 
-  def negatedShorthandClass[_: P]: P[NonEmptyList[Match.Negated[Char]]] =
-    P("d").map(_ => NonEmptyList.one(CharacterClasses.digitMatch.negate)) |
-      P("w").map(_ => CharacterClasses.wordCharMatches.map(_.negate)) |
-      P("s").map(_ => CharacterClasses.whitespaceCharMatches.map(_.negate)) |
-      P("h").map(_ => CharacterClasses.horizontalWhitespaceCharMatches.map(_.negate))
+  // TODO ceedubs don't we have negated versions of these?
+  def negatedShorthandClass[_: P]: P[Match.NegatedMatchSet[Char]] =
+    P("d").map(_ => CharacterClasses.digitMatch.negate) |
+      P("w").map(_ => CharacterClasses.wordCharMatches.negate) |
+      P("s").map(_ => CharacterClasses.whitespaceCharMatches.negate) |
+      P("h").map(_ => CharacterClasses.horizontalWhitespaceCharMatches.negate)
 
   /**
    * Standard characters to match like `a` or `%`.
@@ -110,42 +111,46 @@ object Parser {
   /**
    * Character range like `a-z`.
    */
-  def matchCharRange[_: P]: P[Match.Range[Char]] = P(
+  def matchCharRange[_: P]: P[Match.MatchSet[Char]] = P(
     (singleLitCharClassChar ~ "-" ~/ singleLitCharClassChar).map {
       case (l, h) =>
-        Match.Range(l, h)
+        // TODO ceedubs import Match at the top-level scope?
+        Match.MatchSet.range(l, h)
     }
   )
 
-  def negatedCharOrRange[_: P]: P[Match.Negated[Char]] =
-    (matchCharRange.map(Match.Negated.NegatedRange(_)) | matchLitCharClassChar.map(
-      Match.Negated.NegatedLiteral(_)))
+  def negatedCharOrRange[_: P]: P[Match.NegatedMatchSet[Char]] =
+    (matchCharRange.map(_.negate) | singleLitCharClassChar.map(c => Match.MatchSet.one(c).negate))
 
-  def negatedPOSIXClass[_: P]: P[NonEmptyList[Match.Negated[Char]]] =
+  // TODO ceedubs we really don't have any need for these any more, do we?
+  def negatedPOSIXClass[_: P]: P[Match.NegatedMatchSet[Char]] =
     P("alnum").map(_ => CharacterClasses.nonAlphaNumericMatches) |
       P("alpha").map(_ => CharacterClasses.nonAlphaMatches) |
-      P("ascii").map(_ => NonEmptyList.one(CharacterClasses.nonAsciiMatch)) |
+      P("ascii").map(_ => CharacterClasses.nonAsciiMatch) |
       P("blank").map(_ => CharacterClasses.nonHorizontalWhitespaceCharMatches) |
       P("cntrl").map(_ => CharacterClasses.nonControlCharMatches) |
-      P("digit").map(_ => NonEmptyList.one(CharacterClasses.nonDigitMatch)) |
-      P("graph").map(_ => NonEmptyList.one(CharacterClasses.nonGraphCharMatch)) |
-      P("lower").map(_ => NonEmptyList.one(CharacterClasses.nonLowerAlphaMatch)) |
-      P("print").map(_ => NonEmptyList.one(CharacterClasses.nonPrintableCharMatch)) |
+      P("digit").map(_ => CharacterClasses.nonDigitMatch) |
+      P("graph").map(_ => CharacterClasses.nonGraphCharMatch) |
+      P("lower").map(_ => CharacterClasses.nonLowerAlphaMatch) |
+      P("print").map(_ => CharacterClasses.nonPrintableCharMatch) |
       P("punct").map(_ => CharacterClasses.nonPunctuationCharMatches) |
       P("space").map(_ => CharacterClasses.nonWhitespaceCharMatches) |
-      P("upper").map(_ => NonEmptyList.one(CharacterClasses.nonUpperAlphaMatch)) |
+      P("upper").map(_ => CharacterClasses.nonUpperAlphaMatch) |
       P("word").map(_ => CharacterClasses.nonWordCharMatches) |
       P("xdigit").map(_ => CharacterClasses.nonHexDigitMatches)
 
-  def negatedCharClassContent[_: P]: P[Match.NoneOf[Char]] =
+  def negatedCharClassContent[_: P]: P[Match.NegatedMatchSet[Char]] =
     (
       ("\\" ~ negatedShorthandClass) |
         ("[:" ~/ negatedPOSIXClass ~ ":]") |
-        negatedCharOrRange.map(NonEmptyList.one(_))
+        negatedCharOrRange
     ).opaque(
         """literal character to match (ex: 'a'), escaped special character literal (ex: '\*'), a shorthand class (ex: '\w'), or a POSIX class (ex: '[:alpha:]')""")
       .rep(1)
-      .map(xs => Match.NoneOf(xs.reduceOption(_ |+| _).get)) // .get is safe because of .rep(1)
+      .map{ negatedSets =>
+        val diet = negatedSets.foldLeft(Diet.empty[Char])(_ | _.diet)
+        Match.NegatedMatchSet(diet)
+      }
 
   def positivePOSIXCharClass[_: P]: P[Regex[Char]] =
     P("alnum").map(_ => Regex.alphaNumericChar) |

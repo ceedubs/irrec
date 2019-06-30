@@ -9,6 +9,8 @@ class RegexShrinkTests extends CatsSuite {
   // this is pretty hacky but I haven't yet written a meaningful equality for regexes.
   implicit private val eqIntRegex: Eq[Regex[Int]] = Eq.fromUniversalEquals
   implicit val shrinkIntRegex: Shrink[Regex[Int]] = RegexShrink.shrinkForRegex
+  implicit private val eqCharRegex: Eq[Regex[Char]] = Eq.fromUniversalEquals
+  implicit val shrinkCharRegex: Shrink[Regex[Char]] = RegexShrink.shrinkForRegex
 
   test("shrinking a literal") {
     val r: Regex[Int] = Regex.lit(2)
@@ -22,9 +24,16 @@ class RegexShrinkTests extends CatsSuite {
     shrink(r).toList should ===(expected)
   }
 
+  // TODO ceedubs currently the parser doesn't combine classes as one might expect, so something
+  // like [1-3x] behaves very differently.
   test("shrinking a range") {
-    val r: Regex[Int] = Regex.range(1, 2)
-    val expected = List(Regex.range(0, 2), Regex.range(1, 1), Regex.range(1, -1), Regex.range(1, 0))
+    val r: Regex[Char] = Regex.matching(Match.MatchSet.range('1', '3'))
+    val expected = List(
+      Match.MatchSet.range('1', '2'),
+      Match.MatchSet.range('1', '1'),
+      Match.MatchSet.range('2', '3'),
+      Match.MatchSet.range('3', '3')
+    ).map(Regex.matching(_))
     shrink(r).toList should ===(expected)
   }
 
