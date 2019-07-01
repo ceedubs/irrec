@@ -70,7 +70,7 @@ object CharRegexGen {
 
   // TODO ceedubs is there a better way?
   val genAlphaNumCharRegex: Gen[Regex[Char]] =
-    RegexGen.genRegex(RegexGen.Config.fromIntegralDiet(CharacterClasses.alphaNumericMatches.diet))
+    RegexGen.genRegex(RegexGen.Config.fromIntegralDiet(CharacterClasses.alphaNumeric))
 
   // TODO ceedubs should any of this be extracted?
   val genCharRegexAndMatch: Gen[RegexAndCandidate[Char]] =
@@ -88,7 +88,7 @@ object CharRegexGen {
   //  standardCharRegexGenConfig, RegexMatchGen.dietMatchingGen(supportedCharacters, RegexMatchGen.integralDietMatchingGen(_)))
   //  TODO ceedubs make it so this isn't just ASCII
   val genCharRegexAndCandidate: Gen[RegexAndCandidate[Char]] = RegexAndCandidate.genRegexAndCandidate(
-    RegexGen.Config.fromIntegralDiet(CharacterClasses.asciiMatch.diet), RegexMatchGen.dietMatchToGen(CharacterClasses.asciiMatch.diet, RegexMatchGen.dietMatchingGen(_)))
+    RegexGen.Config.fromIntegralDiet(CharacterClasses.ascii), RegexMatchGen.dietMatchToGen(CharacterClasses.ascii, RegexMatchGen.dietMatchingGen(_)))
 
   // TODO ceedubs
   //val genAlphaNumCharRegexAndCandidate: Gen[RegexAndCandidate[Char]] = genRegexAndCandidate(

@@ -11,6 +11,7 @@ import org.scalatest.compatible.Assertion
 import fastparse.Parsed.Failure
 import fastparse.Parsed.Success
 import ceedubs.irrec.regex.Match.MatchSet
+import cats.collections.{Diet, Range}
 
 class ParserTests extends IrrecSuite {
   import ParserTests._
@@ -93,13 +94,14 @@ class ParserTests extends IrrecSuite {
   }
 
   test("regex parsing supports character classes") {
-    val expected = lit('a') * Regex.oneOf('b', 'c', 'd') * lit('e')
+    val expected = lit('a') * Regex.range('b', 'd') * lit('e')
     val r = parse("a[bcd]e")
     sameRegex(r, expected)
   }
 
   test("regex parsing supports escaped special characters within character classes") {
-    val expected = lit('a') * Regex.oneOf('*') * lit('e')
+    // TODO ceedubs look for places that I'm using matching and providing a MatchSet and make helper methods
+    val expected = lit('a') * matching(MatchSet.allow(Diet.one('*'))) * lit('e')
     val r = parse("""a[\*]e""")
     sameRegex(r, expected)
   }
@@ -117,18 +119,16 @@ class ParserTests extends IrrecSuite {
   }
 
   test("regex parsing supports ranges with multiple ranges and non-ranges") {
-    val expected = lit('a') * (range('b', 'd') | Regex.oneOf('e', 'g') | range('i', 'k')) * lit('e')
+    // TODO ceedubs look for all of the places that I have imported this and either write helper method or clean up
+    val charClass =
+      MatchSet.allow(Diet.fromRange(Range('b', 'e')) + 'g' ++ Diet.fromRange(Range('i', 'k')))
+    val expected = lit('a') * matching(charClass) * lit('e')
     val r = parse("a[b-degi-k]e")
     sameRegex(r, expected)
   }
 
   test("regex parsing supports ranges with negative character classes") {
-    val negated = Regex.matching(MatchSet.range('b', 'd')
-      .union(MatchSet.one('e'))
-      .union(MatchSet.one('g'))
-      .union(MatchSet.range('i', 'k'))
-      .negate)
-
+    val negated = notInSet(Diet.fromRange(Range('b', 'd')) + 'e' + 'g' + Range('i', 'k'))
     val expected = lit('a') * negated * lit('e')
 
     val r = parse("a[^b-degi-k]e")
@@ -172,17 +172,14 @@ class ParserTests extends IrrecSuite {
   }
 
   test("regex parsing handles digit classes") {
-    val expected = lit('a') * (lit('b') | Regex.digit | lit('c'))
+    val expected = lit('a') * matching(
+      MatchSet.allow(Diet.fromRange(Range('0', '9')) + Range('b', 'c')))
     sameRegex(parse("""a[b\dc]"""), expected)
     sameRegex(parse("""a[b[:digit:]c]"""), expected)
   }
 
   test("regex parsing handles negative digit classes") {
-    val negated = Regex.matching(
-      MatchSet.one('b')
-      .union(MatchSet.range('0', '9'))
-      .union(MatchSet.one('c'))
-      .negate)
+    val negated = notInSet(Diet.one('b') + Range('0', '9') + 'c')
 
     val expected = lit('a') * negated
     sameRegex(parse("""a[^b\dc]"""), expected)
@@ -190,17 +187,14 @@ class ParserTests extends IrrecSuite {
   }
 
   test("regex parsing handles whitespace classes") {
-    val expected = lit('a') * (lit('b') | Regex.whitespaceChar | lit('c'))
+    val expected = lit('a') * matching(
+      MatchSet.allow(Diet.fromRange(Range('\t', '\r')) + ' ' + Range('b', 'c')))
     sameRegex(parse("""a[b\sc]"""), expected)
     sameRegex(parse("""a[b[:space:]c]"""), expected)
   }
 
   test("regex parsing handles negative whitespace classes") {
-    import Match.{lit => _, _}
-    val negated = Regex.matching(
-      MatchSet.one('b')
-      .union(CharacterClasses.whitespaceCharMatches)
-      .union(MatchSet.one('c')).negate)
+    val negated = notInSet(CharacterClasses.whitespaceChar + 'b' + 'c')
     val expected = lit('a') * negated
     sameRegex(parse("""a[^b\sc]"""), expected)
     sameRegex(parse("""a[^b[:space:]c]"""), expected)
@@ -212,8 +206,23 @@ class ParserTests extends IrrecSuite {
     sameRegex(r, expected)
   }
 
+  test("regex parsing handles non-whitespace classes in negative classes") {
+    val expected = lit('a') * Regex.whitespaceChar * lit('c')
+    val r = parse("""a[^\S]c""")
+    sameRegex(r, expected)
+  }
+
+  test("shorthand character classes are intersected in negated character classes") {
+    val charClass = Regex.matching(
+      MatchSet.allow(CharacterClasses.whitespaceChar) intersect MatchSet.forbid(
+        CharacterClasses.whitespaceChar))
+    val expected = lit('a') * charClass * lit('c')
+    val r = parse("""a[^\s\S]c""")
+    sameRegex(r, expected)
+  }
+
   test("regex parsing handles horizontal whitespace classes") {
-    val expected = lit('a') * (lit('b') | Regex.horizontalWhitespaceChar | lit('c'))
+    val expected = lit('a') * matching(MatchSet.allow(Diet.one('\t') + ' ' + 'b' + 'c'))
     sameRegex(parse("""a[b\hc]"""), expected)
     sameRegex(parse("""a[b[:blank:]c]"""), expected)
   }
@@ -235,7 +244,7 @@ class ParserTests extends IrrecSuite {
   }
 
   test("regex parsing handles ascii classes") {
-    val expected = lit('a') * (lit('b') | Regex.asciiChar | lit('c'))
+    val expected = lit('a') * Regex.range('\u0000', '\u007F')
     val r = parse("""a[b[:ascii:]c]""")
     sameRegex(r, expected)
   }
@@ -247,7 +256,7 @@ class ParserTests extends IrrecSuite {
   }
 
   test("regex parsing handles alpha classes") {
-    val expected = lit('a') * (lit('b') | Regex.alphaChar | lit('c'))
+    val expected = lit('a') * Regex.alphaChar
     val r = parse("""a[b[:alpha:]c]""")
     sameRegex(r, expected)
   }
@@ -259,7 +268,7 @@ class ParserTests extends IrrecSuite {
   }
 
   test("regex parsing handles alnum classes") {
-    val expected = lit('a') * (lit('b') | Regex.alphaNumericChar | lit('c'))
+    val expected = lit('a') * Regex.alphaNumericChar
     val r = parse("""a[b[:alnum:]c]""")
     sameRegex(r, expected)
   }
@@ -271,7 +280,8 @@ class ParserTests extends IrrecSuite {
   }
 
   test("regex parsing handles characters that can only be unescaped inside character classes") {
-    val expected = lit('a') * Regex.oneOf('*', '[', '<', '(', '{', '|')
+    val expected = lit('a') * Regex.matching(
+      MatchSet.allow(Diet.one('*') + '[' + '<' + '(' + '{' + '|'))
     val r = parse("""a[*[<({|]""")
     sameRegex(r, expected)
   }
@@ -280,6 +290,12 @@ class ParserTests extends IrrecSuite {
     "regex parsing handles characters that can only be unescaped inside character classes in negative classes") {
     val expected = lit('a') * Regex.noneOf('*', '[', '<', '(', '{', '|')
     val r = parse("""a[^*[<({|]""")
+    sameRegex(r, expected)
+  }
+
+  test("regex parsing handles character class intersection") {
+    val expected = lit('a') * Regex.matching(MatchSet.allow(Diet.one('a') + 'b') intersect MatchSet.forbid(Diet.one('b')))
+    val r = parse("""a[[ab]&&[^b]]""")
     sameRegex(r, expected)
   }
 

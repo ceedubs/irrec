@@ -44,8 +44,9 @@ object RegexMatchGen {
     discreteA: Discrete[A]): Match[A] => Gen[A] = _ match {
     case Match.Literal(expected) => Gen.const(expected)
     case Match.Wildcard() => dietToGen(available)
-    case Match.MatchSet(diet) => dietToGen(diet)
-    case Match.NegatedMatchSet(diet) => dietToGen(available -- diet)
+    case Match.MatchSet(pos, neg) =>
+      val allowed = pos.getOrElse(available)
+      dietToGen(allowed -- neg)
   }
 
   // TODO ceedus this is the main generator. Need to make it easier to figure out what's what.
