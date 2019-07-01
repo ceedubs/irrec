@@ -20,11 +20,13 @@ object RegexShrink {
   }
 
   // TODO ceedubs do we actually want to use the Shrink[A]?
-  def shrinkMatch[A](implicit discreteA: Discrete[A], orderA: Order[A], shrinkA: Shrink[A]): Match[A] => Stream[Match[A]] = {
+  // TODO ceedubs clean up commented out code
+  def shrinkMatch[A](implicit shrinkA: Shrink[A]): Match[A] => Stream[Match[A]] = {
     case Match.Literal(expected) => shrinkA.shrink(expected).map(Match.Literal(_))
     case Match.Wildcard() => Stream.empty
-    case Match.MatchSet(d) => shrinkDiet(d).filterNot(_.isEmpty).map(Match.MatchSet(_))
-    case Match.NegatedMatchSet(d) => shrinkDiet(d).filterNot(_.isEmpty).map(Match.NegatedMatchSet(_))
+    //case Match.MatchSet(d) => shrinkDiet(d).filterNot(_.isEmpty).map(Match.MatchSet(_))
+    case Match.MatchSet(_, _) => Stream.empty // TODO ceedubs implement
+    //case Match.NegatedMatchSet(d) => shrinkDiet(d).filterNot(_.isEmpty).map(Match.NegatedMatchSet(_))
   }
 
   def shrinkDiet[A:Discrete:Order](diet: Diet[A]): Stream[Diet[A]] = {

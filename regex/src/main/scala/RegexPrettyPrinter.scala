@@ -55,6 +55,7 @@ object RegexPrettyPrinter {
         (lit, "\\" + special)
     }
 
+  // TODO ceedubs should output \r in a way that doesn't cause newlines
   def showChar(inCharacterClass: Boolean): Char => String =
     if (inCharacterClass) c => charClassCharToEscapedChar.get(c).getOrElse(c.toString)
     else c => nonCharClassCharToEscapedChar.get(c).getOrElse(c.toString)
@@ -87,17 +88,25 @@ object RegexPrettyPrinter {
     import Match._
     _ match {
       case Literal(a) => f(false, a)
-      // TODO ceedubs clean up duplicate code
-      case MatchSet(d) =>
-        d.foldLeftRange("["){ case (s, cats.collections.Range(l, h)) =>
-          val current = if (l === h) f(true, l) else s"${f(true, l)}-${f(true, h)}"
-          s + current
-        } + "]"
-      case NegatedMatchSet(d) =>
-        d.foldLeftRange("[^"){ case (s, cats.collections.Range(l, h)) =>
-          val current = if (l === h) f(true, l) else s"${f(true, l)}-${f(true, h)}"
-          s + current
-        } + "]"
+      // TODO ceedubs do better and clean up
+      case MatchSet(pos, neg) =>
+        val posString = pos.filterNot(_.isEmpty).map(d => 
+          d.foldLeftRange("["){ case (s, cats.collections.Range(l, h)) =>
+            val current = if (l === h) f(true, l) else s"${f(true, l)}-${f(true, h)}"
+            s + current
+          } + "]")
+        val negString = if (neg.isEmpty) None else Some(
+          neg.foldLeftRange("[^"){ case (s, cats.collections.Range(l, h)) =>
+            val current = if (l === h) f(true, l) else s"${f(true, l)}-${f(true, h)}"
+            s + current
+          } + "]")
+        (posString, negString) match {
+          case (Some(p), Some(n)) => s"[$p&&$n]"
+          case (Some(p), None) => p
+          case (None, Some(n)) => n
+          // TODO ceedubs
+          case (None, None) => throw new IllegalStateException("both pos and neg are empty")
+        }
       case Match.Wildcard() => "."
     }
   }

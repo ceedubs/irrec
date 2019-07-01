@@ -12,8 +12,8 @@ import fastparse._, NoWhitespace._
 import ceedubs.irrec.regex.Match
 import ceedubs.irrec.regex.Regex
 import ceedubs.irrec.regex._
-import qq.droste.data.Coattr
-import cats.collections.Diet
+import cats.collections.{Diet, Range}
+import ceedubs.irrec.regex.Match.MatchSet
 
 object Parser {
   sealed abstract class RepeatCount extends Product with Serializable {
@@ -46,24 +46,27 @@ object Parser {
    * A shorthand class such as `\d` or `\w`. This parser itself doesn't look for the `\`; it starts
    * with the character after it.
    */
-  def shorthandClass[_: P]: P[Regex[Char]] =
+  def shorthandClass[_: P]: P[Match.MatchSet[Char]] =
     (
-      P("d").map(_ => Regex.digit) |
-        P("D").map(_ => Regex.nonDigit) |
-        P("w").map(_ => Regex.wordChar) |
-        P("W").map(_ => Regex.nonWordChar) |
-        P("h").map(_ => Regex.horizontalWhitespaceChar) |
-        P("H").map(_ => Regex.nonHorizontalWhitespaceChar) |
-        P("s").map(_ => Regex.whitespaceChar) |
-        P("S").map(_ => Regex.nonWhitespaceChar)
+      P("d").map(_ => MatchSet.allow(CharacterClasses.digit)) |
+        P("D").map(_ => MatchSet.forbid(CharacterClasses.digit)) |
+        P("w").map(_ => MatchSet.allow(CharacterClasses.wordChar)) |
+        P("W").map(_ => MatchSet.forbid(CharacterClasses.wordChar)) |
+        P("h").map(_ => MatchSet.allow(CharacterClasses.horizontalWhitespaceChar)) |
+        P("H").map(_ => MatchSet.forbid(CharacterClasses.horizontalWhitespaceChar)) |
+        P("s").map(_ => MatchSet.allow(CharacterClasses.whitespaceChar)) |
+        P("S").map(_ => MatchSet.forbid(CharacterClasses.whitespaceChar))
     ).opaque("""character class such as \w, \d, \s, \S, etc""")
 
-  // TODO ceedubs don't we have negated versions of these?
-  def negatedShorthandClass[_: P]: P[Match.NegatedMatchSet[Char]] =
-    P("d").map(_ => CharacterClasses.digitMatch.negate) |
-      P("w").map(_ => CharacterClasses.wordCharMatches.negate) |
-      P("s").map(_ => CharacterClasses.whitespaceCharMatches.negate) |
-      P("h").map(_ => CharacterClasses.horizontalWhitespaceCharMatches.negate)
+  def negatedShorthandClass[_: P]: P[Match.MatchSet[Char]] =
+    P("d").map(_ => MatchSet.forbid(CharacterClasses.digit)) |
+    P("D").map(_ => MatchSet.allow(CharacterClasses.digit)) |
+      P("w").map(_ => MatchSet.forbid(CharacterClasses.wordChar)) |
+      P("W").map(_ => MatchSet.allow(CharacterClasses.wordChar)) |
+      P("h").map(_ => MatchSet.forbid(CharacterClasses.horizontalWhitespaceChar)) |
+      P("H").map(_ => MatchSet.allow(CharacterClasses.horizontalWhitespaceChar)) |
+      P("s").map(_ => MatchSet.forbid(CharacterClasses.whitespaceChar)) |
+      P("S").map(_ => MatchSet.allow(CharacterClasses.whitespaceChar))
 
   /**
    * Standard characters to match like `a` or `%`.
@@ -111,35 +114,32 @@ object Parser {
   /**
    * Character range like `a-z`.
    */
-  def matchCharRange[_: P]: P[Match.MatchSet[Char]] = P(
+  def matchCharRange[_: P]: P[Range[Char]] = P(
     (singleLitCharClassChar ~ "-" ~/ singleLitCharClassChar).map {
-      case (l, h) =>
-        // TODO ceedubs import Match at the top-level scope?
-        Match.MatchSet.range(l, h)
+      case (l, h) => Range(l, h)
     }
   )
 
-  def negatedCharOrRange[_: P]: P[Match.NegatedMatchSet[Char]] =
-    (matchCharRange.map(_.negate) | singleLitCharClassChar.map(c => Match.MatchSet.one(c).negate))
+  def negatedCharOrRange[_: P]: P[Match.MatchSet[Char]] =
+    (matchCharRange.map(r => MatchSet.forbid(Diet.fromRange(r))) | singleLitCharClassChar.map(c => MatchSet.forbid(Diet.one(c))))
 
-  // TODO ceedubs we really don't have any need for these any more, do we?
-  def negatedPOSIXClass[_: P]: P[Match.NegatedMatchSet[Char]] =
-    P("alnum").map(_ => CharacterClasses.nonAlphaNumericMatches) |
-      P("alpha").map(_ => CharacterClasses.nonAlphaMatches) |
-      P("ascii").map(_ => CharacterClasses.nonAsciiMatch) |
-      P("blank").map(_ => CharacterClasses.nonHorizontalWhitespaceCharMatches) |
-      P("cntrl").map(_ => CharacterClasses.nonControlCharMatches) |
-      P("digit").map(_ => CharacterClasses.nonDigitMatch) |
-      P("graph").map(_ => CharacterClasses.nonGraphCharMatch) |
-      P("lower").map(_ => CharacterClasses.nonLowerAlphaMatch) |
-      P("print").map(_ => CharacterClasses.nonPrintableCharMatch) |
-      P("punct").map(_ => CharacterClasses.nonPunctuationCharMatches) |
-      P("space").map(_ => CharacterClasses.nonWhitespaceCharMatches) |
-      P("upper").map(_ => CharacterClasses.nonUpperAlphaMatch) |
-      P("word").map(_ => CharacterClasses.nonWordCharMatches) |
-      P("xdigit").map(_ => CharacterClasses.nonHexDigitMatches)
+  def negatedPOSIXClass[_: P]: P[MatchSet[Char]] =
+    P("alnum").map(_ => MatchSet.forbid(CharacterClasses.alphaNumeric)) |
+      P("alpha").map(_ => MatchSet.forbid(CharacterClasses.alpha)) |
+      P("ascii").map(_ => MatchSet.forbid(CharacterClasses.ascii)) |
+      P("blank").map(_ => MatchSet.forbid(CharacterClasses.horizontalWhitespaceChar)) |
+      P("cntrl").map(_ => MatchSet.forbid(CharacterClasses.controlChar)) |
+      P("digit").map(_ => MatchSet.forbid(CharacterClasses.digit)) |
+      P("graph").map(_ => MatchSet.forbid(CharacterClasses.graphChar)) |
+      P("lower").map(_ => MatchSet.forbid(CharacterClasses.lowerAlpha)) |
+      P("print").map(_ => MatchSet.forbid(CharacterClasses.printableChar)) |
+      P("punct").map(_ => MatchSet.forbid(CharacterClasses.punctuationChar)) |
+      P("space").map(_ => MatchSet.forbid(CharacterClasses.whitespaceChar)) |
+      P("upper").map(_ => MatchSet.forbid(CharacterClasses.upperAlpha)) |
+      P("word").map(_ => MatchSet.forbid(CharacterClasses.wordChar)) |
+      P("xdigit").map(_ => MatchSet.forbid(CharacterClasses.hexDigit))
 
-  def negatedCharClassContent[_: P]: P[Match.NegatedMatchSet[Char]] =
+  def negatedCharClassContent[_: P]: P[MatchSet[Char]] =
     (
       ("\\" ~ negatedShorthandClass) |
         ("[:" ~/ negatedPOSIXClass ~ ":]") |
@@ -147,50 +147,55 @@ object Parser {
     ).opaque(
         """literal character to match (ex: 'a'), escaped special character literal (ex: '\*'), a shorthand class (ex: '\w'), or a POSIX class (ex: '[:alpha:]')""")
       .rep(1)
-      .map{ negatedSets =>
-        val diet = negatedSets.foldLeft(Diet.empty[Char])(_ | _.diet)
-        Match.NegatedMatchSet(diet)
-      }
+      .map(_.reduceLeftOption(_ intersect _).get) // .get is safe because of .rep(1) but is gross
 
-  def positivePOSIXCharClass[_: P]: P[Regex[Char]] =
-    P("alnum").map(_ => Regex.alphaNumericChar) |
-      P("alpha").map(_ => Regex.alphaChar) |
-      P("ascii").map(_ => Regex.asciiChar) |
-      P("blank").map(_ => Regex.horizontalWhitespaceChar) |
-      P("cntrl").map(_ => Regex.controlChar) |
-      P("digit").map(_ => Regex.digit) |
-      P("graph").map(_ => Regex.graphChar) |
-      P("lower").map(_ => Regex.lowerAlphaChar) |
-      P("print").map(_ => Regex.printableChar) |
-      P("punct").map(_ => Regex.punctuationChar) |
-      P("space").map(_ => Regex.whitespaceChar) |
-      P("upper").map(_ => Regex.upperAlphaChar) |
-      P("word").map(_ => Regex.wordChar) |
-      P("xdigit").map(_ => Regex.hexDigitChar)
+  def positivePOSIXCharClass[_: P]: P[MatchSet[Char]] =
+    P("alnum").map(_ => MatchSet.allow(CharacterClasses.alphaNumeric)) |
+      P("alpha").map(_ => MatchSet.allow(CharacterClasses.alpha)) |
+      P("ascii").map(_ => MatchSet.allow(CharacterClasses.ascii)) |
+      P("blank").map(_ => MatchSet.allow(CharacterClasses.horizontalWhitespaceChar)) |
+      P("cntrl").map(_ => MatchSet.allow(CharacterClasses.controlChar)) |
+      P("digit").map(_ => MatchSet.allow(CharacterClasses.digit)) |
+      P("graph").map(_ => MatchSet.allow(CharacterClasses.graphChar)) |
+      P("lower").map(_ => MatchSet.allow(CharacterClasses.lowerAlpha)) |
+      P("print").map(_ => MatchSet.allow(CharacterClasses.printableChar)) |
+      P("punct").map(_ => MatchSet.allow(CharacterClasses.punctuationChar)) |
+      P("space").map(_ => MatchSet.allow(CharacterClasses.whitespaceChar)) |
+      P("upper").map(_ => MatchSet.allow(CharacterClasses.upperAlpha)) |
+      P("word").map(_ => MatchSet.allow(CharacterClasses.wordChar)) |
+      P("xdigit").map(_ => MatchSet.allow(CharacterClasses.hexDigit))
 
-  def positiveCharClassContent[_: P]: P[Regex[Char]] =
+  def positiveCharClassContent[_: P]: P[MatchSet[Char]] =
     (
       ("\\" ~ shorthandClass) |
         ("[:" ~/ positivePOSIXCharClass ~ ":]") |
-        (matchCharRange | matchLitCharClassChar).map(Coattr.pure[KleeneF, Match[Char]](_))
+        (matchCharRange.map(r => MatchSet.allow(Diet.fromRange(r))) | singleLitCharClassChar.map(c => MatchSet.allow(Diet.one(c))))
     ).opaque(
         """literal character to match (ex: 'a'), escaped special character literal (ex: '\*'), a shorthand class (ex: '\w'), or a POSIX class (ex: '[:alpha:]')""")
       .rep(1)
-      .map(matches => Regex.oneOfR(matches.head, matches.tail: _*)) // .head is safe because of .rep(1)
+      .map(_.reduceOption(_ union _).get) // .get is safe because of .rep(1), but this is gross
 
   /**
    * Character classes like `[acz]` or `[^a-cHP-W]`.
    */
-  def charClass[_: P]: P[Regex[Char]] =
+  def charClassTerm[_: P]: P[MatchSet[Char]] =
     P(
-      "[" ~/
-        (("^" ~/ negatedCharClassContent
-          .map(Coattr.pure[KleeneF, Match[Char]](_))) | positiveCharClassContent) ~/
+      "[" ~
+        (("^" ~/ negatedCharClassContent) | positiveCharClassContent) ~/
         "]")
+
+  // TODO ceedubs handle unions
+  // TODO ceedubs I don't know if this is getting precedence right.
+  def compositeCharacterClass[_: P]: P[MatchSet[Char]] = charClassTerm.flatMap{ m =>
+    ("&&" ~/ compositeCharacterClass).map(m2 => m.intersect(m2)) |
+      Pass(m)
+  }
+
+  def charClass[_: P]: P[Regex[Char]] = (("[" ~ compositeCharacterClass ~ "]") | charClassTerm).map(Regex.matching(_))
 
   def base[_: P]: P[Regex[Char]] = P(
     standardMatchChar.map(Regex.lit(_)) |
-      ("\\" ~/ (specialChar.map(Regex.lit(_)) | shorthandClass)) |
+      ("\\" ~/ (specialChar.map(Regex.lit(_)) | shorthandClass.map(Regex.matching(_)))) |
       wildcard |
       charClass |
       ("(" ~/ "?:".? ~ regex ~ ")")

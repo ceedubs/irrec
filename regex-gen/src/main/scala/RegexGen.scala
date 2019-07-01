@@ -9,7 +9,7 @@ import cats.implicits._
 import qq.droste.{scheme, CoalgebraM}
 import qq.droste.data.CoattrF
 import qq.droste.data.prelude._
-import org.scalacheck.{Arbitrary, Gen}, Gen.Choose
+import org.scalacheck.{Arbitrary, Gen}, Gen.Choose, Arbitrary.arbitrary
 
 object RegexGen {
 
@@ -20,6 +20,8 @@ object RegexGen {
   final case class Config[A](
     gen: Gen[A],
     genDiet: Gen[Diet[A]],
+    discreteA: Discrete[A],
+    orderA: Order[A],
     includeZero: Boolean,
     includeOne: Boolean)
 
@@ -41,6 +43,8 @@ object RegexGen {
       Config(
         gen = RegexMatchGen.dietMatchingGen(available),
         genDiet = genNonEmptySubDiet(available),
+        discreteA = implicitly,
+        orderA = implicitly,
         includeZero = false,
         // TODO ceedubs should this be one?
         includeOne = false)
@@ -98,20 +102,37 @@ object RegexGen {
   //def genNonEmptyDiet[A: Order: Discrete](genRange: Gen[Range[A]]): Gen[Diet[A]] =
   //  Gen.nonEmptyListOf(genRange).map(_.foldLeft(Diet.empty[A])(_ addRange _))
 
-  def genMatch[A](genA: Gen[A], genDietA: Gen[Diet[A]]): Gen[Match[A]] =
+  def genMatch[A:Discrete:Order](genA: Gen[A], genDietA: Gen[Diet[A]]): Gen[Match[A]] =
     Gen.frequency(
       9 -> genA.map(Match.lit(_)),
-      3 -> genDietA.map(Match.MatchSet(_)),
-      // TODO ceedubs do we need to do anything to make sure that we don't generate diets with no
-      // matches?
-      2 -> genDietA.map(Match.NegatedMatchSet(_)),
+      // TODO ceedubs should this be better?
+      // clean up
+      // TODO ceedubs don't generate empty matchers
+      3 -> {
+        for {
+          pos <- Gen.option(genDietA)
+          neg <- genDietA
+          op <- arbitrary[Boolean]
+        } yield {
+          val negM = Match.MatchSet.forbid(neg)
+          pos.fold(negM){ pos =>
+            val posM = Match.MatchSet.allow(pos)
+            val attempt = if (op) posM union negM else posM intersect negM
+            // TODO ceedubs this is pretty hacky. Does it work?
+            attempt.positive.fold(negM){ pos =>
+              // TODO ceedubs is posM right here?
+              if ((pos -- neg).isEmpty) posM else attempt
+            }
+          }
+        }
+      },
       1 -> Gen.const(Match.wildcard)
     )
 
   def genRegexCoalgebraM[A](cfg: Config[A]): CoalgebraM[Gen, CoattrF[KleeneF, Match[A], ?], Int] = {
     val leafGen: Gen[CoattrF[KleeneF, Match[A], Int]] =
       Gen.frequency(
-        10 -> genMatch[A](cfg.gen, cfg.genDiet).map(CoattrF.pure),
+        10 -> genMatch[A](cfg.gen, cfg.genDiet)(cfg.discreteA, cfg.orderA).map(CoattrF.pure),
         (if (cfg.includeOne) 2 else 0) -> Gen.const(CoattrF.roll(KleeneF.One)),
         (if (cfg.includeZero) 1 else 0) -> Gen.const(CoattrF.roll(KleeneF.Zero))
       )
