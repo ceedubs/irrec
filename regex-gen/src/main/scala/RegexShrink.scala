@@ -20,19 +20,16 @@ object RegexShrink {
   }
 
   // TODO ceedubs do we actually want to use the Shrink[A]?
-  // TODO ceedubs clean up commented out code
-  def shrinkMatch[A](implicit shrinkA: Shrink[A]): Match[A] => Stream[Match[A]] = {
+  def shrinkMatch[A: Discrete: Order](implicit shrinkA: Shrink[A]): Match[A] => Stream[Match[A]] = {
     case Match.Literal(expected) => shrinkA.shrink(expected).map(Match.Literal(_))
     case Match.Wildcard() => Stream.empty
-    //case Match.MatchSet(d) => shrinkDiet(d).filterNot(_.isEmpty).map(Match.MatchSet(_))
-    case Match.MatchSet(_, _) => Stream.empty // TODO ceedubs implement
-    //case Match.NegatedMatchSet(d) => shrinkDiet(d).filterNot(_.isEmpty).map(Match.NegatedMatchSet(_))
+    case Match.MatchSet.Allow(allowed) => shrinkDiet(allowed).map(Match.MatchSet.allow(_))
+    case Match.MatchSet.Forbid(forbidden) => shrinkDiet(forbidden).map(Match.MatchSet.forbid(_))
   }
 
-  def shrinkDiet[A:Discrete:Order](diet: Diet[A]): Stream[Diet[A]] = {
+  def shrinkDiet[A: Discrete: Order](diet: Diet[A]): Stream[Diet[A]] = {
     implicit val rangeShrink: Shrink[Range[A]] = Shrink(shrinkRange(_))
-    Shrink.shrink(dietRangeList(diet)).map(ranges =>
-      ranges.foldMap(Diet.fromRange _))
+    Shrink.shrink(dietRangeList(diet)).map(ranges => ranges.foldMap(Diet.fromRange _))
   }
 
   // TODO ceedubs add something to cats collections so we don't need this.
@@ -45,23 +42,24 @@ object RegexShrink {
       .iterate(discreteA.pred(range.end))(e => discreteA.pred(e)) // decrease end
       .takeWhile(_ >= range.start)
       .map(e => Range(range.start, e)) append
-    Stream
-      .iterate(discreteA.succ(range.start))(s => discreteA.succ(s)) // increase start
-      .takeWhile(_ <= range.end)
-      .map(s => Range(s, range.end))
+      Stream
+        .iterate(discreteA.succ(range.start))(s => discreteA.succ(s)) // increase start
+        .takeWhile(_ <= range.end)
+        .map(s => Range(s, range.end))
 
-  def shrinkRegexCoattrF[A:Discrete:Order:Shrink]: CoattrF[KleeneF, Match[A], Regex[A]] => Stream[Regex[A]] =
+  def shrinkRegexCoattrF[A: Discrete: Order: Shrink]
+    : CoattrF[KleeneF, Match[A], Regex[A]] => Stream[Regex[A]] =
     CoattrF.un(_) match {
       case Left(ma) => shrinkMatch[A].apply(ma).map(Coattr.pure[KleeneF, Match[A]](_))
       case Right(kf) => shrinkKleeneF(kf)
     }
 
-  def shrinkRegexCoattrFAlgebra[A:Discrete:Order:Shrink]
+  def shrinkRegexCoattrFAlgebra[A: Discrete: Order: Shrink]
     : AlgebraM[Stream, CoattrF[KleeneF, Match[A], ?], Regex[A]] = AlgebraM(shrinkRegexCoattrF[A])
 
-    // TODO ceedubs we have an issue where if the left side returns an empty Stream upon shrinking,
-    // then we flatMap and never include the right.
-  def shrinkRegex[A:Discrete:Order:Shrink]: Regex[A] => Stream[Regex[A]] =
+  // TODO ceedubs we have an issue where if the left side returns an empty Stream upon shrinking,
+  // then we flatMap and never include the right.
+  def shrinkRegex[A: Discrete: Order: Shrink]: Regex[A] => Stream[Regex[A]] =
     scheme.cataM(shrinkRegexCoattrFAlgebra[A])
 
   /**
@@ -74,5 +72,5 @@ object RegexShrink {
    * implicit val shrinkForCharRegex: Shrink[Regex[Char]] = RegexShrink.shrinkForRegex`
    * }}}
    */
-  def shrinkForRegex[A:Discrete:Order:Shrink]: Shrink[Regex[A]] = Shrink(shrinkRegex[A])
+  def shrinkForRegex[A: Discrete: Order: Shrink]: Shrink[Regex[A]] = Shrink(shrinkRegex[A])
 }

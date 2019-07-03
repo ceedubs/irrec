@@ -30,7 +30,6 @@ object Regex {
 
   def notInSet[A](forbidden: Diet[A]): Regex[A] = matching(MatchSet.forbid(forbidden))
 
-  // TODO ceedubs should this create a MatchSet? It would add a Discrete and Order requirement
   def oneOf[A](a1: A, as: A*): Regex[A] = as.foldLeft(lit(a1))((acc, a) => or(acc, lit(a)))
 
   def oneOfR[A](r1: Kleene[A], rs: Kleene[A]*): Kleene[A] = rs.foldLeft(r1)((acc, r) => or(acc, r))

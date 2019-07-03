@@ -9,7 +9,8 @@ sealed abstract class Match[A] extends Product with Serializable {
 
   def matches(a: A)(implicit orderA: Order[A]): Boolean = this match {
     case Literal(expected) => a === expected
-    case MatchSet(pos, neg) => pos.forall(_.contains(a)) && !neg.contains(a)
+    case MatchSet.Allow(allowed) => allowed.contains(a)
+    case MatchSet.Forbid(forbidden) => !forbidden.contains(a)
     case Wildcard() => true
   }
 }
@@ -18,48 +19,39 @@ object Match {
 
   final case class Literal[A](value: A) extends Match[A]
 
-  final case class MatchSet[A] private(positive: Option[Diet[A]], negative: Diet[A]) extends Match[A] {
+  sealed abstract class MatchSet[A] extends Match[A] {
+    import MatchSet._
 
-    def union(other: MatchSet[A])(implicit discreteA: Discrete[A], orderA: Order[A]): MatchSet[A] = {
-      // TODO ceedubs is this right? Document.
-      val newPositive = (this.positive, other.positive) match {
-        case (None, _) => None
-        case (_, None) => None
-        case (Some(l), Some(r)) => Some(l | r)
+    def union(other: MatchSet[A])(implicit discreteA: Discrete[A], orderA: Order[A]): MatchSet[A] =
+      (this, other) match {
+        case (Allow(x), Allow(y)) => Allow(x | y)
+        case (Allow(x), Forbid(y)) => Forbid(y -- x)
+        case (Forbid(x), Allow(y)) => Forbid(x -- y)
+        case (Forbid(x), Forbid(y)) => Forbid(x & y)
       }
-      val negativeIntersection = this.negative & other.negative
-      MatchSet(
-      positive = newPositive,
-      negative = newPositive.fold(negativeIntersection)(negativeIntersection -- _))
-    }
 
-    def intersect(other: MatchSet[A])(implicit discreteA: Discrete[A], orderA: Order[A]): MatchSet[A] = {
-      MatchSet(
-      // TODO ceedubs do I need to subtract newNegative?
-      positive = (this.positive, other.positive) match {
-        case (None, r) => r
-        case (l, None) => l
-        case (Some(l), Some(r)) => Some(l & r)
-      },
-      negative = this.negative | other.negative)
-    }
+    def intersect(
+      other: MatchSet[A])(implicit discreteA: Discrete[A], orderA: Order[A]): MatchSet[A] =
+      (this, other) match {
+        case (Allow(x), Allow(y)) => Allow(x & y)
+        case (Allow(x), Forbid(y)) => Allow(x -- y)
+        case (Forbid(x), Allow(y)) => Allow(y -- x)
+        case (Forbid(x), Forbid(y)) => Forbid(x | y)
+      }
 
-    // TODO ceedubs remove?
-    // TODO ceedubs is this right?
-    // I think that this works on "primitive" match sets (one side is empty), but I don't know about complex ones
-    def negate: MatchSet[A] = MatchSet[A](
-      positive = if (negative.isEmpty) None else Some(negative),
-      negative = positive.getOrElse(Diet.empty))
+    def negate: MatchSet[A] = this match {
+      case Allow(x) => Forbid(x)
+      case Forbid(x) => Allow(x)
+    }
   }
 
-  // TODO ceedubs more helpful constructor methods
   object MatchSet {
-    // overriding so it is private
-    private def apply[A](positive: Option[Diet[A]], negative: Diet[A]): MatchSet[A] = new MatchSet(positive, negative)
+    final case class Allow[A](allowed: Diet[A]) extends MatchSet[A]
+    final case class Forbid[A](forbidden: Diet[A]) extends MatchSet[A]
 
-    def allow[A](allowed: Diet[A]): MatchSet[A] = MatchSet(Some(allowed), Diet.empty)
+    def allow[A](allowed: Diet[A]): MatchSet[A] = Allow(allowed)
 
-    def forbid[A](forbidden: Diet[A]): MatchSet[A] = MatchSet(None, forbidden)
+    def forbid[A](forbidden: Diet[A]): MatchSet[A] = Forbid(forbidden)
   }
 
   sealed case class Wildcard[A]() extends Match[A]
