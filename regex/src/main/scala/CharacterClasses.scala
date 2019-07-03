@@ -39,10 +39,10 @@ object CharacterClasses {
 
   val printableChar: Diet[Char] = Diet.fromRange(Range('\u0020', '\u007E'))
 
-  // TODO ceedubs remove the "matches" suffix from a lot of these names?
   val punctuationChar: Diet[Char] =
-    Diet.fromRange(Range('\u0021', '\u002F'))
-    .addRange(Range('\u003A', '\u0040'))
-    .addRange(Range('\u005B', '\u0060'))
-    .addRange(Range('\u007B', '\u007E'))
+    Diet
+      .fromRange(Range('\u0021', '\u002F'))
+      .addRange(Range('\u003A', '\u0040'))
+      .addRange(Range('\u005B', '\u0060'))
+      .addRange(Range('\u007B', '\u007E'))
 }

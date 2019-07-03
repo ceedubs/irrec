@@ -6,6 +6,7 @@ import cats.implicits._
 import qq.droste.{scheme, Algebra, Gather, RAlgebra}
 import qq.droste.data.CoattrF
 import qq.droste.data.prelude._
+import cats.collections.Diet
 
 object RegexPrettyPrinter {
   private val timesPrecedence: Int = 2
@@ -86,27 +87,20 @@ object RegexPrettyPrinter {
    */
   def showMatch[A](f: (Boolean, A) => String)(implicit eqA: Eq[A]): Match[A] => String = {
     import Match._
+
+    def showDiet(diet: Diet[A]): String =
+      diet.foldLeftRange("") {
+        case (s, cats.collections.Range(l, h)) =>
+          val current = if (l === h) f(true, l) else s"${f(true, l)}-${f(true, h)}"
+          s + current
+      }
+
     _ match {
       case Literal(a) => f(false, a)
-      // TODO ceedubs do better and clean up
-      case MatchSet(pos, neg) =>
-        val posString = pos.filterNot(_.isEmpty).map(d => 
-          d.foldLeftRange("["){ case (s, cats.collections.Range(l, h)) =>
-            val current = if (l === h) f(true, l) else s"${f(true, l)}-${f(true, h)}"
-            s + current
-          } + "]")
-        val negString = if (neg.isEmpty) None else Some(
-          neg.foldLeftRange("[^"){ case (s, cats.collections.Range(l, h)) =>
-            val current = if (l === h) f(true, l) else s"${f(true, l)}-${f(true, h)}"
-            s + current
-          } + "]")
-        (posString, negString) match {
-          case (Some(p), Some(n)) => s"[$p&&$n]"
-          case (Some(p), None) => p
-          case (None, Some(n)) => n
-          // TODO ceedubs
-          case (None, None) => throw new IllegalStateException("both pos and neg are empty")
-        }
+      case MatchSet.Allow(allowed) =>
+        if (allowed.isEmpty) pprintKleene(KleeneF.Zero) else s"[${showDiet(allowed)}]"
+      case MatchSet.Forbid(forbidden) =>
+        if (forbidden.isEmpty) "." else s"[^${showDiet(forbidden)}]"
       case Match.Wildcard() => "."
     }
   }

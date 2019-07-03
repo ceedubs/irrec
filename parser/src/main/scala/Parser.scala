@@ -60,7 +60,7 @@ object Parser {
 
   def negatedShorthandClass[_: P]: P[Match.MatchSet[Char]] =
     P("d").map(_ => MatchSet.forbid(CharacterClasses.digit)) |
-    P("D").map(_ => MatchSet.allow(CharacterClasses.digit)) |
+      P("D").map(_ => MatchSet.allow(CharacterClasses.digit)) |
       P("w").map(_ => MatchSet.forbid(CharacterClasses.wordChar)) |
       P("W").map(_ => MatchSet.allow(CharacterClasses.wordChar)) |
       P("h").map(_ => MatchSet.forbid(CharacterClasses.horizontalWhitespaceChar)) |
@@ -121,7 +121,8 @@ object Parser {
   )
 
   def negatedCharOrRange[_: P]: P[Match.MatchSet[Char]] =
-    (matchCharRange.map(r => MatchSet.forbid(Diet.fromRange(r))) | singleLitCharClassChar.map(c => MatchSet.forbid(Diet.one(c))))
+    (matchCharRange.map(r => MatchSet.forbid(Diet.fromRange(r))) | singleLitCharClassChar.map(c =>
+      MatchSet.forbid(Diet.one(c))))
 
   def negatedPOSIXClass[_: P]: P[MatchSet[Char]] =
     P("alnum").map(_ => MatchSet.forbid(CharacterClasses.alphaNumeric)) |
@@ -169,9 +170,9 @@ object Parser {
     (
       ("\\" ~ shorthandClass) |
         ("[:" ~/ positivePOSIXCharClass ~ ":]") |
-        (matchCharRange.map(r => MatchSet.allow(Diet.fromRange(r))) | singleLitCharClassChar.map(c => MatchSet.allow(Diet.one(c))))
-    ).opaque(
-        """literal character to match (ex: 'a'), escaped special character literal (ex: '\*'), a shorthand class (ex: '\w'), or a POSIX class (ex: '[:alpha:]')""")
+        (matchCharRange.map(r => MatchSet.allow(Diet.fromRange(r))) | singleLitCharClassChar.map(
+          c => MatchSet.allow(Diet.one(c))))
+    ).opaque("""literal character to match (ex: 'a'), escaped special character literal (ex: '\*'), a shorthand class (ex: '\w'), or a POSIX class (ex: '[:alpha:]')""")
       .rep(1)
       .map(_.reduceOption(_ union _).get) // .get is safe because of .rep(1), but this is gross
 
@@ -184,14 +185,8 @@ object Parser {
         (("^" ~/ negatedCharClassContent) | positiveCharClassContent) ~/
         "]")
 
-  // TODO ceedubs handle unions
-  // TODO ceedubs I don't know if this is getting precedence right.
-  def compositeCharacterClass[_: P]: P[MatchSet[Char]] = charClassTerm.flatMap{ m =>
-    ("&&" ~/ compositeCharacterClass).map(m2 => m.intersect(m2)) |
-      Pass(m)
-  }
-
-  def charClass[_: P]: P[Regex[Char]] = (("[" ~ compositeCharacterClass ~ "]") | charClassTerm).map(Regex.matching(_))
+  def charClass[_: P]: P[Regex[Char]] =
+    charClassTerm.map(Regex.matching(_))
 
   def base[_: P]: P[Regex[Char]] = P(
     standardMatchChar.map(Regex.lit(_)) |
