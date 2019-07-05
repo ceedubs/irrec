@@ -33,7 +33,7 @@ class MatchTests extends IrrecSuite {
   }
 
   test("allow(x) intersect forbid(x) shouldn't allow anything") {
-    forAll(charDietGen, arbitrary[Char]){ (x, y) =>
+    forAll(charDietGen, arbitrary[Char]) { (x, y) =>
       val pos = MatchSet.allow(x)
       val neg = MatchSet.forbid(x)
 

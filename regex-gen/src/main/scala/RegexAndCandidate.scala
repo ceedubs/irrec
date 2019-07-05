@@ -12,13 +12,16 @@ object RegexAndCandidate {
    * expression. The other half will be random streams which _could_ match the expression but are
    * unlikely to.
    *
-   * @see also [[genMatchingStream]].
+   * @see also [[genRegexAndMatch]].
    */
   def genCandidateStream[A](matchToGen: Match[A] => Gen[A]): Regex[A] => Gen[Stream[A]] = {
     val matching = RegexMatchGen.regexMatchingStreamGen(matchToGen)
     r => Gen.oneOf(matching(r), Gen.containerOf[Stream, A](matchToGen(Match.wildcard)))
   }
 
+  /**
+   * Generate a regular expression and a stream that matches the regular expression.
+   */
   def genRegexAndMatch[A](
     cfg: RegexGen.Config[A],
     matchToGen: Match[A] => Gen[A]): Gen[RegexAndCandidate[A]] =
