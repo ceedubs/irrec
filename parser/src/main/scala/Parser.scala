@@ -58,16 +58,6 @@ object Parser {
         P("S").map(_ => MatchSet.forbid(CharacterClasses.whitespaceChar))
     ).opaque("""character class such as \w, \d, \s, \S, etc""")
 
-  def negatedShorthandClass[_: P]: P[Match.MatchSet[Char]] =
-    P("d").map(_ => MatchSet.forbid(CharacterClasses.digit)) |
-      P("D").map(_ => MatchSet.allow(CharacterClasses.digit)) |
-      P("w").map(_ => MatchSet.forbid(CharacterClasses.wordChar)) |
-      P("W").map(_ => MatchSet.allow(CharacterClasses.wordChar)) |
-      P("h").map(_ => MatchSet.forbid(CharacterClasses.horizontalWhitespaceChar)) |
-      P("H").map(_ => MatchSet.allow(CharacterClasses.horizontalWhitespaceChar)) |
-      P("s").map(_ => MatchSet.forbid(CharacterClasses.whitespaceChar)) |
-      P("S").map(_ => MatchSet.allow(CharacterClasses.whitespaceChar))
-
   /**
    * Standard characters to match like `a` or `%`.
    */
@@ -120,35 +110,9 @@ object Parser {
     }
   )
 
-  def negatedCharOrRange[_: P]: P[Match.MatchSet[Char]] =
-    (matchCharRange.map(r => MatchSet.forbid(Diet.fromRange(r))) | singleLitCharClassChar.map(c =>
-      MatchSet.forbid(Diet.one(c))))
-
-  def negatedPOSIXClass[_: P]: P[MatchSet[Char]] =
-    P("alnum").map(_ => MatchSet.forbid(CharacterClasses.alphaNumeric)) |
-      P("alpha").map(_ => MatchSet.forbid(CharacterClasses.alpha)) |
-      P("ascii").map(_ => MatchSet.forbid(CharacterClasses.ascii)) |
-      P("blank").map(_ => MatchSet.forbid(CharacterClasses.horizontalWhitespaceChar)) |
-      P("cntrl").map(_ => MatchSet.forbid(CharacterClasses.controlChar)) |
-      P("digit").map(_ => MatchSet.forbid(CharacterClasses.digit)) |
-      P("graph").map(_ => MatchSet.forbid(CharacterClasses.graphChar)) |
-      P("lower").map(_ => MatchSet.forbid(CharacterClasses.lowerAlpha)) |
-      P("print").map(_ => MatchSet.forbid(CharacterClasses.printableChar)) |
-      P("punct").map(_ => MatchSet.forbid(CharacterClasses.punctuationChar)) |
-      P("space").map(_ => MatchSet.forbid(CharacterClasses.whitespaceChar)) |
-      P("upper").map(_ => MatchSet.forbid(CharacterClasses.upperAlpha)) |
-      P("word").map(_ => MatchSet.forbid(CharacterClasses.wordChar)) |
-      P("xdigit").map(_ => MatchSet.forbid(CharacterClasses.hexDigit))
-
-  def negatedCharClassContent[_: P]: P[MatchSet[Char]] =
-    (
-      ("\\" ~ negatedShorthandClass) |
-        ("[:" ~/ negatedPOSIXClass ~ ":]") |
-        negatedCharOrRange
-    ).opaque(
-        """literal character to match (ex: 'a'), escaped special character literal (ex: '\*'), a shorthand class (ex: '\w'), or a POSIX class (ex: '[:alpha:]')""")
-      .rep(1)
-      .map(_.reduceLeftOption(_ intersect _).get) // .get is safe because of .rep(1) but is gross
+  def charOrRange[_: P]: P[Match.MatchSet[Char]] =
+    matchCharRange.map(r => MatchSet.allow(Diet.fromRange(r))) |
+      singleLitCharClassChar.map(c => MatchSet.allow(Diet.one(c)))
 
   def positivePOSIXCharClass[_: P]: P[MatchSet[Char]] =
     P("alnum").map(_ => MatchSet.allow(CharacterClasses.alphaNumeric)) |
@@ -170,9 +134,9 @@ object Parser {
     (
       ("\\" ~ shorthandClass) |
         ("[:" ~/ positivePOSIXCharClass ~ ":]") |
-        (matchCharRange.map(r => MatchSet.allow(Diet.fromRange(r))) | singleLitCharClassChar.map(
-          c => MatchSet.allow(Diet.one(c))))
-    ).opaque("""literal character to match (ex: 'a'), escaped special character literal (ex: '\*'), a shorthand class (ex: '\w'), or a POSIX class (ex: '[:alpha:]')""")
+        charOrRange
+    ).opaque(
+        """literal character to match (ex: 'a'), escaped special character literal (ex: '\*'), a shorthand class (ex: '\w'), or a POSIX class (ex: '[:alpha:]')""")
       .rep(1)
       .map(_.reduceOption(_ union _).get) // .get is safe because of .rep(1), but this is gross
 
@@ -182,7 +146,7 @@ object Parser {
   def charClassTerm[_: P]: P[MatchSet[Char]] =
     P(
       "[" ~
-        (("^" ~/ negatedCharClassContent) | positiveCharClassContent) ~/
+        (("^" ~/ positiveCharClassContent.map(_.negate)) | positiveCharClassContent) ~/
         "]")
 
   def charClass[_: P]: P[Regex[Char]] =
