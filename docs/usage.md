@@ -94,12 +94,12 @@ animalLit.toPattern
 Irrec provides support for creating [Scalacheck](https://www.scalacheck.org/) generators that produce values that match a regular expression. This generation is done efficiently as opposed to generating a bunch of random values and then filtering the ones that don't match the regular expression (which would quickly lead to Scalacheck giving up on generating matching values).
 
 ```scala mdoc:silent
-import ceedubs.irrec.regex.RegexGen._
+import ceedubs.irrec.regex.CharRegexGen._
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.rng.Seed
 
-val phraseGen: Gen[String] = regexMatchingStringGen(arbitrary[Char])(animalPhrase)
+val phraseGen: Gen[String] = regexMatchingStringGen(animalPhrase)
 ```
 
 ```scala mdoc

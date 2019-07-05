@@ -37,10 +37,9 @@ object DietGen {
       a2 <- genA
     } yield if (orderingA.lt(a1, a2)) Range(a1, a2) else Range(a2, a1)
 
-  def genDiscreteDiet[A:Discrete:Order](genA: Gen[A]): Gen[Diet[A]] = {
+  def genDiscreteDiet[A: Discrete: Order](genA: Gen[A]): Gen[Diet[A]] =
     for {
       ranges <- Gen.listOf(genRange(genA))
       individualValues <- Gen.listOf(genA)
     } yield ranges.foldMap(Diet.fromRange) ++ individualValues.foldMap(Diet.one)
-  }
 }

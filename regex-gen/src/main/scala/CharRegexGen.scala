@@ -18,13 +18,13 @@ object CharRegexGen {
   val supportedCharacters: Diet[Char] =
     Diet.fromRange(Range('\u0000', '\uD7FF')).addRange(Range('\uF900', '\uFFFD'))
 
-  def regexMatchingStringGen(available: Diet[Char]): Regex[Char] => Gen[String] = {
+  def regexMatchingStringGenFromDiet(available: Diet[Char]): Regex[Char] => Gen[String] = {
     val streamGen = RegexMatchGen.dietRegexMatchingStreamGen(available)
     r => streamGen(r).map(_.mkString)
   }
 
-  val regexMatchingStandardStringGen: Regex[Char] => Gen[String] =
-    regexMatchingStringGen(supportedCharacters)
+  val regexMatchingStringGen: Regex[Char] => Gen[String] =
+    regexMatchingStringGenFromDiet(supportedCharacters)
 
   val standardCharRegexGenConfig: RegexGen.Config[Char] =
     RegexGen.Config
@@ -34,6 +34,16 @@ object CharRegexGen {
 
   val genAlphaNumCharRegex: Gen[Regex[Char]] =
     RegexGen.genRegex(RegexGen.Config.fromDiscreteDiet(CharacterClasses.alphaNumeric))
+
+  val genAlphaNumCharRegexAndMatch: Gen[RegexAndCandidate[Char]] =
+    RegexAndCandidate.genRegexAndMatch(
+      RegexGen.Config.fromDiscreteDiet(CharacterClasses.alphaNumeric),
+      RegexMatchGen.dietMatchToGen[Char](CharacterClasses.alphaNumeric, dietMatchingGen(_)))
+
+  val genAlphaNumCharRegexAndCandidate: Gen[RegexAndCandidate[Char]] =
+    RegexAndCandidate.genRegexAndCandidate(
+      RegexGen.Config.fromDiscreteDiet(CharacterClasses.alphaNumeric),
+      RegexMatchGen.dietMatchToGen[Char](CharacterClasses.alphaNumeric, dietMatchingGen(_)))
 
   val genCharRegexAndMatch: Gen[RegexAndCandidate[Char]] =
     RegexAndCandidate.genRegexAndMatch(
