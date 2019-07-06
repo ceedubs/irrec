@@ -40,8 +40,8 @@ const siteConfig = {
   ],
 
   /* path to images for header/footer */
-  headerIcon: 'img/favicon.ico',
-  footerIcon: 'img/favicon.ico',
+  headerIcon: 'img/irrec-logo.png',
+  footerIcon: 'img/irrec-logo.png',
   favicon: 'img/favicon.ico',
 
   /* Colors for website */
