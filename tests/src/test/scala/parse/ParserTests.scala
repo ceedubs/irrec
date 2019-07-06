@@ -4,6 +4,7 @@ package parse
 import ceedubs.irrec.regex._
 import CharRegexGen._
 import ceedubs.irrec.parse.{regex => parse}
+import Match.MatchSet
 
 import fastparse._
 import ceedubs.irrec.regex.Regex._
@@ -272,38 +273,49 @@ class ParserTests extends IrrecSuite {
   }
 
   test("regex parsing handles characters that can only be unescaped inside character classes") {
-    val expected = lit('a') * inSet(Diet.one('*') + '[' + '<' + '(' + '{' + '|')
-    val r = parse("""a[*[<({|]""")
+    val expected = lit('a') * inSet(Diet.one('*') + '<' + '(' + '{' + '|')
+    val r = parse("""a[*<({|]""")
     sameRegex(r, expected)
   }
 
   test(
     "regex parsing handles characters that can only be unescaped inside character classes in negative classes") {
-    val expected = lit('a') * Regex.noneOf('*', '[', '<', '(', '{', '|')
-    val r = parse("""a[^*[<({|]""")
+    val expected = lit('a') * Regex.noneOf('*', '<', '(', '{', '|')
+    val r = parse("""a[^*<({|]""")
     sameRegex(r, expected)
   }
 
-  // TODO enable these when union/intersection have been properly implemented
-  //test("regex parsing handles character class intersection") {
-  //  val expected = lit('a') * inSet(Diet.one('a'))
-  //  val r = parse("""a[[ab]&&[^b]]""")
-  //  sameRegex(r, expected)
-  //}
-  //
-  //test("regex parsing handles character class union") {
-  //  val expected = lit('a') * notInSet(CharacterClasses.lowerAlpha - 'a' - 'b')
-  //  val r = parse("""a[[ab][^[:lower:]]]""")
-  //  sameRegex(r, expected)
-  //}
-  //
-  //test("regex parsing handles character class union/intersection mixes") {
-  //  val expected = lit('a') * Regex.matching(
-  //    MatchSet.allow(CharacterClasses.ascii + 'λ') intersect MatchSet.forbid(
-  //      CharacterClasses.punctuationChar))
-  //  val r = parse("""a[[:ascii:][λ]&&[^[:punct:]]]""")
-  //  sameRegex(r, expected)
-  //}
+  test("regex parsing handles character class intersection") {
+    val expected = lit('a') * inSet(Diet.one('a'))
+    val r = parse("""a[[ab]&&[^b]]""")
+    sameRegex(r, expected)
+  }
+
+  test("regex parsing handles character class union") {
+    val expected = lit('a') * notInSet(CharacterClasses.lowerAlpha - 'a' - 'b')
+    val r = parse("""a[[ab][^[:lower:]]]""")
+    sameRegex(r, expected)
+  }
+
+  test("regex parsing handles character class union/intersection mixes") {
+    val expected = lit('a') * Regex.matching(
+      MatchSet.allow(CharacterClasses.ascii + 'λ') intersect MatchSet.forbid(
+        CharacterClasses.punctuationChar))
+    val r = parse("""a[[:ascii:][λ]&&[^[:punct:]]]""")
+    sameRegex(r, expected)
+  }
+
+  test("character classes allow arbitrary nesting of []") {
+    val expected = lit('a') * inSet(Diet.one('b') + 'c')
+    val r = parse("""a[[[[b][c]]]]""")
+    sameRegex(r, expected)
+  }
+
+  test("character classes handle escaped [ and ]") {
+    val expected = inSet(Diet.one('[') + 'a' + ']')
+    val r = parse("""[\[a\]]""")
+    sameRegex(r, expected)
+  }
 
   test("pretty print parser round trip") {
     forAll(genCharRegexAndCandidate) {

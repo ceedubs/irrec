@@ -33,7 +33,7 @@ object RegexPrettyPrinter {
   val nonCharClassCharsToEscape: Set[Char] = Set('<', '(', '[', '{', '\\', '^', '-', '=', '$', '!',
     '|', ']', '}', ')', '?', '*', '+', '.', '>')
 
-  val charClassCharsToEscape: Set[Char] = Set(']', '\\', '^', '-')
+  val charClassCharsToEscape: Set[Char] = Set('[', ']', '\\', '^', '-')
 
   val whitespaceCharMappings: Map[Char, Char] =
     Map('t' -> '\t', 'n' -> '\n', 'r' -> '\r', 'f' -> '\f')

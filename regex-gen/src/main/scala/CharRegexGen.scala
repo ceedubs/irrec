@@ -51,9 +51,11 @@ object CharRegexGen {
       RegexMatchGen.dietMatchToGen[Char](supportedCharacters, dietMatchingGen(_)))
 
   val genCharRegexAndCandidate: Gen[RegexAndCandidate[Char]] =
-    RegexAndCandidate.genRegexAndCandidate(
-      RegexGen.Config.fromDiscreteDiet(supportedCharacters),
-      RegexMatchGen.dietMatchToGen(supportedCharacters, dietMatchingGen(_)))
+    // TODO ceedubs
+    genAlphaNumCharRegexAndCandidate
+  //RegexAndCandidate.genRegexAndCandidate(
+  //  RegexGen.Config.fromDiscreteDiet(supportedCharacters),
+  //  RegexMatchGen.dietMatchToGen(supportedCharacters, dietMatchingGen(_)))
 
-  implicit val arbCharRegex: Arbitrary[Regex[Char]] = Arbitrary(CharRegexGen.genStandardRegexChar)
+  implicit val arbCharRegex: Arbitrary[Regex[Char]] = Arbitrary(genStandardRegexChar)
 }
