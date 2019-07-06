@@ -133,30 +133,43 @@ object Parser {
   def positiveCharClassContent[_: P]: P[MatchSet[Char]] =
     (
       ("\\" ~ shorthandClass) |
-        ("[:" ~/ positivePOSIXCharClass ~ ":]") |
+        ("[:" ~/ positivePOSIXCharClass ~/ ":]") |
         charOrRange
     ).opaque(
         """literal character to match (ex: 'a'), escaped special character literal (ex: '\*'), a shorthand class (ex: '\w'), or a POSIX class (ex: '[:alpha:]')""")
       .rep(1)
       .map(_.reduceOption(_ union _).get) // .get is safe because of .rep(1), but this is gross
 
+  def charClassBase[_: P]: P[MatchSet[Char]] =
+    P(
+      ("[:" ~/ positivePOSIXCharClass ~ ":]") |
+        ("[" ~ positiveCharClassContent ~ "]") |
+        ("[^" ~ positiveCharClassContent.map(_.negate) ~ "]") |
+        ("[^" ~ charClass.map(_.negate) ~ "]") |
+        ("[" ~ charClass ~ "]"))
+
   /**
    * Character classes like `[acz]` or `[^a-cHP-W]`.
    */
-  def charClassTerm[_: P]: P[MatchSet[Char]] =
-    P(
-      "[" ~
-        (("^" ~/ positiveCharClassContent.map(_.negate)) | positiveCharClassContent) ~/
-        "]")
-
-  def charClass[_: P]: P[Regex[Char]] =
-    charClassTerm.map(Regex.matching(_))
+  def charClass[_: P]: P[MatchSet[Char]] =
+    ("[" ~
+      (charClassBase ~ ((StringIn("&&", "").! ~ charClassBase)).rep(1)).map {
+        case (first, others) =>
+          others.foldLeft(first) {
+            case (set, (op, other)) =>
+              op match {
+                case "&&" => set.intersect(other)
+                case "" => set.union(other)
+              }
+          }
+      } ~
+      "]") | charClassBase
 
   def base[_: P]: P[Regex[Char]] = P(
     standardMatchChar.map(Regex.lit(_)) |
       ("\\" ~/ (specialChar.map(Regex.lit(_)) | shorthandClass.map(Regex.matching(_)))) |
       wildcard |
-      charClass |
+      charClass.map(Regex.matching(_)) |
       ("(" ~/ "?:".? ~ regex ~ ")")
   )
 

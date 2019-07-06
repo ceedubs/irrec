@@ -55,5 +55,5 @@ object CharRegexGen {
       RegexGen.Config.fromDiscreteDiet(supportedCharacters),
       RegexMatchGen.dietMatchToGen(supportedCharacters, dietMatchingGen(_)))
 
-  implicit val arbCharRegex: Arbitrary[Regex[Char]] = Arbitrary(CharRegexGen.genStandardRegexChar)
+  implicit val arbCharRegex: Arbitrary[Regex[Char]] = Arbitrary(genStandardRegexChar)
 }
