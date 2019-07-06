@@ -339,6 +339,30 @@ class ParserTests extends IrrecSuite {
     sameRegex(r, expected)
   }
 
+  test("regex parsing handles unicode character points") {
+    val expected = Regex.lit('a')
+    val r = parse("\\u0061")
+    sameRegex(r, expected)
+  }
+
+  test("regex parsing handles unicode character points inside ranges") {
+    val expected = range('a', 'c')
+    val r = parse("[\\u0061-\\u0063]")
+    sameRegex(r, expected)
+  }
+
+  test("regex parsing only looks at 4 characters for unicode character points") {
+    val expected = Regex.lit('a') * lit('1')
+    val r = parse("\\u00611")
+    sameRegex(r, expected)
+  }
+
+  test("regex parsing handles unicode character points inside negated ranges") {
+    val expected = notInSet(Diet.fromRange(Range('a', 'c')))
+    val r = parse("[^\\u0061-\\u0063]")
+    sameRegex(r, expected)
+  }
+
   test("regex parsing fails on invalid regexes") {
     assert(!parseRegex("(").isSuccess)
     assert(!parseRegex(")").isSuccess)
