@@ -56,10 +56,13 @@ object RegexPrettyPrinter {
         (lit, "\\" + special)
     }
 
-  // TODO ceedubs should output \r in a way that doesn't cause newlines
+  def nonGraphicalToUnicode(c: Char): String =
+    if (CharacterClasses.graphChar.contains(c)) c.toString
+    else f"\\u${c.toInt}%04x"
+
   def showChar(inCharacterClass: Boolean): Char => String =
-    if (inCharacterClass) c => charClassCharToEscapedChar.get(c).getOrElse(c.toString)
-    else c => nonCharClassCharToEscapedChar.get(c).getOrElse(c.toString)
+    if (inCharacterClass) c => charClassCharToEscapedChar.get(c).getOrElse(nonGraphicalToUnicode(c))
+    else c => nonCharClassCharToEscapedChar.get(c).getOrElse(nonGraphicalToUnicode(c))
 
   def parensMaybe(
     currentPrecedence: Int,

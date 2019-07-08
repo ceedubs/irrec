@@ -42,6 +42,14 @@ object Parser {
       .opaque(
         s"special regular expression character that should be escaped such as '(', '}', '*', etc")
 
+  def unicodeCodePoint[_: P]: P[Char] =
+    P(
+      CharPred(CharacterClasses.hexDigit.contains(_))
+        .rep(exactly = 4)
+        .!
+        .map(hexChars => Integer.parseInt(hexChars, 16).toChar)
+    ).opaque("A valid unicode code point in 4-digit hex form (ex: '006F')")
+
   /**
    * A shorthand class such as `\d` or `\w`. This parser itself doesn't look for the `\`; it starts
    * with the character after it.
@@ -96,7 +104,7 @@ object Parser {
       ) ~ "}").opaque("repeat count such as '{3}', '{1,4}', or '{3,}'")
 
   def singleLitCharClassChar[_: P]: P[Char] =
-    P(("\\" ~ specialChar | charClassStandardMatchChar))
+    P(("\\u" ~ unicodeCodePoint) | ("\\" ~ specialChar | charClassStandardMatchChar))
 
   def matchLitCharClassChar[_: P]: P[Match.Literal[Char]] =
     P(singleLitCharClassChar.map(Match.Literal(_)))
@@ -167,7 +175,8 @@ object Parser {
 
   def base[_: P]: P[Regex[Char]] = P(
     standardMatchChar.map(Regex.lit(_)) |
-      ("\\" ~/ (specialChar.map(Regex.lit(_)) | shorthandClass.map(Regex.matching(_)))) |
+      ("\\" ~/ (("u" ~ unicodeCodePoint | specialChar).map(Regex.lit(_)) | shorthandClass.map(
+        Regex.matching(_)))) |
       wildcard |
       charClass.map(Regex.matching(_)) |
       ("(" ~/ "?:".? ~ regex ~ ")")
