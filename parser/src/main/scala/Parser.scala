@@ -7,13 +7,13 @@ import ceedubs.irrec.regex.RegexPrettyPrinter.{
   specialNonCharClassCharToLit
 }
 
-import cats.data.NonEmptyList
 import cats.implicits._
 import fastparse._, NoWhitespace._
 import ceedubs.irrec.regex.Match
 import ceedubs.irrec.regex.Regex
 import ceedubs.irrec.regex._
-import qq.droste.data.Coattr
+import cats.collections.{Diet, Range}
+import ceedubs.irrec.regex.Match.MatchSet
 
 object Parser {
   sealed abstract class RepeatCount extends Product with Serializable {
@@ -46,23 +46,17 @@ object Parser {
    * A shorthand class such as `\d` or `\w`. This parser itself doesn't look for the `\`; it starts
    * with the character after it.
    */
-  def shorthandClass[_: P]: P[Regex[Char]] =
+  def shorthandClass[_: P]: P[Match.MatchSet[Char]] =
     (
-      P("d").map(_ => Regex.digit) |
-        P("D").map(_ => Regex.nonDigit) |
-        P("w").map(_ => Regex.wordChar) |
-        P("W").map(_ => Regex.nonWordChar) |
-        P("h").map(_ => Regex.horizontalWhitespaceChar) |
-        P("H").map(_ => Regex.nonHorizontalWhitespaceChar) |
-        P("s").map(_ => Regex.whitespaceChar) |
-        P("S").map(_ => Regex.nonWhitespaceChar)
+      P("d").map(_ => MatchSet.allow(CharacterClasses.digit)) |
+        P("D").map(_ => MatchSet.forbid(CharacterClasses.digit)) |
+        P("w").map(_ => MatchSet.allow(CharacterClasses.wordChar)) |
+        P("W").map(_ => MatchSet.forbid(CharacterClasses.wordChar)) |
+        P("h").map(_ => MatchSet.allow(CharacterClasses.horizontalWhitespaceChar)) |
+        P("H").map(_ => MatchSet.forbid(CharacterClasses.horizontalWhitespaceChar)) |
+        P("s").map(_ => MatchSet.allow(CharacterClasses.whitespaceChar)) |
+        P("S").map(_ => MatchSet.forbid(CharacterClasses.whitespaceChar))
     ).opaque("""character class such as \w, \d, \s, \S, etc""")
-
-  def negatedShorthandClass[_: P]: P[NonEmptyList[Match.Negated[Char]]] =
-    P("d").map(_ => NonEmptyList.one(CharacterClasses.digitMatch.negate)) |
-      P("w").map(_ => CharacterClasses.wordCharMatches.map(_.negate)) |
-      P("s").map(_ => CharacterClasses.whitespaceCharMatches.map(_.negate)) |
-      P("h").map(_ => CharacterClasses.horizontalWhitespaceCharMatches.map(_.negate))
 
   /**
    * Standard characters to match like `a` or `%`.
@@ -110,82 +104,57 @@ object Parser {
   /**
    * Character range like `a-z`.
    */
-  def matchCharRange[_: P]: P[Match.Range[Char]] = P(
+  def matchCharRange[_: P]: P[Range[Char]] = P(
     (singleLitCharClassChar ~ "-" ~/ singleLitCharClassChar).map {
-      case (l, h) =>
-        Match.Range(l, h)
+      case (l, h) => Range(l, h)
     }
   )
 
-  def negatedCharOrRange[_: P]: P[Match.Negated[Char]] =
-    (matchCharRange.map(Match.Negated.NegatedRange(_)) | matchLitCharClassChar.map(
-      Match.Negated.NegatedLiteral(_)))
+  def charOrRange[_: P]: P[Match.MatchSet[Char]] =
+    matchCharRange.map(r => MatchSet.allow(Diet.fromRange(r))) |
+      singleLitCharClassChar.map(c => MatchSet.allow(Diet.one(c)))
 
-  def negatedPOSIXClass[_: P]: P[NonEmptyList[Match.Negated[Char]]] =
-    P("alnum").map(_ => CharacterClasses.nonAlphaNumericMatches) |
-      P("alpha").map(_ => CharacterClasses.nonAlphaMatches) |
-      P("ascii").map(_ => NonEmptyList.one(CharacterClasses.nonAsciiMatch)) |
-      P("blank").map(_ => CharacterClasses.nonHorizontalWhitespaceCharMatches) |
-      P("cntrl").map(_ => CharacterClasses.nonControlCharMatches) |
-      P("digit").map(_ => NonEmptyList.one(CharacterClasses.nonDigitMatch)) |
-      P("graph").map(_ => NonEmptyList.one(CharacterClasses.nonGraphCharMatch)) |
-      P("lower").map(_ => NonEmptyList.one(CharacterClasses.nonLowerAlphaMatch)) |
-      P("print").map(_ => NonEmptyList.one(CharacterClasses.nonPrintableCharMatch)) |
-      P("punct").map(_ => CharacterClasses.nonPunctuationCharMatches) |
-      P("space").map(_ => CharacterClasses.nonWhitespaceCharMatches) |
-      P("upper").map(_ => NonEmptyList.one(CharacterClasses.nonUpperAlphaMatch)) |
-      P("word").map(_ => CharacterClasses.nonWordCharMatches) |
-      P("xdigit").map(_ => CharacterClasses.nonHexDigitMatches)
+  def positivePOSIXCharClass[_: P]: P[MatchSet[Char]] =
+    P("alnum").map(_ => MatchSet.allow(CharacterClasses.alphaNumeric)) |
+      P("alpha").map(_ => MatchSet.allow(CharacterClasses.alpha)) |
+      P("ascii").map(_ => MatchSet.allow(CharacterClasses.ascii)) |
+      P("blank").map(_ => MatchSet.allow(CharacterClasses.horizontalWhitespaceChar)) |
+      P("cntrl").map(_ => MatchSet.allow(CharacterClasses.controlChar)) |
+      P("digit").map(_ => MatchSet.allow(CharacterClasses.digit)) |
+      P("graph").map(_ => MatchSet.allow(CharacterClasses.graphChar)) |
+      P("lower").map(_ => MatchSet.allow(CharacterClasses.lowerAlpha)) |
+      P("print").map(_ => MatchSet.allow(CharacterClasses.printableChar)) |
+      P("punct").map(_ => MatchSet.allow(CharacterClasses.punctuationChar)) |
+      P("space").map(_ => MatchSet.allow(CharacterClasses.whitespaceChar)) |
+      P("upper").map(_ => MatchSet.allow(CharacterClasses.upperAlpha)) |
+      P("word").map(_ => MatchSet.allow(CharacterClasses.wordChar)) |
+      P("xdigit").map(_ => MatchSet.allow(CharacterClasses.hexDigit))
 
-  def negatedCharClassContent[_: P]: P[Match.NoneOf[Char]] =
-    (
-      ("\\" ~ negatedShorthandClass) |
-        ("[:" ~/ negatedPOSIXClass ~ ":]") |
-        negatedCharOrRange.map(NonEmptyList.one(_))
-    ).opaque(
-        """literal character to match (ex: 'a'), escaped special character literal (ex: '\*'), a shorthand class (ex: '\w'), or a POSIX class (ex: '[:alpha:]')""")
-      .rep(1)
-      .map(xs => Match.NoneOf(xs.reduceOption(_ |+| _).get)) // .get is safe because of .rep(1)
-
-  def positivePOSIXCharClass[_: P]: P[Regex[Char]] =
-    P("alnum").map(_ => Regex.alphaNumericChar) |
-      P("alpha").map(_ => Regex.alphaChar) |
-      P("ascii").map(_ => Regex.asciiChar) |
-      P("blank").map(_ => Regex.horizontalWhitespaceChar) |
-      P("cntrl").map(_ => Regex.controlChar) |
-      P("digit").map(_ => Regex.digit) |
-      P("graph").map(_ => Regex.graphChar) |
-      P("lower").map(_ => Regex.lowerAlphaChar) |
-      P("print").map(_ => Regex.printableChar) |
-      P("punct").map(_ => Regex.punctuationChar) |
-      P("space").map(_ => Regex.whitespaceChar) |
-      P("upper").map(_ => Regex.upperAlphaChar) |
-      P("word").map(_ => Regex.wordChar) |
-      P("xdigit").map(_ => Regex.hexDigitChar)
-
-  def positiveCharClassContent[_: P]: P[Regex[Char]] =
+  def positiveCharClassContent[_: P]: P[MatchSet[Char]] =
     (
       ("\\" ~ shorthandClass) |
         ("[:" ~/ positivePOSIXCharClass ~ ":]") |
-        (matchCharRange | matchLitCharClassChar).map(Coattr.pure[KleeneF, Match[Char]](_))
+        charOrRange
     ).opaque(
         """literal character to match (ex: 'a'), escaped special character literal (ex: '\*'), a shorthand class (ex: '\w'), or a POSIX class (ex: '[:alpha:]')""")
       .rep(1)
-      .map(matches => Regex.oneOfR(matches.head, matches.tail: _*)) // .head is safe because of .rep(1)
+      .map(_.reduceOption(_ union _).get) // .get is safe because of .rep(1), but this is gross
 
   /**
    * Character classes like `[acz]` or `[^a-cHP-W]`.
    */
-  def charClass[_: P]: P[Regex[Char]] =
+  def charClassTerm[_: P]: P[MatchSet[Char]] =
     P(
-      "[" ~/
-        (("^" ~/ negatedCharClassContent
-          .map(Coattr.pure[KleeneF, Match[Char]](_))) | positiveCharClassContent) ~/
+      "[" ~
+        (("^" ~/ positiveCharClassContent.map(_.negate)) | positiveCharClassContent) ~/
         "]")
+
+  def charClass[_: P]: P[Regex[Char]] =
+    charClassTerm.map(Regex.matching(_))
 
   def base[_: P]: P[Regex[Char]] = P(
     standardMatchChar.map(Regex.lit(_)) |
-      ("\\" ~/ (specialChar.map(Regex.lit(_)) | shorthandClass)) |
+      ("\\" ~/ (specialChar.map(Regex.lit(_)) | shorthandClass.map(Regex.matching(_)))) |
       wildcard |
       charClass |
       ("(" ~/ "?:".? ~ regex ~ ")")

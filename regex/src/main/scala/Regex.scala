@@ -2,25 +2,33 @@ package ceedubs.irrec
 package regex
 
 import cats.{Foldable, Order, Reducible}
+import cats.collections.{Diet, Discrete, Range}
 import cats.implicits._
 import qq.droste.data.Coattr
 import cats.data.NonEmptyList
+import ceedubs.irrec.regex.Match.MatchSet
 
 // TODO ceedubs work around that scala bug where a companion object and type alias have the same name
 object Regex {
 
+  def matching[A](m: Match[A]): Regex[A] = Coattr.pure(m)
+
   /** alias for [[literal]] */
   def lit[A](value: A): Regex[A] = literal(value)
 
-  def literal[A](value: A): Regex[A] = Coattr.pure(Match.Literal(value))
+  def literal[A](value: A): Regex[A] = matching(Match.Literal(value))
 
-  def range[A](l: A, r: A): Regex[A] = Coattr.pure(Match.Range(l, r))
+  def range[A](l: A, r: A): Regex[A] = inSet(Diet.fromRange(Range(l, r)))
 
-  def wildcard[A]: Regex[A] = Coattr.pure(Match.Wildcard)
+  def wildcard[A]: Regex[A] = matching(Match.Wildcard())
 
   def or[A](l: Kleene[A], r: Kleene[A]): Kleene[A] = Coattr.roll(KleeneF.Plus(l, r))
 
   def andThen[A](l: Kleene[A], r: Kleene[A]): Kleene[A] = Coattr.roll(KleeneF.Times(l, r))
+
+  def inSet[A](allowed: Diet[A]): Regex[A] = matching(MatchSet.allow(allowed))
+
+  def notInSet[A](forbidden: Diet[A]): Regex[A] = matching(MatchSet.forbid(forbidden))
 
   def oneOf[A](a1: A, as: A*): Regex[A] = as.foldLeft(lit(a1))((acc, a) => or(acc, lit(a)))
 
@@ -32,10 +40,8 @@ object Regex {
   def oneOfFR[F[_], A](values: F[Kleene[A]])(implicit reducibleF: Reducible[F]): Kleene[A] =
     reducibleF.reduceLeft(values)((acc, r) => or(acc, r))
 
-  def noneOf[A](a1: A, as: A*): Regex[A] =
-    Coattr.pure(
-      Match.NoneOf(
-        NonEmptyList.of(a1, as: _*).map(a => Match.Negated.NegatedLiteral(Match.Literal(a)))))
+  def noneOf[A](a1: A, as: A*)(implicit discreteA: Discrete[A], orderA: Order[A]): Regex[A] =
+    notInSet(NonEmptyList.of(a1, as: _*).foldMap(Diet.one(_)))
 
   /**
    * AKA `+` in regular expressions, but I avoided confusion with `Plus` corresponding to "or".
@@ -86,205 +92,168 @@ object Regex {
    * Matches a single digit character ('0', '3', '9', etc). Could be represented in a regular
    * expression as `\d` or `[0-9]`.
    */
-  val digit: Regex[Char] = Coattr.pure(CharacterClasses.digitMatch)
+  val digit: Regex[Char] = inSet(CharacterClasses.digit)
 
   /**
    * Opposite of [[digit]]. Could be represented in a regular expression as
    * `\D`.
    */
   val nonDigit: Regex[Char] =
-    Coattr.pure(Match.NoneOf(NonEmptyList.one(CharacterClasses.nonDigitMatch)))
+    notInSet(CharacterClasses.digit)
 
   /**
    * Matches a single lowercase character ('a', 'z', etc). Could be represented in a regular
    * expression as `[a-z]` or `[:lower:]`.
    */
-  val lowerAlphaChar: Regex[Char] = Coattr.pure(CharacterClasses.lowerAlphaMatch)
+  val lowerAlphaChar: Regex[Char] = inSet(CharacterClasses.lowerAlpha)
 
   /**
    * Opposite of [[lowerAlphaChar]]. Could be represented in a regular expression as
    * `[^a-z]` or `[^[:lower:]]`.
    */
-  val nonLowerAlphaChar: Regex[Char] =
-    Coattr.pure(Match.NoneOf(NonEmptyList.one(CharacterClasses.nonLowerAlphaMatch)))
+  val nonLowerAlphaChar: Regex[Char] = notInSet(CharacterClasses.lowerAlpha)
 
   /**
    * Matches a single uppercase character ('a', 'z', etc). Could be represented in a regular
    * expression as `[a-z]` or `[:upper:]`.
    */
-  val upperAlphaChar: Regex[Char] = Coattr.pure(CharacterClasses.upperAlphaMatch)
+  val upperAlphaChar: Regex[Char] = inSet(CharacterClasses.upperAlpha)
 
   /**
    * Opposite of [[upperAlphaChar]]. Could be represented in a regular expression as
    * `[^a-z]` or `[^[:upper:]]`.
    */
-  val nonUpperAlphaChar: Regex[Char] =
-    Coattr.pure(Match.NoneOf(NonEmptyList.one(CharacterClasses.nonUpperAlphaMatch)))
+  val nonUpperAlphaChar: Regex[Char] = notInSet(CharacterClasses.upperAlpha)
 
   /**
    * Matches a single alphabetic character ('a', 'A', etc). Could be represented in a regular
    * expression as `[:alpha:]`.
    */
-  val alphaChar: Regex[Char] = oneOfFR[NonEmptyList, Match[Char]](
-    CharacterClasses.alphaMatches
-      .widen[Match[Char]]
-      .map(Coattr.pure(_)))
+  val alphaChar: Regex[Char] = inSet(CharacterClasses.alpha)
 
   /**
    * Opposite of [[alphaChar]]. Could be represented in a regular expression as
    * `[^[:alalpha:]]`.
    */
-  val nonAlphaChar: Regex[Char] =
-    Coattr.pure(Match.NoneOf(CharacterClasses.nonAlphaMatches))
+  val nonAlphaChar: Regex[Char] = notInSet(CharacterClasses.alpha)
 
   /**
    * Matches a single alphanumeric character ('0', 'a', 'A', etc). Could be represented in a regular
    * expression as `[:alnum:]`.
    */
-  val alphaNumericChar: Regex[Char] = oneOfFR[NonEmptyList, Match[Char]](
-    CharacterClasses.alphaNumericMatches
-      .widen[Match[Char]]
-      .map(Coattr.pure(_)))
+  val alphaNumericChar: Regex[Char] = inSet(CharacterClasses.alphaNumeric)
 
   /**
    * Opposite of [[alphaNumericChar]]. Could be represented in a regular expression as
    * `[^[:alnum:]]`.
    */
-  val nonAlphaNumericChar: Regex[Char] =
-    Coattr.pure(Match.NoneOf(CharacterClasses.nonAlphaNumericMatches))
+  val nonAlphaNumericChar: Regex[Char] = notInSet(CharacterClasses.alphaNumeric)
 
   /**
    * Matches a single hexadecimal digit ('0', '1', 'A', 'F', 'a', 'f', etc). Could be represented in
    * a regular expression as `[:xdigit:]`.
    */
-  val hexDigitChar: Regex[Char] = oneOfFR[NonEmptyList, Match[Char]](
-    CharacterClasses.hexDigitMatches
-      .widen[Match[Char]]
-      .map(Coattr.pure(_)))
+  val hexDigitChar: Regex[Char] = inSet(CharacterClasses.hexDigit)
 
   /**
    * Opposite of [[hexDigitChar]]. Could be represented in a regular expression as
    * `[^[:alnum:]]`.
    */
-  val nonHexDigitChar: Regex[Char] =
-    Coattr.pure(Match.NoneOf(CharacterClasses.nonHexDigitMatches))
+  val nonHexDigitChar: Regex[Char] = notInSet(CharacterClasses.hexDigit)
 
   /**
    * Matches a single "word" character ('A', 'a', '_', etc). Could be represented in a regular
    * expression as `\w`.
    */
-  val wordChar: Regex[Char] = oneOfFR[NonEmptyList, Match[Char]](
-    CharacterClasses.wordCharMatches
-      .widen[Match[Char]]
-      .map(Coattr.pure(_)))
+  val wordChar: Regex[Char] = inSet(CharacterClasses.wordChar)
 
   /**
    * Opposite of [[wordChar]]. Could be represented in a regular expression as
    * `\W`.
    */
-  val nonWordChar: Regex[Char] =
-    Coattr.pure(Match.NoneOf(CharacterClasses.nonWordCharMatches))
+  val nonWordChar: Regex[Char] = notInSet(CharacterClasses.wordChar)
 
   /**
    * A single horizontal whitespace character `[\t ]`. Could be represented in a regular expression
    * as `\h`.
    */
-  val horizontalWhitespaceChar: Regex[Char] = oneOfFR[NonEmptyList, Match[Char]](
-    CharacterClasses.horizontalWhitespaceCharMatches
-      .widen[Match[Char]]
-      .map(Coattr.pure(_)))
+  val horizontalWhitespaceChar: Regex[Char] = inSet(CharacterClasses.horizontalWhitespaceChar)
 
   /**
    * Opposite of [[horizontalWhitespaceChar]]; this matches on any character that is not a tab
    * or a space. Could be represented in a regular expression as `\H`.
    */
-  val nonHorizontalWhitespaceChar: Regex[Char] =
-    Coattr.pure(Match.NoneOf(CharacterClasses.nonHorizontalWhitespaceCharMatches))
+  val nonHorizontalWhitespaceChar: Regex[Char] = notInSet(CharacterClasses.horizontalWhitespaceChar)
 
   /**
    * A single whitespace character `[\t\n\f\r ]`. Could be represented in a regular expression as
    * `\s`.
    */
-  val whitespaceChar: Regex[Char] = oneOfFR[NonEmptyList, Match[Char]](
-    CharacterClasses.whitespaceCharMatches
-      .widen[Match[Char]]
-      .map(Coattr.pure(_)))
+  val whitespaceChar: Regex[Char] = inSet(CharacterClasses.whitespaceChar)
 
   /**
    * Opposite of [[whitespaceChar]]. Could be represented in a regular expression as
    * `\S`.
    */
-  val nonWhitespaceChar: Regex[Char] =
-    Coattr.pure(Match.NoneOf(CharacterClasses.nonWhitespaceCharMatches))
+  val nonWhitespaceChar: Regex[Char] = notInSet(CharacterClasses.whitespaceChar)
 
   /**
    * A single ASCII character `[ -~]`. Could be represented in a regular expression as
    * `[:ascii:]`.
    */
-  val asciiChar: Regex[Char] = Coattr.pure(CharacterClasses.asciiMatch)
+  val asciiChar: Regex[Char] = inSet(CharacterClasses.ascii)
 
   /**
    * Opposite of [[asciiChar]]. Could be represented in a regular expression as
    * `[^[:ascii:]]`.
    */
-  val nonAsciiChar: Regex[Char] =
-    Coattr.pure(Match.NoneOf(NonEmptyList.one(CharacterClasses.nonAsciiMatch)))
+  val nonAsciiChar: Regex[Char] = notInSet(CharacterClasses.ascii)
 
   /**
    * A single control character `[\x00-\x1F\x7F]`. Could be represented in a regular expression as
    * `[:cntrl:]`.
    */
-  val controlChar: Regex[Char] = oneOfFR[NonEmptyList, Match[Char]](
-    CharacterClasses.controlCharMatches
-      .widen[Match[Char]]
-      .map(Coattr.pure(_)))
+  val controlChar: Regex[Char] = inSet(CharacterClasses.controlChar)
 
   /**
    * Opposite of [[controlChar]]. Could be represented in a regular expression as
    * `[^[:cntrl:]]`.
    */
-  val nonControlChar: Regex[Char] =
-    Coattr.pure(Match.NoneOf(CharacterClasses.nonControlCharMatches))
+  val nonControlChar: Regex[Char] = notInSet(CharacterClasses.controlChar)
 
   /**
    * A single visible (graphical) character `[\x21-\x7E]`. Could be represented in a regular
    * expression as `[:graph:]`.
    */
-  val graphChar: Regex[Char] = Coattr.pure(CharacterClasses.graphCharMatch)
+  val graphChar: Regex[Char] = inSet(CharacterClasses.graphChar)
 
   /**
    * Opposite of [[graphChar]]. Could be represented in a regular expression as `[^[:graph:]]`.
    */
-  val nonGraphChar: Regex[Char] =
-    Coattr.pure(Match.NoneOf(NonEmptyList.one(CharacterClasses.nonGraphCharMatch)))
+  val nonGraphChar: Regex[Char] = notInSet(CharacterClasses.graphChar)
 
   /**
    * A single printable character (visible character or space). Could be represented in a regular
    * expression as `[:print:]` or `\x20-\x7E`.
    */
-  val printableChar: Regex[Char] = Coattr.pure(CharacterClasses.printableCharMatch)
+  val printableChar: Regex[Char] = inSet(CharacterClasses.printableChar)
 
   /**
    * Opposite of [[printableChar]]. Could be represented in a regular expression as `[^[:print:]]`.
    */
-  val nonPrintableChar: Regex[Char] =
-    Coattr.pure(Match.NoneOf(NonEmptyList.one(CharacterClasses.nonPrintableCharMatch)))
+  val nonPrintableChar: Regex[Char] = notInSet(CharacterClasses.printableChar)
 
   /**
    * A single punctuation character (`;`, `!`, etc).. Could be represented in a regular expression
    * as `[:punct:]`.
    */
-  val punctuationChar: Regex[Char] = oneOfFR[NonEmptyList, Match[Char]](
-    CharacterClasses.punctuationCharMatches
-      .widen[Match[Char]]
-      .map(Coattr.pure(_)))
+  val punctuationChar: Regex[Char] = inSet(CharacterClasses.punctuationChar)
 
   /**
    * Opposite of [[punctuationChar]]. Could be represented in a regular expression as
    * `[^[:punct:]]`.
    */
-  val nonPunctuationChar: Regex[Char] =
-    Coattr.pure(Match.NoneOf(CharacterClasses.nonPunctuationCharMatches))
+  val nonPunctuationChar: Regex[Char] = notInSet(CharacterClasses.punctuationChar)
 
   def matcher[F[_], A](
     r: Regex[A])(implicit orderingA: Ordering[A], foldableF: Foldable[F]): F[A] => Boolean = {

@@ -5,14 +5,13 @@ import ceedubs.irrec.regex.Regex._
 import ceedubs.irrec.regex.RegexGen._
 import org.scalacheck.Gen
 import RegexAndCandidate._
+import RegexMatchGen._
 import org.scalacheck.Arbitrary, Arbitrary.arbitrary
 import cats.data.NonEmptyList
 import cats.laws.discipline.arbitrary._
 import ceedubs.irrec.parse.{regex => parse}
 
 class GlushkovTests extends IrrecSuite {
-  val genIntRegexAndMatch: Gen[RegexAndCandidate[Int]] =
-    genRegexAndMatch(includeOne = true, arbitrary[Int], genRangeMatch(arbitrary[Int]))
 
   test("literal match") { assert(literal('b').stringMatcher("b")) }
 
@@ -290,13 +289,9 @@ class GlushkovTests extends IrrecSuite {
     val gen = for {
       min <- Gen.chooseNum(0, 10)
       plus <- Gen.chooseNum(0, 5)
-      r <- genRegex(
-        arbitrary[Int],
-        genRangeMatch(arbitrary[Int]),
-        includeZero = false,
-        includeOne = true)
+      r <- arbitrary[Regex[Int]]
       rRepeat = r.repeat(min, Some(min + plus))
-      c <- regexMatchingStreamGen(arbitrary[Int]).apply(rRepeat)
+      c <- regexMatchingStreamGen(intMatchingGen).apply(rRepeat)
     } yield (min, r, c)
 
     forAll(gen) {
@@ -310,7 +305,7 @@ class GlushkovTests extends IrrecSuite {
     val gen = for {
       values <- arbitrary[NonEmptyList[Byte]]
       r1 = oneOfF(values)
-      c <- genCandidateStream(r1, arbitrary[Byte])
+      c <- genCandidateStream(byteMatchingGen)(r1)
     } yield (values, r1, c)
     forAll(gen) {
       case (values, r1, c) =>
@@ -323,7 +318,7 @@ class GlushkovTests extends IrrecSuite {
     val gen = for {
       values <- arbitrary[NonEmptyList[Byte]]
       r1 = oneOfF(values)
-      c <- genCandidateStream(r1, arbitrary[Byte])
+      c <- genCandidateStream(byteMatchingGen)(r1)
     } yield (values, r1, c)
     forAll(gen) {
       case (values, r1, c) =>
@@ -337,7 +332,7 @@ class GlushkovTests extends IrrecSuite {
       values <- arbitrary[NonEmptyList[Byte]]
       lits = values.map(lit(_))
       r1 = oneOfFR(lits)
-      c <- genCandidateStream(r1, arbitrary[Byte])
+      c <- genCandidateStream(byteMatchingGen)(r1)
     } yield (lits, r1, c)
     forAll(gen) {
       case (lits, r1, c) =>
@@ -350,7 +345,7 @@ class GlushkovTests extends IrrecSuite {
     val gen = for {
       values <- arbitrary[List[Byte]]
       r1 = seq(values)
-      c <- genCandidateStream(r1, arbitrary[Byte])
+      c <- genCandidateStream(byteMatchingGen)(r1)
     } yield (values, r1, c)
     forAll(gen) {
       case (values, r1, c) =>
@@ -363,7 +358,7 @@ class GlushkovTests extends IrrecSuite {
     val gen = for {
       values <- arbitrary[List[Byte]]
       r1 = allOfF(values)
-      c <- genCandidateStream(r1, arbitrary[Byte])
+      c <- genCandidateStream(byteMatchingGen)(r1)
     } yield (values, r1, c)
     forAll(gen) {
       case (values, r1, c) =>
@@ -376,7 +371,7 @@ class GlushkovTests extends IrrecSuite {
     val gen = for {
       values <- arbitrary[List[Byte]]
       r1 = allOfF(values)
-      c <- genCandidateStream(r1, arbitrary[Byte])
+      c <- genCandidateStream(byteMatchingGen)(r1)
     } yield (values, r1, c)
     forAll(gen) {
       case (values, r1, c) =>
@@ -390,7 +385,7 @@ class GlushkovTests extends IrrecSuite {
       values <- arbitrary[List[Byte]]
       lits = values.map(lit(_))
       r1 = allOfR(lits: _*)
-      c <- genCandidateStream(r1, arbitrary[Byte])
+      c <- genCandidateStream(byteMatchingGen)(r1)
     } yield (lits, r1, c)
     forAll(gen) {
       case (lits, r1, c) =>

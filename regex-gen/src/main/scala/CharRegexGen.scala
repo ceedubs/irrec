@@ -1,11 +1,11 @@
 package ceedubs.irrec
 package regex
 
-import RegexGen.{genRangeMatch, genRegex}
-import RegexAndCandidate.{genRegexAndCandidate, genRegexAndMatch}
+import DietGen.dietMatchingGen
 
 import cats.implicits._
-import org.scalacheck.Gen
+import org.scalacheck.{Arbitrary, Gen}
+import cats.collections.{Diet, Range}
 
 /**
  * This providex support for generation of `Char` regular expressions.
@@ -15,61 +15,45 @@ import org.scalacheck.Gen
  */
 object CharRegexGen {
 
-  val supportedCharRangesInclusive: List[(Char, Char)] = List((0x0000, 0xD7FF), (0xF900, 0xFFFD))
+  val supportedCharacters: Diet[Char] =
+    Diet.fromRange(Range('\u0000', '\uD7FF')).addRange(Range('\uF900', '\uFFFD'))
 
-  /**
-   * Adapted from code in Scalacheck.
-   */
-  private val genSupportedCharRangeBounds: Gen[(Char, Char)] =
-    Gen.frequency((supportedCharRangesInclusive.map {
-      case (first, last) => (last + 1 - first, Gen.const((first, last)))
-    }: List[(Int, Gen[(Char, Char)])]): _*)
+  def regexMatchingStringGenFromDiet(available: Diet[Char]): Regex[Char] => Gen[String] = {
+    val streamGen = RegexMatchGen.dietRegexMatchingStreamGen(available)
+    r => streamGen(r).map(_.mkString)
+  }
 
-  val genSupportedChar: Gen[Char] =
-    for {
-      bounds <- genSupportedCharRangeBounds
-      (min, max) = bounds
-      c <- Gen.choose(min, max)
-    } yield c
+  val regexMatchingStringGen: Regex[Char] => Gen[String] =
+    regexMatchingStringGenFromDiet(supportedCharacters)
 
-  val genSupportedCharMatchRange: Gen[Match.Range[Char]] =
-    for {
-      bounds <- genSupportedCharRangeBounds
-      (min, max) = bounds
-      lower <- Gen.choose(min, max)
-      upper <- Gen.choose(lower, max)
-    } yield Match.Range(lower, upper)
+  val standardCharRegexGenConfig: RegexGen.Config[Char] =
+    RegexGen.Config
+      .fromDiscreteDiet(supportedCharacters)
 
-  def genRegexChar(includeZero: Boolean, includeOne: Boolean): Gen[Regex[Char]] =
-    genRegex(
-      genSupportedChar,
-      genSupportedCharMatchRange,
-      includeZero = includeZero,
-      includeOne = includeOne)
+  val genStandardRegexChar: Gen[Regex[Char]] = RegexGen.genRegex(standardCharRegexGenConfig)
 
-  val genStandardRegexChar: Gen[Regex[Char]] = genRegexChar(includeZero = false, includeOne = false)
-
-  val genAlphaNumCharRegex: Gen[Regex[Char]] = genRegex(
-    Gen.alphaNumChar,
-    genRangeMatch(Gen.alphaNumChar),
-    includeZero = false,
-    includeOne = false)
-
-  val genCharRegexAndMatch: Gen[RegexAndCandidate[Char]] =
-    genRegexAndMatch(includeOne = false, genSupportedChar, genSupportedCharMatchRange)
+  val genAlphaNumCharRegex: Gen[Regex[Char]] =
+    RegexGen.genRegex(RegexGen.Config.fromDiscreteDiet(CharacterClasses.alphaNumeric))
 
   val genAlphaNumCharRegexAndMatch: Gen[RegexAndCandidate[Char]] =
-    genRegexAndMatch(includeOne = false, Gen.alphaNumChar, genRangeMatch(Gen.alphaNumChar))
+    RegexAndCandidate.genRegexAndMatch(
+      RegexGen.Config.fromDiscreteDiet(CharacterClasses.alphaNumeric),
+      RegexMatchGen.dietMatchToGen[Char](CharacterClasses.alphaNumeric, dietMatchingGen(_)))
 
-  val genCharRegexAndCandidate: Gen[RegexAndCandidate[Char]] = genRegexAndCandidate(
-    genSupportedChar,
-    genSupportedCharMatchRange,
-    includeZero = false,
-    includeOne = false)
+  val genAlphaNumCharRegexAndCandidate: Gen[RegexAndCandidate[Char]] =
+    RegexAndCandidate.genRegexAndCandidate(
+      RegexGen.Config.fromDiscreteDiet(CharacterClasses.alphaNumeric),
+      RegexMatchGen.dietMatchToGen[Char](CharacterClasses.alphaNumeric, dietMatchingGen(_)))
 
-  val genAlphaNumCharRegexAndCandidate: Gen[RegexAndCandidate[Char]] = genRegexAndCandidate(
-    Gen.alphaNumChar,
-    genRangeMatch(Gen.alphaNumChar),
-    includeZero = false,
-    includeOne = false)
+  val genCharRegexAndMatch: Gen[RegexAndCandidate[Char]] =
+    RegexAndCandidate.genRegexAndMatch(
+      standardCharRegexGenConfig,
+      RegexMatchGen.dietMatchToGen[Char](supportedCharacters, dietMatchingGen(_)))
+
+  val genCharRegexAndCandidate: Gen[RegexAndCandidate[Char]] =
+    RegexAndCandidate.genRegexAndCandidate(
+      RegexGen.Config.fromDiscreteDiet(supportedCharacters),
+      RegexMatchGen.dietMatchToGen(supportedCharacters, dietMatchingGen(_)))
+
+  implicit val arbCharRegex: Arbitrary[Regex[Char]] = Arbitrary(CharRegexGen.genStandardRegexChar)
 }

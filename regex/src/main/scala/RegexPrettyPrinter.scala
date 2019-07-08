@@ -1,10 +1,12 @@
 package ceedubs.irrec
 package regex
 
+import cats.Eq
 import cats.implicits._
 import qq.droste.{scheme, Algebra, Gather, RAlgebra}
 import qq.droste.data.CoattrF
 import qq.droste.data.prelude._
+import cats.collections.Diet
 
 object RegexPrettyPrinter {
   private val timesPrecedence: Int = 2
@@ -54,6 +56,7 @@ object RegexPrettyPrinter {
         (lit, "\\" + special)
     }
 
+  // TODO ceedubs should output \r in a way that doesn't cause newlines
   def showChar(inCharacterClass: Boolean): Char => String =
     if (inCharacterClass) c => charClassCharToEscapedChar.get(c).getOrElse(c.toString)
     else c => nonCharClassCharToEscapedChar.get(c).getOrElse(c.toString)
@@ -82,19 +85,23 @@ object RegexPrettyPrinter {
    * @param f a function that takes an `A` value and a boolean indicating whether or not the `A` is
    * appearing within a range and formats it as a string.
    */
-  def showMatch[A](f: (Boolean, A) => String)(m: Match[A]): String = {
+  def showMatch[A](f: (Boolean, A) => String)(implicit eqA: Eq[A]): Match[A] => String = {
     import Match._
-    m match {
+
+    def showDiet(diet: Diet[A]): String =
+      diet.foldLeftRange("") {
+        case (s, cats.collections.Range(l, h)) =>
+          val current = if (l === h) f(true, l) else s"${f(true, l)}-${f(true, h)}"
+          s + current
+      }
+
+    _ match {
       case Literal(a) => f(false, a)
-      case Range(l, r) => s"[${f(true, l)}-${f(true, r)}]"
-      case NoneOf(l) =>
-        l.map {
-            case Negated.NegatedRange(Range(l, h)) => s"${f(true, l)}-${f(true, h)}"
-            case Negated.NegatedLiteral(Literal(a)) => f(true, a)
-          }
-          .toList
-          .mkString("[^", "", "]")
-      case Match.Wildcard => "."
+      case MatchSet.Allow(allowed) =>
+        if (allowed.isEmpty) pprintKleene(KleeneF.Zero) else s"[${showDiet(allowed)}]"
+      case MatchSet.Forbid(forbidden) =>
+        if (forbidden.isEmpty) "." else s"[^${showDiet(forbidden)}]"
+      case Match.Wildcard() => "."
     }
   }
 
