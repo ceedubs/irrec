@@ -38,7 +38,8 @@ class RegexPrettyPrinterTests extends IrrecSuite {
     lit(' ').pprint should ===("\\u0020")
   }
 
-  test("char regex pretty print should display non-graphical characters in character classes as unicode code points") {
+  test(
+    "char regex pretty print should display non-graphical characters in character classes as unicode code points") {
     range('\u0000', ' ').pprint should ===("[\\u0000-\\u0020]")
   }
 }

@@ -162,7 +162,8 @@ object Parser {
 
   def base[_: P]: P[Regex[Char]] = P(
     standardMatchChar.map(Regex.lit(_)) |
-      ("\\" ~/ (("u" ~ unicodeCodePoint | specialChar).map(Regex.lit(_)) | shorthandClass.map(Regex.matching(_)))) |
+      ("\\" ~/ (("u" ~ unicodeCodePoint | specialChar).map(Regex.lit(_)) | shorthandClass.map(
+        Regex.matching(_)))) |
       wildcard |
       charClass |
       ("(" ~/ "?:".? ~ regex ~ ")")
