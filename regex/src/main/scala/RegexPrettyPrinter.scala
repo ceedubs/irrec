@@ -3,9 +3,9 @@ package regex
 
 import cats.Eq
 import cats.implicits._
-import qq.droste.{scheme, Algebra, Gather, RAlgebra}
-import qq.droste.data.CoattrF
-import qq.droste.data.prelude._
+import higherkindness.droste.{scheme, Algebra, Gather, RAlgebra}
+import higherkindness.droste.data.CoattrF
+import higherkindness.droste.data.prelude._
 import cats.collections.Diet
 
 object RegexPrettyPrinter {

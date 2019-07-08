@@ -2,9 +2,9 @@ package ceedubs.irrec
 package regex
 
 import cats.collections.{Diet, Discrete, Range}
-import qq.droste.{scheme, RAlgebra}
-import qq.droste.data.{Coattr, CoattrF}
-import qq.droste.data.prelude._
+import higherkindness.droste.{scheme, RAlgebra}
+import higherkindness.droste.data.{Coattr, CoattrF}
+import higherkindness.droste.data.prelude._
 import org.scalacheck.Shrink
 import cats.{Now, Order}
 import cats.implicits._
@@ -61,7 +61,10 @@ object RegexShrink {
 
   def shrinkDiet[A: Discrete: Order](diet: Diet[A]): Stream[Diet[A]] = {
     implicit val rangeShrink: Shrink[Range[A]] = Shrink(shrinkRange(_))
-    Shrink.shrink(dietRangeList(diet)).map(ranges => ranges.foldMap(Diet.fromRange _))
+    Shrink
+      .shrink(dietRangeList(diet))
+      .filter(_.nonEmpty)
+      .map(ranges => ranges.foldMap(Diet.fromRange _))
   }
 
   // TODO ceedubs add something to cats collections so we don't need this.

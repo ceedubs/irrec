@@ -1,8 +1,9 @@
 package ceedubs.irrec
 package regex
 
-import cats.Foldable
+import cats.{Foldable, Order}
 import java.util.regex.Pattern
+import cats.collections.Discrete
 
 final class KleeneOps[A](private val r: Kleene[A]) extends AnyVal {
 
@@ -20,13 +21,14 @@ final class KleeneOps[A](private val r: Kleene[A]) extends AnyVal {
 
   def repeat(minInclusive: Int, maxInclusive: Option[Int]): Kleene[A] =
     Regex.repeat(minInclusive, maxInclusive, r)
-
-  def optimize: Kleene[A] = KleeneOptimization.optimizeKleene(r)
 }
 
 final class RegexOps[A](private val r: Regex[A]) extends AnyVal {
   def matcher[F[_]](implicit orderingA: Ordering[A], foldableF: Foldable[F]): F[A] => Boolean =
     Regex.matcher(r)
+
+  def optimize(implicit discreteA: Discrete[A], orderA: Order[A]): Regex[A] =
+    RegexOptimization.optimizeRegex[A].apply(r)
 }
 
 final class CharRegexOps(private val r: Regex[Char]) extends AnyVal {

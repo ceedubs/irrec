@@ -6,9 +6,9 @@ import DietGen.dietMatchingGen
 import cats.implicits._
 import cats.Order
 import cats.collections.{Diet, Discrete, Range}
-import qq.droste.{scheme, Algebra}
-import qq.droste.data.CoattrF
-import qq.droste.data.prelude._
+import higherkindness.droste.{scheme, Algebra}
+import higherkindness.droste.data.CoattrF
+import higherkindness.droste.data.prelude._
 import org.scalacheck.Gen, Gen.Choose
 
 object RegexMatchGen {

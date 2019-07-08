@@ -8,9 +8,9 @@ import DietGen._
 import cats.Order
 import cats.collections.{Diet, Discrete, Range}
 import cats.implicits._
-import qq.droste.{scheme, CoalgebraM}
-import qq.droste.data.CoattrF
-import qq.droste.data.prelude._
+import higherkindness.droste.{scheme, CoalgebraM}
+import higherkindness.droste.data.CoattrF
+import higherkindness.droste.data.prelude._
 import org.scalacheck.{Arbitrary, Gen}, Gen.Choose
 
 object RegexGen {

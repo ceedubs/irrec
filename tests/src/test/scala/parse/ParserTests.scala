@@ -318,16 +318,23 @@ class ParserTests extends IrrecSuite {
   }
 
   test("pretty print parser round trip") {
-    forAll(genCharRegexAndCandidate) {
-      case RegexAndCandidate(r, s) =>
-        val clue = s"regex: (${r.pprint}), candidate: (${s.mkString})"
-        parseRegex(r.pprint) match {
-          case Failure(label, _, _) => withClue(clue)(fail(s"parsing failure: $label"))
-          case Success(parsed, _) =>
-            sameRegex(parsed, r)
-            withClue(clue)(r.matcher[Stream].apply(s) should ===(parsed.matcher[Stream].apply(s)))
-        }
+    implicit val regexShrink = RegexShrink.shrinkForRegex[Char]
+    forAll(genStandardRegexChar) { r =>
+      val clue = s"regex: (${r.pprint})"
+      parseRegex(r.pprint) match {
+        case Failure(label, _, _) => withClue(clue)(fail(s"parsing failure: $label"))
+        case Success(parsed, _) =>
+          sameRegex(parsed, r)
+      }
     }
+  }
+
+  test("unicode character points") {
+    val r = lit('陸')
+    val printed = r.pprint
+    printed should ===("\\uf9d3")
+    val r2 = parse("\\uf9d3")
+    r2.pprint should ===("\\uf9d3")
   }
 
   test("regex parsing handles empty strings") {
@@ -403,6 +410,7 @@ class ParserTests extends IrrecSuite {
       // equivalent. For example `Times(x, Times(y, z))` and `Times(Times(x, y), z)`. So we compare
       // them by their pretty-printed equivalence. It's not perfect, but in practice it works pretty
       // well.
+      //actual.optimize.pprint should ===(expected.optimize.pprint)
       actual.optimize.pprint should ===(expected.optimize.pprint)
     }
   }
