@@ -4,7 +4,7 @@ package regex
 import cats.{Foldable, Order, Reducible}
 import cats.collections.{Diet, Discrete, Range}
 import cats.implicits._
-import qq.droste.data.Coattr
+import higherkindness.droste.data.Coattr
 import cats.data.NonEmptyList
 import ceedubs.irrec.regex.Match.MatchSet
 

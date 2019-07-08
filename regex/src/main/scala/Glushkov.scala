@@ -4,10 +4,10 @@ package regex
 import cats.{Functor, Order}
 import cats.data.State
 import cats.implicits._
-import qq.droste.{Algebra, AlgebraM}
-import qq.droste.data.prelude._
-import qq.droste.data.{Coattr, CoattrF}
-import qq.droste.scheme
+import higherkindness.droste.{Algebra, AlgebraM}
+import higherkindness.droste.data.prelude._
+import higherkindness.droste.data.{Coattr, CoattrF}
+import higherkindness.droste.scheme
 import scala.collection.immutable.{SortedMap, SortedSet}
 
 // a lot of the code in here is based on http://luzhuomi.blogspot.com/2012/06/extending-glushkov-nfa-with-sub.html

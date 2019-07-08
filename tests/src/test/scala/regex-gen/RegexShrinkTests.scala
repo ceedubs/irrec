@@ -104,7 +104,6 @@ class RegexShrinkTests extends CatsSuite {
   test("shrink negative MatchSet") {
     val r: Regex[Char] = notInSet(Diet.one('a') + 'b' + 'c')
     val expected = List(
-      Diet.empty[Char],
       Diet.one('a') + 'b',
       Diet.one('a'),
       Diet.one('b') + 'c',

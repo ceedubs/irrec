@@ -1,6 +1,6 @@
 package ceedubs.irrec
 
-import qq.droste.data.Coattr
+import higherkindness.droste.data.Coattr
 
 package object regex {
   type Kleene[A] = Coattr[KleeneF, A]

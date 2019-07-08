@@ -1,6 +1,7 @@
 package ceedubs.irrec
 package bench
 
+import cats.implicits._
 import regex._, Regex._
 import java.util.regex.Pattern
 import org.openjdk.jmh.annotations.{Benchmark, Scope, State}
