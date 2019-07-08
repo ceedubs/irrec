@@ -19,6 +19,8 @@ inefficientRegex.pprint
 ```
 
 ```scala mdoc:silent
+import cats.implicits._
+
 val moreEfficientRegex: Regex[Char] = inefficientRegex.optimize
 ```
 
