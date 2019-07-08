@@ -4,8 +4,7 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 val stableVersion = "0.2.1"
 
 val catsVersion = "1.6.1"
-// TODO ceedubs
-val catsCollectionsVersion = "0.8.0-SNAPSHOT"
+val catsCollectionsVersion = "0.8.0"
 val scalacheckVersion = "1.13.5"
 val drosteVersion = "0.6.0"
 val fastParseVersion = "2.1.0"
