@@ -4,6 +4,7 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 val stableVersion = "0.2.1"
 
 val catsVersion = "1.6.1"
+val catsCollectionsVersion = "0.8.0"
 val scalacheckVersion = "1.13.5"
 val drosteVersion = "0.6.0"
 val fastParseVersion = "2.1.0"
@@ -35,6 +36,8 @@ inThisBuild(
 
 coverageExcludedPackages in ThisBuild := "ceedubs.irrec.bench"
 
+scalaVersion in Global := "2.12.8"
+
 lazy val kleene = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Pure)
   .in(file("kleene"))
@@ -49,7 +52,9 @@ lazy val regex = crossProject(JSPlatform, JVMPlatform)
   .dependsOn(kleene)
   .settings(
     moduleName := "irrec-regex",
-    libraryDependencies += drosteOrg %%% "droste-core" % drosteVersion)
+    libraryDependencies ++= Seq(
+      drosteOrg %%% "droste-core" % drosteVersion,
+      catsOrg %%% "cats-collections-core" % catsCollectionsVersion))
   .settings(commonSettings)
 
 lazy val tests = crossProject(JSPlatform, JVMPlatform)

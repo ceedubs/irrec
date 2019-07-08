@@ -1,56 +1,62 @@
 package ceedubs.irrec.regex
 
 import cats.Order
-import cats.data.NonEmptyList
+import cats.collections.{Diet, Discrete}
 import cats.implicits._
-import ceedubs.irrec.regex.Match.Negated.NegatedRange
-import ceedubs.irrec.regex.Match.Negated.NegatedLiteral
 
-sealed abstract class Match[+A] extends Product with Serializable {
+sealed abstract class Match[A] extends Product with Serializable {
   import Match._
 
-  def matches[AA >: A](a: AA)(implicit orderA: Order[AA]): Boolean = this match {
+  def matches(a: A)(implicit orderA: Order[A]): Boolean = this match {
     case Literal(expected) => a === expected
-    case Range(l, r) => a >= l && a <= r
-    case NoneOf(l) => l.forall(n => !n.toMatch.matches(a))
-    case Wildcard => true
+    case MatchSet.Allow(allowed) => allowed.contains(a)
+    case MatchSet.Forbid(forbidden) => !forbidden.contains(a)
+    case Wildcard() => true
   }
 }
 
 object Match {
 
-  sealed trait Negatable[+A] extends Match[A] {
-    def negate: Negated[A]
-  }
+  final case class Literal[A](value: A) extends Match[A]
 
-  final case class Literal[+A](value: A) extends Negatable[A] {
-    def negate: Negated.NegatedLiteral[A] = Negated.NegatedLiteral(this)
-  }
+  sealed abstract class MatchSet[A] extends Match[A] {
+    import MatchSet._
 
-  /** An inclusive range */
-  final case class Range[+A](lower: A, upper: A) extends Negatable[A] {
-    def negate: Negated.NegatedRange[A] = Negated.NegatedRange(this)
-  }
+    def union(other: MatchSet[A])(implicit discreteA: Discrete[A], orderA: Order[A]): MatchSet[A] =
+      (this, other) match {
+        case (Allow(x), Allow(y)) => Allow(x | y)
+        case (Allow(x), Forbid(y)) => Forbid(y -- x)
+        case (Forbid(x), Allow(y)) => Forbid(x -- y)
+        case (Forbid(x), Forbid(y)) => Forbid(x & y)
+      }
 
-  case object Wildcard extends Match[Nothing]
+    def intersect(
+      other: MatchSet[A])(implicit discreteA: Discrete[A], orderA: Order[A]): MatchSet[A] =
+      (this, other) match {
+        case (Allow(x), Allow(y)) => Allow(x & y)
+        case (Allow(x), Forbid(y)) => Allow(x -- y)
+        case (Forbid(x), Allow(y)) => Allow(y -- x)
+        case (Forbid(x), Forbid(y)) => Forbid(x | y)
+      }
 
-  final case class NoneOf[+A](values: NonEmptyList[Negated[A]]) extends Match[A]
-
-  sealed abstract class Negated[+A] extends Product with Serializable {
-    def toMatch: Match[A] = this match {
-      case NegatedRange(range) => range
-      case NegatedLiteral(lit) => lit
+    def negate: MatchSet[A] = this match {
+      case Allow(x) => Forbid(x)
+      case Forbid(x) => Allow(x)
     }
   }
 
-  object Negated {
-    final case class NegatedRange[+A](range: Range[A]) extends Negated[A]
-    final case class NegatedLiteral[+A](lit: Literal[A]) extends Negated[A]
+  object MatchSet {
+    final case class Allow[A](allowed: Diet[A]) extends MatchSet[A]
+    final case class Forbid[A](forbidden: Diet[A]) extends MatchSet[A]
+
+    def allow[A](allowed: Diet[A]): MatchSet[A] = Allow(allowed)
+
+    def forbid[A](forbidden: Diet[A]): MatchSet[A] = Forbid(forbidden)
   }
+
+  sealed case class Wildcard[A]() extends Match[A]
 
   def lit[A](a: A): Match[A] = Literal(a)
 
-  def range[A](lower: A, upper: A): Match[A] = Range(lower, upper)
-
-  def wildcard[A]: Match[A] = Wildcard
+  def wildcard[A]: Match[A] = Wildcard()
 }

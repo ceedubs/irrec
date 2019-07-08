@@ -9,6 +9,7 @@ class RegexShrinkTests extends CatsSuite {
   // this is pretty hacky but I haven't yet written a meaningful equality for regexes.
   implicit private val eqIntRegex: Eq[Regex[Int]] = Eq.fromUniversalEquals
   implicit val shrinkIntRegex: Shrink[Regex[Int]] = RegexShrink.shrinkForRegex
+  implicit val shrinkCharRegex: Shrink[Regex[Char]] = RegexShrink.shrinkForRegex
 
   test("shrinking a literal") {
     val r: Regex[Int] = Regex.lit(2)
@@ -19,12 +20,6 @@ class RegexShrinkTests extends CatsSuite {
   test("shrinking a wildcard") {
     val r: Regex[Int] = Regex.wildcard[Int]
     val expected = List.empty[Regex[Int]]
-    shrink(r).toList should ===(expected)
-  }
-
-  test("shrinking a range") {
-    val r: Regex[Int] = Regex.range(1, 2)
-    val expected = List(Regex.range(0, 2), Regex.range(1, 1), Regex.range(1, -1), Regex.range(1, 0))
     shrink(r).toList should ===(expected)
   }
 
