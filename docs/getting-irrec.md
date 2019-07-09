@@ -8,9 +8,9 @@ If you are using SBT, you can add irrec as a dependency to your project with:
 ```scala
 libraryDependencies ++= Seq(
   // for basic functionality
-  "@ORG@" % "irrec-parser" % "@VERSION@",
+  "@ORG@" %% "irrec-parser" % "@VERSION@",
   // for Scalacheck generators
-  "@ORG@" % "irrec-regex-gen" % "@VERSION@"
+  "@ORG@" %% "irrec-regex-gen" % "@VERSION@"
 )
 ```
 
