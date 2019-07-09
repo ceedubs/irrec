@@ -94,6 +94,7 @@ lazy val jsDocs = project
   )
   .enablePlugins(ScalaJSPlugin)
   .dependsOn(regexGen.js, parser.js)
+  .settings(noPublishSettings)
 
 lazy val docs = project
   .in(file("irrec-docs"))
