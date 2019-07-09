@@ -1,8 +1,6 @@
 // shadow sbt-scalajs' crossProject and CrossType from Scala.js 0.6.x
 import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
-val stableVersion = "0.2.1"
-
 val catsVersion = "1.6.1"
 val catsCollectionsVersion = "0.8.0"
 val scalacheckVersion = "1.13.5"
@@ -109,7 +107,7 @@ lazy val docs = project
     mdocJS := Some(jsDocs),
     mdocVariables := Map(
       "ORG" -> organization.value,
-      "VERSION" -> stableVersion
+      "VERSION" -> version.value
     )
   )
   .settings(noPublishSettings)
