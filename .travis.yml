@@ -25,7 +25,7 @@ jobs:
       script: ./scripts/builds.sh release
     - stage: publish-docs
       # without this, docusaurus is getting errors looking at ~/.ssh/config
-      install: mkdir ~/.ssh && touch ~/.ssh/config && chmod 600 ~/.ssh/config
+      install: mkdir -p ~/.ssh && touch ~/.ssh/config && chmod 600 ~/.ssh/config
       script: ./scripts/builds.sh publish-docs
 
 before_install:
