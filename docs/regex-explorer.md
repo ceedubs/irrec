@@ -8,8 +8,8 @@ Since irrec cross-compiles with [Scala.js](https://www.scala-js.org/), it can be
 
 ```scala mdoc:js:invisible
 <ul class="key-value">
-<li>regex: <input type="text" name="regex" size="68" value="It's been [2-9]{1,3} (hours|days) since the last (injury|NPE|🔥|🐊 incident)\."/><p class="regex-error-msg"></p></li>
-<li>candidate: <input type="text" name="match" size="60" value="It's been 7 hours since the last 🐊 incident."/></li>
+<li>regex: <input type="text" name="regex" size="76" value="It's been [2-9]{1,3} (hours|days) since the last (injury|NPE|\ud83d\udc0a)\."/><p class="regex-error-msg"></p></li>
+<li>candidate: <input type="text" name="match" size="60" value="It's been 7 hours since the last injury."/></li>
 <li>RNG seed: <input type="text" name="rng-seed" size="10" value="21"/></li>
 
 </ul>
