@@ -5,7 +5,9 @@ sudo: required
 stages:
   - name: test
   - name: release
-    if: (branch = master AND type = push) OR (tag IS present)
+    if: ((branch = master AND type = push) OR (tag IS present)) AND NOT fork
+  - name: publish-docs
+    if: ((branch = master AND type = push) OR (tag IS present)) AND NOT fork
 
 jobs:
   include:
@@ -21,6 +23,8 @@ jobs:
       script: ./scripts/builds.sh coverage
     - stage: release
       script: ./scripts/builds.sh release
+    - stage: publish-docs
+      script: ./scripts/builds.sh publish-docs
 
 before_install:
   - git fetch --tags

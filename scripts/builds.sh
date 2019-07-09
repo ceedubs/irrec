@@ -28,6 +28,9 @@ case "$1" in
     "release")
         sbt 'ci-release'
         ;;
+    "publish-docs")
+        sbt 'docs/docusaurusPublishGhpages'
+        ;;
     *)
         echo "no command specified!"
         exit 1
