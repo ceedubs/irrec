@@ -5,16 +5,14 @@ import ceedubs.irrec.regex._
 import CharRegexGen._
 import ceedubs.irrec.parse.{regex => parse}
 import Match.MatchSet
+import Parser.parseRegex
 
 import fastparse._
 import ceedubs.irrec.regex.Regex._
 import org.scalatest.compatible.Assertion
-import fastparse.Parsed.Failure
-import fastparse.Parsed.Success
 import cats.collections.{Diet, Range}
 
 class ParserTests extends IrrecSuite {
-  import ParserTests._
 
   test("regex parsing works for single literal") {
     val expected = Regex.lit('a')
@@ -105,6 +103,12 @@ class ParserTests extends IrrecSuite {
     sameRegex(r, expected)
   }
 
+  test("regex parsing supports single negated character classes") {
+    val expected = lit('a') * Regex.noneOf('b') * lit('c')
+    val r = parse("""a[^b]c""")
+    sameRegex(r, expected)
+  }
+
   test("regex parsing supports escaped special characters within negative character classes") {
     val expected = lit('a') * Regex.noneOf('*') * lit('e')
     val r = parse("""a[^\*]e""")
@@ -179,7 +183,7 @@ class ParserTests extends IrrecSuite {
 
     val expected = lit('a') * negated
     sameRegex(parse("""a[^b\dc]"""), expected)
-    sameRegex(parse("""a[^b[:digit:]c]"""), expected)
+    sameRegex(parse("""a[^[b[:digit:]c]]"""), expected)
   }
 
   test("regex parsing handles whitespace classes") {
@@ -192,7 +196,7 @@ class ParserTests extends IrrecSuite {
     val negated = notInSet(CharacterClasses.whitespaceChar + 'b' + 'c')
     val expected = lit('a') * negated
     sameRegex(parse("""a[^b\sc]"""), expected)
-    sameRegex(parse("""a[^b[:space:]c]"""), expected)
+    sameRegex(parse("""a[^[b[:space:]c]]"""), expected)
   }
 
   test("regex parsing handles non-whitespace classes") {
@@ -214,6 +218,34 @@ class ParserTests extends IrrecSuite {
     sameRegex(r, expected)
   }
 
+  test("negation has higher precedence than intersection") {
+    val charClass = inSet(Diet.one('d'))
+    val expected = lit('a') * charClass * lit('e')
+    val r = parse("""a[^bc&&[bcd]]e""")
+    sameRegex(r, expected)
+  }
+
+  test("negation has higher precedence than union") {
+    val charClass = notInSet(Diet.one('d'))
+    val expected = lit('a') * charClass * lit('e')
+    val r = parse("""a[^bcd[bc]]e""")
+    sameRegex(r, expected)
+  }
+
+  test("negation applies to the whole union with brackets") {
+    val charClass = notInSet(Diet.fromRange(Range('b', 'f')))
+    val expected = lit('a') * charClass * lit('g')
+    val r = parse("""a[^[bcd][ef]]g""")
+    sameRegex(r, expected)
+  }
+
+  test("single literal ampersands are allowed in character classes") {
+    val charClass = inSet(Diet.one('b') + '&' + 'c')
+    val expected = lit('a') * charClass * lit('d')
+    val r = parse("""a[b&c]d""")
+    sameRegex(r, expected)
+  }
+
   test("regex parsing handles horizontal whitespace classes") {
     val expected = lit('a') * inSet(Diet.one('\t') + ' ' + 'b' + 'c')
     sameRegex(parse("""a[b\hc]"""), expected)
@@ -229,11 +261,11 @@ class ParserTests extends IrrecSuite {
   test("regex parsing handles horizontal whitespace classes in a negated character class") {
     val expected = lit('a') * Regex.noneOf('b', '\t', ' ', 'c')
     sameRegex(parse("""a[^b\hc]"""), expected)
-    sameRegex(parse("""a[^b[:blank:]c]"""), expected)
+    sameRegex(parse("""a[^[b[:blank:]c]]"""), expected)
   }
 
   test("regex parsing rejects ranges on character class shorthands") {
-    assert(!parseRegex("""a[b\d-df]""").isSuccess)
+    assert(parseRegex("""a[b\d-df]""").isLeft)
   }
 
   test("regex parsing handles ascii classes") {
@@ -322,9 +354,8 @@ class ParserTests extends IrrecSuite {
     forAll(genStandardRegexChar) { r =>
       val clue = s"regex: (${r.pprint})"
       parseRegex(r.pprint) match {
-        case Failure(label, _, _) => withClue(clue)(fail(s"parsing failure: $label"))
-        case Success(parsed, _) =>
-          sameRegex(parsed, r)
+        case Left(label) => withClue(clue)(fail(s"parsing failure: $label"))
+        case Right(parsed) => sameRegex(parsed, r)
       }
     }
   }
@@ -382,15 +413,29 @@ class ParserTests extends IrrecSuite {
     sameRegex(r, expected)
   }
 
+  test("regex parsing handles things that look _almost_ like a POSIX class") {
+    sameRegex(parse("[:]"), inSet(Diet.one(':')))
+
+    sameRegex(parse("[:a]"), inSet(Diet.one(':') + 'a'))
+
+    sameRegex(parse("[a:]"), inSet(Diet.one(':') + 'a'))
+
+    sameRegex(parse("[[:]]"), inSet(Diet.one(':')))
+
+    sameRegex(parse("[[:a]]"), inSet(Diet.one(':') + 'a'))
+
+    sameRegex(parse("[[a:]]"), inSet(Diet.one(':') + 'a'))
+  }
+
   test("regex parsing fails on invalid regexes") {
-    assert(!parseRegex("(").isSuccess)
-    assert(!parseRegex(")").isSuccess)
-    assert(!parseRegex("[").isSuccess)
-    assert(!parseRegex("]").isSuccess)
-    assert(!parseRegex("[(").isSuccess)
-    assert(!parseRegex("*").isSuccess)
-    assert(!parseRegex("[a-Z").isSuccess)
-    assert(!parseRegex("a{1,").isSuccess)
+    assert(parseRegex("(").isLeft)
+    assert(parseRegex(")").isLeft)
+    assert(parseRegex("[").isLeft)
+    assert(parseRegex("]").isLeft)
+    assert(parseRegex("[(").isLeft)
+    assert(parseRegex("*").isLeft)
+    assert(parseRegex("[a-Z").isLeft)
+    assert(parseRegex("a{1,").isLeft)
   }
 
   def sameRegex(actual: Regex[Char], expected: Regex[Char]): Assertion = {
@@ -414,10 +459,4 @@ class ParserTests extends IrrecSuite {
       actual.optimize.pprint should ===(expected.optimize.pprint)
     }
   }
-}
-
-object ParserTests {
-
-  def parseRegex(regex: String): Parsed[Regex[Char]] =
-    fastparse.parse(regex, Parser.regexExpr(_), verboseFailures = true)
 }
