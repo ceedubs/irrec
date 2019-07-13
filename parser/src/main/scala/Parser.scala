@@ -141,7 +141,7 @@ object Parser {
       P("xdigit").map(_ => MatchSet.allow(CharacterClasses.hexDigit))
 
   def positiveCharClassContent[_: P]: P[MatchSet[Char]] =
-    !"&&" ~ (("\\" ~ shorthandClass) | charOrRange)
+    (!"&&" ~ (("\\" ~ shorthandClass) | charOrRange))
       .rep(1)
       .map(_.reduce(_ union _))
 
