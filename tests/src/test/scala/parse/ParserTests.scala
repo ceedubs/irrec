@@ -427,12 +427,6 @@ class ParserTests extends IrrecSuite {
     sameRegex(parse("[[a:]]"), inSet(Diet.one(':') + 'a'))
   }
 
-  test("parser handles empty string") {
-    val expected = Regex.empty[Match[Char]]
-    val r = parse("")
-    sameRegex(r, expected)
-  }
-
   test("regex parsing fails on invalid regexes") {
     assert(parseRegex("(").isLeft)
     assert(parseRegex(")").isLeft)
