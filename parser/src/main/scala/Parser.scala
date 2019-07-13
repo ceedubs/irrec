@@ -14,6 +14,8 @@ import ceedubs.irrec.regex.Regex
 import ceedubs.irrec.regex._
 import cats.collections.{Diet, Range}
 import ceedubs.irrec.regex.Match.MatchSet
+import fastparse.Parsed.Failure
+import fastparse.Parsed.Success
 
 object Parser {
   sealed abstract class RepeatCount extends Product with Serializable {
@@ -113,7 +115,7 @@ object Parser {
    * Character range like `a-z`.
    */
   def matchCharRange[_: P]: P[Range[Char]] = P(
-    (singleLitCharClassChar ~ "-" ~/ singleLitCharClassChar).map {
+    (singleLitCharClassChar ~ "-" ~ singleLitCharClassChar).map {
       case (l, h) => Range(l, h)
     }
   )
@@ -139,39 +141,39 @@ object Parser {
       P("xdigit").map(_ => MatchSet.allow(CharacterClasses.hexDigit))
 
   def positiveCharClassContent[_: P]: P[MatchSet[Char]] =
-    (
-      ("\\" ~ shorthandClass) |
-        ("[:" ~/ positivePOSIXCharClass ~/ ":]") |
-        charOrRange
-    ).opaque(
-        """literal character to match (ex: 'a'), escaped special character literal (ex: '\*'), a shorthand class (ex: '\w'), or a POSIX class (ex: '[:alpha:]')""")
+    (!"&&" ~ (("\\" ~ shorthandClass) | charOrRange))
       .rep(1)
-      .map(_.reduceOption(_ union _).get) // .get is safe because of .rep(1), but this is gross
+      .map(_.reduce(_ union _))
 
   def charClassBase[_: P]: P[MatchSet[Char]] =
     P(
-      ("[:" ~/ positivePOSIXCharClass ~ ":]") |
-        ("[" ~ positiveCharClassContent ~ "]") |
-        ("[^" ~ positiveCharClassContent.map(_.negate) ~ "]") |
-        ("[^" ~ charClass.map(_.negate) ~ "]") |
-        ("[" ~ charClass ~ "]"))
+      positiveCharClassContent |
+        ("[:" ~ positivePOSIXCharClass ~ ":]") |
+        charClass)
+
+  def charClassUnion[_: P]: P[MatchSet[Char]] =
+    P(charClassBase.rep(1).map(_.reduce(_ union _)))
+
+  def charClassTerm[_: P]: P[MatchSet[Char]] =
+    charClassUnion.flatMap { c1 =>
+      ("&&" ~/ charClassTerm).map(c2 => c1 intersect c2) |
+        Pass(c1)
+    }
 
   /**
    * Character classes like `[acz]` or `[^a-cHP-W]`.
    */
   def charClass[_: P]: P[MatchSet[Char]] =
-    ("[" ~
-      (charClassBase ~ ((StringIn("&&", "").! ~ charClassBase)).rep(1)).map {
-        case (first, others) =>
-          others.foldLeft(first) {
-            case (set, (op, other)) =>
-              op match {
-                case "&&" => set.intersect(other)
-                case "" => set.union(other)
-              }
-          }
-      } ~
-      "]") | charClassBase
+    P(
+      ("[^" ~ (positiveCharClassContent.map(_.negate) ~ "&&" ~ charClassTerm).map {
+        case (c1, c2) => c1 intersect c2
+      } ~ "]") |
+        ("[^" ~ (positiveCharClassContent.map(_.negate) ~ charClassTerm).map {
+          case (c1, c2) => c1 union c2
+        } ~ "]") |
+        ("[^" ~ charClassTerm.map(_.negate) ~ "]") |
+        ("[" ~ charClassTerm ~ "]")
+    )
 
   def base[_: P]: P[Regex[Char]] = P(
     standardMatchChar.map(Regex.lit(_)) |
@@ -209,4 +211,10 @@ object Parser {
    * A parser for strings that are complete regular expressions, up until the end of the string.
    */
   def regexExpr[_: P]: P[Regex[Char]] = P(regex ~ End)
+
+  def parseRegex(regex: String): Either[String, Regex[Char]] =
+    parse(regex, regexExpr(_), verboseFailures = true) match {
+      case f @ Failure(_, _, _) => Left(f.msg)
+      case Success(value, _) => Right(value)
+    }
 }

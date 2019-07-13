@@ -2,10 +2,8 @@ package ceedubs.irrec
 package parse
 
 import ceedubs.irrec.regex._
-import ParserTests.parseRegex
+import Parser.parseRegex
 
-import fastparse.Parsed.Failure
-import fastparse.Parsed.Success
 import java.util.regex.Pattern
 
 /**
@@ -28,8 +26,8 @@ class ParserJvmTests extends IrrecSuite {
         val irrecRegex = s"""[a[:$className:]c]"""
         val pattern = Pattern.compile(s"""^[a${javaClass}c]$$""", Pattern.DOTALL)
         parseRegex(irrecRegex) match {
-          case Failure(label, _, _) => withClue(clue)(fail(s"parsing failure: $label"))
-          case Success(parsed, _) =>
+          case Left(err) => withClue(clue)(fail(s"parsing failure: $err"))
+          case Right(parsed) =>
             withClue(clue)(parsed.stringMatcher.apply(s) should ===(pattern.matcher(s).matches))
         }
       }
@@ -42,11 +40,11 @@ class ParserJvmTests extends IrrecSuite {
       posixClassNames foreach { className =>
         val javaClass = posixClassToJavaClass(className)
         val clue = s"posix class: $className, candidate: (${c.toInt.toHexString})"
-        val irrecRegex = s"""[^a[:$className:]c]"""
-        val pattern = Pattern.compile(s"""^[^a${javaClass}c]$$""", Pattern.DOTALL)
+        val irrecRegex = s"""[^[:$className:]]"""
+        val pattern = Pattern.compile(s"""^[^${javaClass}]$$""", Pattern.DOTALL)
         parseRegex(irrecRegex) match {
-          case Failure(label, _, _) => withClue(clue)(fail(s"parsing failure: $label"))
-          case Success(parsed, _) =>
+          case Left(err) => withClue(clue)(fail(s"parsing failure: $err"))
+          case Right(parsed) =>
             withClue(clue)(parsed.stringMatcher.apply(s) should ===(pattern.matcher(s).matches))
         }
       }
