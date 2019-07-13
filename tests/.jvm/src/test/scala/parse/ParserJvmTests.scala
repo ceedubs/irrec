@@ -40,8 +40,8 @@ class ParserJvmTests extends IrrecSuite {
       posixClassNames foreach { className =>
         val javaClass = posixClassToJavaClass(className)
         val clue = s"posix class: $className, candidate: (${c.toInt.toHexString})"
-        val irrecRegex = s"""[^a[:$className:]c]"""
-        val pattern = Pattern.compile(s"""^[^a${javaClass}c]$$""", Pattern.DOTALL)
+        val irrecRegex = s"""[^[:$className:]]"""
+        val pattern = Pattern.compile(s"""^[^${javaClass}]$$""", Pattern.DOTALL)
         parseRegex(irrecRegex) match {
           case Left(err) => withClue(clue)(fail(s"parsing failure: $err"))
           case Right(parsed) =>
