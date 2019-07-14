@@ -59,7 +59,12 @@ const siteConfig = {
   },
 
   // Add custom scripts here that would be placed in <script> tags.
-  //scripts: ['https://buttons.github.io/buttons.js'],
+  scripts: [
+    {
+      src: 'https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.7.3/cytoscape.min.js',
+      async: false,
+    },
+  ],
 
   // On page navigation for the current documentation page.
   onPageNav: 'separate',

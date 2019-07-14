@@ -9,6 +9,13 @@ ul.key-value {
   padding-left: 0;
 }
 
+div.nfa-viz {
+  width: 600px;
+  height: 600px;
+  border-style: solid;
+  display: block;
+}
+
 @media only screen and (min-device-width: 360px) and (max-device-width: 736px) {
 }
 
