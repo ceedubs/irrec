@@ -2,7 +2,8 @@ package ceedubs.irrec
 package regex
 
 import cats.implicits._
-import cats.Foldable
+import cats.{Foldable, Monad}
+import cats.data.EitherT
 import scala.collection.immutable.{SortedMap, SortedSet}
 
 final case class NFA[I, A](
@@ -43,6 +44,23 @@ object NFA {
             .getOrElse(i, List.empty)
             .collect { case (i, b) if matches(b, a) => i })
       if (nextStates.isEmpty) Left(()) else Right(nextStates)
+    }
+    finalStates.fold(_ => false, states => states.exists(nfa.finalStates.contains(_)))
+  }
+
+  def runNFAWithEffect[F[_], G[_], I, B, A](nfa: NFA[I, B], matches: (I, I, B, A) => G[Boolean])(
+    implicit foldableF: Foldable[F],
+    G: Monad[G]): F[A] => G[Boolean] = { (fa: F[A]) =>
+    val finalStates: EitherT[G, Unit, List[I]] = fa.foldM(nfa.initStates.toList) {
+      (currentStates, a) =>
+        val nextStates = currentStates
+          .flatTraverse(
+            i =>
+              nfa.transitions
+                .getOrElse(i, List.empty)
+                .filterA { case (i2, b) => matches(i, i2, b, a) })
+          .map(_.map(_._1))
+        EitherT(nextStates.map(states => if (states.isEmpty) Left(()) else Right(states)))
     }
     finalStates.fold(_ => false, states => states.exists(nfa.finalStates.contains(_)))
   }
