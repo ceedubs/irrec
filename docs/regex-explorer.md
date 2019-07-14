@@ -8,14 +8,16 @@ Since irrec cross-compiles with [Scala.js](https://www.scala-js.org/), it can be
 
 ```scala mdoc:js:invisible
 <ul class="key-value">
-<li>regex: <input type="text" name="regex" size="76" value="It's been [2-9]{1,3} (hours|days) since the last (injury|NPE|\ud83d\udc0a)\."/><p class="regex-error-msg"></p></li>
-<li>candidate: <input type="text" name="match" size="60" value="It's been 7 hours since the last injury."/></li>
+<li>regex: <input type="text" name="regex" size="76" value="\ud83d\udc00|([bcr]|gn)ats?"/><p class="regex-error-msg"></p></li>
+<li>candidate: <input type="text" name="match" size="60" value="cat"/></li>
 <li>RNG seed: <input type="text" name="rng-seed" size="10" value="21"/></li>
 
 </ul>
 
 Here are some strings that match your regular expression:
 <ul class="regex-matches"></ul>
+
+<div class="nfa-viz"></div>
 ---
 
 {
@@ -28,6 +30,8 @@ import ceedubs.irrec.regex.CharRegexGen.regexMatchingStringGen
 import org.scalacheck.Gen
 import org.scalacheck.rng.Seed
 import cats.implicits._
+import scala.scalajs.js
+import ceedubs.irrec.docs.NfaCytoscape.nfaGraphDict
 
 val matchInput = node.querySelector("""input[name="match"]""").asInstanceOf[Input]
 
@@ -39,9 +43,11 @@ val regexErrorText = node.querySelector("p.regex-error-msg")
 
 val regexMatchesList = node.querySelector("ul.regex-matches")
 
+val nfaViz = node.querySelector("div.nfa-viz")
+
 def genMatches(r: Regex[Char], seed: Seed): List[String] = {
   val matchGen = regexMatchingStringGen(r)
-  Gen.listOfN(20, matchGen)
+  Gen.listOfN(30, matchGen)
   .map(_.distinct.take(5))
   .apply(Gen.Parameters.default, seed)
   .getOrElse(List.empty)
@@ -75,6 +81,7 @@ def update(): Unit = {
         li.textContent = s
         regexMatchesList.appendChild(li)
       }
+      val _ = js.Dynamic.global.cytoscape(nfaGraphDict(Glushkov.kleeneToNFA(r), nfaViz))
   }
 }
 
