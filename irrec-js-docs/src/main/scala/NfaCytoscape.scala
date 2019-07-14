@@ -4,12 +4,22 @@ package docs
 import ceedubs.irrec.regex._
 import RegexPrettyPrinter.showCharMatch
 
-import cats.implicits._
 import scala.scalajs.js
 import org.scalajs.dom.raw.Element
+import cats.Foldable
+import cats.data.Writer
+import cats.implicits._
 
 object NfaCytoscape {
-  def nfaGraphDict(nfa: NFA[Int, Match[Char]], container: Element): js.Dictionary[js.Any] = {
+
+  implicit private val indexedSeqFoldable: Foldable[IndexedSeq] =
+    new IndexedSeqFoldable[IndexedSeq] {}
+
+  def nfaGraphDict(
+    nfa: NFA[Int, Match[Char]],
+    container: Element,
+    candidate: String): js.Dictionary[js.Any] = {
+
     val (nodes, transitions) = nfa.transitions.toList.foldMap {
       case (node1, transitions) =>
         transitions.foldMap {
@@ -26,14 +36,17 @@ object NfaCytoscape {
           "finalState" -> nfa.finalStates.contains(node)))
     }
 
+    val successEdges = successfulEdges(nfa, candidate)
+
     val edgeDicts = transitions.map {
       case (node1, node2, m) =>
-        js.Dictionary(
+        js.Dictionary[js.Any](
           "data" ->
             js.Dictionary[js.Any](
               "id" -> s"$node1->$node2",
               "source" -> node1,
               "target" -> node2,
+              "matched" -> successEdges.contains((node1, node2)),
               "label" -> m))
     }
 
@@ -62,6 +75,14 @@ object NfaCytoscape {
           )
         ),
         js.Dictionary(
+          "selector" -> "edge[?matched]",
+          "style" -> js
+            .Dictionary[js.Any]("line-color" -> "#17B890", "target-arrow-color" -> "#17B890")),
+        js.Dictionary(
+          "selector" -> "edge[!matched]",
+          "style" -> js
+            .Dictionary[js.Any]("line-style" -> "dashed")),
+        js.Dictionary(
           "selector" -> "node[!initState, !finalState]",
           "style" -> js
             .Dictionary[js.Any]("shape" -> "ellipse", "height" -> "1px", "width" -> "1px")),
@@ -77,4 +98,17 @@ object NfaCytoscape {
         .Dictionary("nodes" -> js.Array(nodeDicts: _*), "edges" -> js.Array(edgeDicts: _*))
     )
   }
+
+  def successfulEdges(nfa: NFA[Int, Match[Char]], candidate: String): Set[(Int, Int)] =
+    NFA
+      .runNFAWithEffect[IndexedSeq, Writer[Set[(Int, Int)], ?], Int, Match[Char], Char](
+        nfa,
+        matches = { (n1, n2, m, c) =>
+          val isMatch = m.matches(c)
+          val log = if (isMatch) Set((n1, n2)) else Set.empty[(Int, Int)]
+          Writer(log, isMatch)
+        }
+      )
+      .apply(candidate)
+      .written
 }

@@ -81,7 +81,7 @@ def update(): Unit = {
         li.textContent = s
         regexMatchesList.appendChild(li)
       }
-      val _ = js.Dynamic.global.cytoscape(nfaGraphDict(Glushkov.kleeneToNFA(r), nfaViz))
+      val _ = js.Dynamic.global.cytoscape(nfaGraphDict(Glushkov.kleeneToNFA(r), nfaViz, matchValue))
   }
 }
 
