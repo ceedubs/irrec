@@ -10,8 +10,12 @@ import higherkindness.droste.data.{Coattr, CoattrF}
 import higherkindness.droste.scheme
 import scala.collection.immutable.{SortedMap, SortedSet}
 
-// a lot of the code in here is based on http://luzhuomi.blogspot.com/2012/06/extending-glushkov-nfa-with-sub.html
-// TODO ceedubs document what these methods do
+/**
+ * Functions for converting a regular expression into an NFA.
+ *
+ * Much of the code in here is based on the blog post [[http://luzhuomi.blogspot.com/2012/06/extending-glushkov-nfa-with-sub.html "Extending Glushkov NFA with sub matching over Strings"]]
+ * by Kenny Zhuo Ming Lu.
+ */
 object Glushkov {
 
   def kleeneLocalIsEmpty[I, A](k: KleeneF[LocalLanguage[I, A]]): Boolean = k match {
