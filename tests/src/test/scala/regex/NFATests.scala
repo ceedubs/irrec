@@ -22,7 +22,7 @@ class NFATests extends IrrecSuite {
   test("runNFA and runNFAWithEffect consistency") {
     // for some reason this seems to be hitting GC issues, so tuning this down for now.
     // Should probably look into whether there is a way to reduce GC pressure from runNFAWithEffect
-    forAll(SizeRange(20)) { rc: RegexAndCandidate[Int] =>
+    forAll(minSuccessful(5), SizeRange(10)) { rc: RegexAndCandidate[Int] =>
       val nfa = Glushkov.kleeneToNFA(rc.r)
       val matches: (Match[Int], Int) => Boolean = _.matches(_)
       val withEffect =
