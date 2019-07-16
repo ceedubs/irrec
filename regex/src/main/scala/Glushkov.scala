@@ -1,14 +1,13 @@
 package ceedubs.irrec
 package regex
 
-import cats.{Functor, Order}
-import cats.data.State
+import cats.Order
 import cats.implicits._
-import higherkindness.droste.{Algebra, AlgebraM}
+import higherkindness.droste.Algebra
 import higherkindness.droste.data.prelude._
-import higherkindness.droste.data.{Coattr, CoattrF}
+import higherkindness.droste.data.CoattrF
 import higherkindness.droste.scheme
-import scala.collection.immutable.{SortedMap, SortedSet}
+import scala.collection.immutable.SortedMap
 
 /**
  * Functions for converting a regular expression into an NFA.
@@ -73,56 +72,19 @@ object Glushkov {
       transitions = kleeneLocalTransitions(ll))
   }
 
-  def indexLeaves[F[_]: Functor, A]
-    : AlgebraM[State[Int, ?], CoattrF[F, A, ?], Coattr[F, (Int, A)]] =
-    AlgebraM {
-      CoattrF.un(_) match {
-        case Left(a) => State((i: Int) => (i + 1, Coattr.pure(i -> a)))
-        case Right(z) => State.pure(Coattr.roll(z))
-      }
-    }
-
-  def kleeneToLocalLanguage[I, A](
+  def indexedKleeneToLocalLanguage[I, A](
     implicit orderingI: Ordering[I]): Algebra[CoattrF[KleeneF, (I, A), ?], LocalLanguage[I, A]] =
     Algebra {
       CoattrF.un(_) match {
-        case Left((i, ma)) => leafLocalLanguage(i, ma)
+        case Left((i, ma)) => LocalLanguage.leaf(i, ma)
         case Right(kf) => kleeneLocalLanguage.apply(kf)
       }
     }
 
   // TODO ceedubs can we combine indexing leaves with another algebra and do a single pass?
   def kleeneToNFA[A](k: Kleene[A]): NFA[Int, A] = {
-    val indexed = scheme.cataM(indexLeaves[KleeneF, A]).apply(k).runA(1).value
-    val ll = scheme.cata(kleeneToLocalLanguage[Int, A]).apply(indexed)
-    localLanguageToNFA(ll)
+    val indexed = scheme.cataM(CoattrSchemes.indexLeaves[KleeneF, A]).apply(k).runA(1).value
+    val ll = scheme.cata(indexedKleeneToLocalLanguage[Int, A]).apply(indexed)
+    LocalLanguage.intLocalLanguageToNFA(ll)
   }
-
-  def leafLocalLanguage[I, A](index: I, a: A)(
-    implicit orderingI: Ordering[I]): LocalLanguage[I, A] = {
-    val singletonList = List((index, a))
-    LocalLanguage(
-      isEmpty = false,
-      leading = singletonList,
-      trailing = singletonList,
-      transitions = SortedMap.empty)
-  }
-
-  def localLanguageToNFA[A](ll: LocalLanguage[Int, A]): NFA[Int, A] =
-    NFA(
-      initStates = SortedSet(0),
-      finalStates = (if (ll.isEmpty) SortedSet(0) else SortedSet.empty[Int]) |+| ll.trailing
-        .map(_._1)
-        .to[SortedSet],
-      transitions = ll.leading.foldMap { l =>
-        SortedMap((0, List(l)))
-      } |+| ll.transitions
-    )
-
-  // TODO ceedubs document
-  final case class LocalLanguage[I, A](
-    isEmpty: Boolean,
-    leading: List[(I, A)],
-    trailing: List[(I, A)],
-    transitions: SortedMap[I, List[(I, A)]])
 }
