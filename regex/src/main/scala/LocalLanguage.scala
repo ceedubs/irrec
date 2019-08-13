@@ -12,7 +12,15 @@ final case class LocalLanguage[I, A](
   isEmpty: Boolean,
   leading: List[(I, A)],
   trailing: List[(I, A)],
-  transitions: SortedMap[I, List[(I, A)]])
+  transitions: SortedMap[I, List[(I, A)]]) {
+
+  // TODO ceedubs test functor laws
+  // TODO ceedubs is mapValues bad here?
+  def map[B](f: A => B): LocalLanguage[I, B] = this.copy(
+    leading = leading.map{ case (i, a) => (i, f(a)) },
+    trailing = trailing.map{ case (i, a) => (i, f(a)) },
+    transitions = transitions.mapValues(_.map{ case (i, a) => (i, f(a)) }))
+}
 
 object LocalLanguage {
   def leaf[I, A](index: I, a: A)(implicit orderingI: Ordering[I]): LocalLanguage[I, A] = {

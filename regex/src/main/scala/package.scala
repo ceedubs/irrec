@@ -6,6 +6,7 @@ package object regex {
   type Kleene[A] = Coattr[KleeneF, A]
   type Regex[A] = Kleene[Match[A]]
   type CapturingKleene[L, A] = Coattr[SemirngF, LabeledKleene[L, A]]
+  type CapturingRegex[L, A] = CapturingKleene[L, Match[A]]
 
   implicit def toKleeneOps[A](r: Kleene[A]): KleeneOps[A] = new KleeneOps(r)
 
