@@ -5,8 +5,8 @@ val catsVersion = "1.6.1"
 val catsCollectionsVersion = "0.8.0"
 val scalacheckVersion = "1.13.5"
 val drosteVersion = "0.7.0"
-val fastParseVersion = "2.1.2"
-val scalaJsDomVersion = "0.9.6"
+val fastParseVersion = "2.1.0"
+val scalaJsDomVersion = "0.9.7"
 
 val catsOrg = "org.typelevel"
 val scalacheckOrg = "org.scalacheck"
@@ -223,7 +223,7 @@ val scalacOptionSettings: Seq[Setting[_]] = {
 }
 
 val commonSettings: Seq[Setting[_]] = Seq(
-  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.7"),
+  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.10"),
   scalaVersion := "2.12.8",
   crossScalaVersions := List("2.11.12", "2.12.8"),
   autoAPIMappings := true
