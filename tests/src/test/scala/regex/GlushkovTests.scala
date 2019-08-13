@@ -7,7 +7,7 @@ import org.scalacheck.Gen
 import RegexAndCandidate._
 import RegexMatchGen._
 import org.scalacheck.Arbitrary, Arbitrary.arbitrary
-import cats.data.NonEmptyList
+import cats.data.{NonEmptyList, Writer}
 import cats.laws.discipline.arbitrary._
 import ceedubs.irrec.parse.{regex => parse}
 
@@ -390,6 +390,33 @@ class GlushkovTests extends IrrecSuite {
       case (lits, r1, c) =>
         val r2 = allOfFR(lits)
         r1.matcher[Stream].apply(c) should ===(r2.matcher[Stream].apply(c))
+    }
+  }
+
+  test("TODO ceedubs"){
+    // TODO ceedubs
+    implicit val indexedSeqFoldable: cats.Foldable[IndexedSeq] =
+      new IndexedSeqFoldable[IndexedSeq] {}
+
+    val r = (lit('a').capture | lit('b').capture) * lit('c').star.capture
+
+    val compiled = NFA.runNFAWithEffect[IndexedSeq, Writer[Map[Int, String], ?], Int, (Option[Int], Match[Char]), Char](Glushkov.tempToNFA(r), { (_, _, x, c) =>
+      val matches = x._2.matches(c)
+      val log: Map[Int, String] = x._1 match {
+        case Some(label) if (matches) => Map((label, c.toString))
+        case _ => Map.empty 
+      }
+      Writer(log, matches)
+      })
+
+    val pairs: List[(String, Writer[Map[Int, String], Boolean])] = List(
+      "acc" -> Writer(Map(1 -> "a", 3 -> "cc"), true),
+      "bc" -> Writer(Map(2 -> "b", 3 -> "c"), true),
+      "bd" -> Writer(Map(2 -> "b"), false),
+      "x" -> Writer(Map.empty, false))
+
+    pairs foreach { case (input, expected) =>
+      compiled(input) should ===(expected)
     }
   }
 }

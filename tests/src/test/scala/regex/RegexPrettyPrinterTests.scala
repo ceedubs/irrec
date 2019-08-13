@@ -8,11 +8,11 @@ class RegexPrettyPrinterTests extends IrrecSuite {
   test("char regex pretty print examples") {
     lit('a').pprint should ===("a")
     lit('a').star.pprint should ===("a*")
-    lit('a').star.star.pprint should ===("(a*)*")
-    lit('a').star.star.star.pprint should ===("((a*)*)*")
+    lit('a').star.star.pprint should ===("(?:a*)*")
+    lit('a').star.star.star.pprint should ===("(?:(?:a*)*)*")
     (lit('a') | lit('b')).pprint should ===("a|b")
-    (lit('a') | lit('b')).star.pprint should ===("(a|b)*")
-    (lit('a') * lit('b') * (lit('c') | lit('d')).star).pprint should ===("ab(c|d)*")
+    (lit('a') | lit('b')).star.pprint should ===("(?:a|b)*")
+    (lit('a') * lit('b') * (lit('c') | lit('d')).star).pprint should ===("ab(?:c|d)*")
   }
 
   test(
@@ -40,5 +40,17 @@ class RegexPrettyPrinterTests extends IrrecSuite {
   test(
     "char regex pretty print should display non-graphical characters in character classes as unicode code points") {
     range('\u0000', ' ').pprint should ===("[\\u0000-\\u0020]")
+  }
+
+  // TODO ceedubs should I print as named capturing groups?
+  // TODO ceedubs I should probably be passing an Option[Int] to captureAs?
+  test("char regex pretty print capturing examples") {
+    lit('a').captureAs(1).pprint should ===("(a)")
+    lit('a').star.captureAs(1).pprint should ===("(a*)")
+    lit('a').star.star.captureAs(1).pprint should ===("((?:a*)*)")
+    lit('a').star.star.star.captureAs(1).pprint should ===("((?:(?:a*)*)*)")
+    (lit('a').captureAs(1) | lit('b').captureAs(1)).pprint should ===("(a)|(b)")
+    (lit('a') | lit('b')).star.pprint should ===("(?:a|b)*")
+    (lit('a') * lit('b') * (lit('c') | lit('d')).star).pprint should ===("ab(?:c|d)*")
   }
 }

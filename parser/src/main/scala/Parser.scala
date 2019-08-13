@@ -182,7 +182,7 @@ object Parser {
         Regex.matching(_)))) |
       wildcard |
       charClass.map(Regex.matching(_)) |
-      ("(" ~/ "?:".? ~ regex ~ ")")
+      ("(?:" ~ regex ~ ")")
   )
 
   def factor[_: P]: P[Regex[Char]] = P {
@@ -208,13 +208,31 @@ object Parser {
     }
   )
 
+  // TODO handle nested stuff. Need to turn this into a term thing and then support |
+  def capturingRegex[_: P]: P[CapturingRegex[Boolean, Char]] =
+    regex.map(r => CapturingKleene.labeledKleene(LabeledKleene(false, r))) |
+  ("(" ~ regex.map(r => CapturingKleene.labeledKleene(LabeledKleene(true, r))) ~ ")")
+
   /**
    * A parser for strings that are complete regular expressions, up until the end of the string.
    */
   def regexExpr[_: P]: P[Regex[Char]] = P(regex ~ End)
 
+  /**
+   * A parser for strings that are complete regular expressions (with optional
+   * capturing), up until the end of the string.
+   */
+  def capturingRegexExpr[_: P]: P[CapturingRegex[Boolean, Char]] = P(capturingRegex ~ End)
+
   def parseRegex(regex: String): Either[String, Regex[Char]] =
     parse(regex, regexExpr(_), verboseFailures = true) match {
+      case f @ Failure(_, _, _) => Left(f.msg)
+      case Success(value, _) => Right(value)
+    }
+
+  // TODO ceedubs add support for auto-indexing
+  def parseCapturingRegex(regex: String): Either[String, CapturingRegex[Boolean, Char]] =
+    parse(regex, capturingRegexExpr(_), verboseFailures = true) match {
       case f @ Failure(_, _, _) => Left(f.msg)
       case Success(value, _) => Right(value)
     }

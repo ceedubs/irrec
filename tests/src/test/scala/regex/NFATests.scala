@@ -33,7 +33,7 @@ class NFATests extends IrrecSuite {
   }
 
   test("runNFAWithEffect Writer") {
-    val r = parse("ab(c|d)e")
+    val r = parse("ab(?:c|d)e")
     val nfa = Glushkov.kleeneToNFA(r)
     val withEffect = NFA.runNFAWithEffect[Stream, Writer[Chain[String], ?], Int, Match[Char], Char](
       nfa,
