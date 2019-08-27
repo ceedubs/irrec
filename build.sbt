@@ -223,7 +223,7 @@ val scalacOptionSettings: Seq[Setting[_]] = {
 }
 
 val commonSettings: Seq[Setting[_]] = Seq(
-  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.10"),
+  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.0"),
   scalaVersion := "2.12.8",
   crossScalaVersions := List("2.11.12", "2.12.8"),
   autoAPIMappings := true
