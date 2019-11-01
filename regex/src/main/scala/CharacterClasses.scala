@@ -5,7 +5,6 @@ import cats.collections.{Diet, Range}
 import cats.implicits._
 
 object CharacterClasses {
-
   val digit: Diet[Char] = Diet.fromRange(Range('0', '9'))
 
   val lowerAlpha: Diet[Char] =

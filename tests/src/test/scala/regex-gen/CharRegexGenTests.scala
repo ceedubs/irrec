@@ -7,7 +7,6 @@ import ceedubs.irrec.parse.{regex => parse}
 import NoShrink.noShrink
 
 class CharRegexGenTests extends IrrecSuite {
-
   test("regexMatchingStandardStreamGen supports negated character classes") {
     val r2 = parse("[^ac-d]")
     val gen = for {

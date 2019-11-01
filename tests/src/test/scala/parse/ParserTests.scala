@@ -13,7 +13,6 @@ import org.scalatest.compatible.Assertion
 import cats.collections.{Diet, Range}
 
 class ParserTests extends IrrecSuite {
-
   test("regex parsing works for single literal") {
     val expected = Regex.lit('a')
     val r = parse("a")

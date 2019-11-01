@@ -5,7 +5,6 @@ import ceedubs.irrec.parse.{regex => parse}
 import Regex._
 
 class RegexPrettyPrinterTests extends IrrecSuite {
-
   test("char regex pretty print examples") {
     lit('a').pprint should ===("a")
     lit('a').star.pprint should ===("a*")

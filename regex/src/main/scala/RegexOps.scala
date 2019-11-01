@@ -6,7 +6,6 @@ import java.util.regex.Pattern
 import cats.collections.Discrete
 
 final class KleeneOps[A](private val r: Kleene[A]) extends AnyVal {
-
   def |(o: Kleene[A]): Kleene[A] = Regex.or(r, o)
 
   def *(o: Kleene[A]): Kleene[A] = Regex.andThen(r, o)

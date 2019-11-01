@@ -11,7 +11,6 @@ import cats.data.Writer
 import cats.implicits._
 
 object NfaCytoscape {
-
   implicit private val indexedSeqFoldable: Foldable[IndexedSeq] =
     new IndexedSeqFoldable[IndexedSeq] {}
 
@@ -19,7 +18,6 @@ object NfaCytoscape {
     nfa: NFA[Int, Match[Char]],
     container: Element,
     candidate: String): js.Dictionary[js.Any] = {
-
     val (nodes, transitions) = nfa.transitions.toList.foldMap {
       case (node1, transitions) =>
         transitions.foldMap {

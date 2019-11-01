@@ -16,7 +16,6 @@ sealed abstract class Match[A] extends Product with Serializable {
 }
 
 object Match {
-
   final case class Literal[A](value: A) extends Match[A]
 
   sealed abstract class MatchSet[A] extends Match[A] {

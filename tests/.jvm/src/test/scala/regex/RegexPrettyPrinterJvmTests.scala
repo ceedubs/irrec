@@ -4,7 +4,6 @@ package regex
 import CharRegexGen._
 
 class RegexPrettyPrinterJvmTests extends IrrecSuite {
-
   test("char regex pretty printer matches java Pattern") {
     forAll(genCharRegexAndMatch) { rm =>
       val prettyRegex = rm.r.pprint

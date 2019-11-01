@@ -7,7 +7,6 @@ import higherkindness.droste.AlgebraM
 import higherkindness.droste.data.{Coattr, CoattrF}
 
 object CoattrSchemes {
-
   def indexLeaves[F[_]: Functor, A]
     : AlgebraM[State[Int, ?], CoattrF[F, A, ?], Coattr[F, (Int, A)]] =
     AlgebraM {
