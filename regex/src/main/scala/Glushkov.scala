@@ -16,7 +16,6 @@ import scala.collection.immutable.SortedMap
  * by Kenny Zhuo Ming Lu.
  */
 object Glushkov {
-
   def kleeneLocalIsEmpty[I, A](k: KleeneF[LocalLanguage[I, A]]): Boolean = k match {
     case KleeneF.Times(l, r) => l.isEmpty && r.isEmpty
     case KleeneF.Plus(l, r) => l.isEmpty || r.isEmpty

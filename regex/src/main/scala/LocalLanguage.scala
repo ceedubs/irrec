@@ -15,7 +15,6 @@ final case class LocalLanguage[I, A](
   transitions: SortedMap[I, List[(I, A)]])
 
 object LocalLanguage {
-
   def leaf[I, A](index: I, a: A)(implicit orderingI: Ordering[I]): LocalLanguage[I, A] = {
     val singletonList = List((index, a))
     LocalLanguage(

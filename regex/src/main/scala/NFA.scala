@@ -12,7 +12,6 @@ final case class NFA[I, A](
   transitions: SortedMap[I, List[(I, A)]])
 
 object NFA {
-
   /**
    * Similar to [[runNFA]], but optimized for a short input `F[A]`.
    *

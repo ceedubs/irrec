@@ -10,7 +10,6 @@ import ceedubs.irrec.regex.Match.MatchSet
 
 // TODO ceedubs work around that scala bug where a companion object and type alias have the same name
 object Regex {
-
   def matching[A](m: Match[A]): Regex[A] = Coattr.pure(m)
 
   /** alias for [[literal]] */

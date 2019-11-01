@@ -12,7 +12,6 @@ import cats.laws.discipline.arbitrary._
 import ceedubs.irrec.parse.{regex => parse}
 
 class GlushkovTests extends IrrecSuite {
-
   test("literal match") { assert(literal('b').stringMatcher("b")) }
 
   test("literal non-match") { assert(!(literal('b').stringMatcher("a"))) }
@@ -393,5 +392,4 @@ class GlushkovTests extends IrrecSuite {
         r1.matcher[Stream].apply(c) should ===(r2.matcher[Stream].apply(c))
     }
   }
-
 }

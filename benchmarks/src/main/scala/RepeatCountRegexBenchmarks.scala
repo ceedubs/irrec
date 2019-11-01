@@ -9,7 +9,6 @@ import org.openjdk.jmh.annotations.{Benchmark, Scope, State}
 
 @State(Scope.Thread)
 class RepeatCountRegexBenchmarks {
-
   val matchingString: String = ("a" * 10) + ("b" * 13)
   val nonMatchingString: String = ("a" * 9) + ("b" * 9)
   val longNonMatchingString: String = matchingString + ("c" * 20)

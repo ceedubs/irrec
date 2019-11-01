@@ -21,5 +21,4 @@ private[irrec] trait IndexedSeqFoldable[F[x] <: IndexedSeq[x]] extends Foldable[
         else G.pure(Right(b))
     }
   }
-
 }

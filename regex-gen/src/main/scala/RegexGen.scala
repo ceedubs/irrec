@@ -14,7 +14,6 @@ import higherkindness.droste.data.prelude._
 import org.scalacheck.{Arbitrary, Gen}, Gen.Choose
 
 object RegexGen {
-
   /**
    * Configuration for generating regular expressions.
    */
@@ -25,7 +24,6 @@ object RegexGen {
     val includeOne: Boolean)
 
   object Config {
-
     def fromDiscreteDiet[A: Choose: Discrete: Order](available: Diet[A]): Config[A] = {
       val genA = dietMatchingGen(available)
       new Config(

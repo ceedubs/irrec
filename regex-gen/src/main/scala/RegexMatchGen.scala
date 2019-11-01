@@ -12,7 +12,6 @@ import higherkindness.droste.data.prelude._
 import org.scalacheck.Gen, Gen.Choose
 
 object RegexMatchGen {
-
   val byteMatchingGen: Match[Byte] => Gen[Byte] =
     dietMatchToGen(Diet.fromRange(Range(Byte.MinValue, Byte.MaxValue)), dietMatchingGen(_))
 

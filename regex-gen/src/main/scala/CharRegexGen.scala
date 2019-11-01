@@ -14,7 +14,6 @@ import cats.collections.{Diet, Range}
  * expressions. So for now at least we avoid the most fiddly of bits.
  */
 object CharRegexGen {
-
   val supportedCharacters: Diet[Char] =
     Diet.fromRange(Range('\u0000', '\uD7FF')).addRange(Range('\uF900', '\uFFFD'))
 

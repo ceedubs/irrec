@@ -7,7 +7,6 @@ import cats.collections.{Diet, Discrete, Range}
 import cats.implicits._
 
 object DietGen {
-
   def genNonEmptySubDiet[A: Choose: Discrete: Order](
     diet: Diet[A],
     weight: Range[A] => Int): Gen[Diet[A]] = {

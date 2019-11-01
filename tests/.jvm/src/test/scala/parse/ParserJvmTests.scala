@@ -53,7 +53,6 @@ class ParserJvmTests extends IrrecSuite {
 }
 
 object ParserJvmTests {
-
   val posixClassNames: Set[String] = Set(
     "alnum",
     "alpha",

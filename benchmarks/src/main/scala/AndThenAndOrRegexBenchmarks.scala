@@ -8,7 +8,6 @@ import org.openjdk.jmh.annotations.{Benchmark, Scope, State}
 
 @State(Scope.Thread)
 class AndThenAndOrRegexBenchmarks {
-
   val matchingString: String = "abcefg"
   val nonMatchingString: String = "abcdefg"
   val longNonMatchingString: String = "abcdefg" * 10
@@ -53,5 +52,4 @@ class AndThenAndOrRegexBenchmarks {
   @Benchmark
   def irrecOptimizedLongNonMatch: Boolean =
     irrecOptimizedMatcher(longNonMatchingString)
-
 }

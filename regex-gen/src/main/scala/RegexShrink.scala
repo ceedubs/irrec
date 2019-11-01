@@ -10,7 +10,6 @@ import cats.{Now, Order}
 import cats.implicits._
 
 object RegexShrink {
-
   def shrinkKleeneF[A]: KleeneF[(Regex[A], Stream[Regex[A]])] => Stream[Regex[A]] = {
     case KleeneF.Plus(l, r) =>
       l._1 #:: // only left

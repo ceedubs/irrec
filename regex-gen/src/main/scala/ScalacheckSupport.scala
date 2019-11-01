@@ -5,7 +5,6 @@ import cats.{Monad, StackSafeMonad}
 import org.scalacheck.Gen
 
 private[irrec] object ScalacheckSupport {
-
   /**
    * CAUTION: this isn't actually stack-safe. But we are working with a version of Scalacheck that
    * doesn't expose the necessary pieces to have a properly stack-safe monad.
