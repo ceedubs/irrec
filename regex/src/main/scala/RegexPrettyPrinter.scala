@@ -30,8 +30,8 @@ object RegexPrettyPrinter {
     }
   }
 
-  val nonCharClassCharsToEscape: Set[Char] = Set('<', '(', '[', '{', '\\', '^', '-', '=', '$', '!',
-    '|', ']', '}', ')', '?', '*', '+', '.', '>')
+  val nonCharClassCharsToEscape: Set[Char] =
+    Set('<', '(', '[', '{', '\\', '^', '=', '$', '!', '|', ']', '}', ')', '?', '*', '+', '.', '>')
 
   val charClassCharsToEscape: Set[Char] = Set('[', ']', '\\', '^', '-')
 
