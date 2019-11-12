@@ -426,6 +426,12 @@ class ParserTests extends IrrecSuite {
     sameRegex(parse("[[a:]]"), inSet(Diet.one(':') + 'a'))
   }
 
+  test("regex parsing doesn't expect hyphens to be escaped outside of character classes") {
+    sameRegex(parse("-"), lit('-'))
+
+    sameRegex(parse("""\d-\d"""), digit * lit('-') * digit)
+  }
+
   test("regex parsing fails on invalid regexes") {
     assert(parseRegex("(").isLeft)
     assert(parseRegex(")").isLeft)
