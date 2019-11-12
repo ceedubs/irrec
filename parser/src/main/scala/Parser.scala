@@ -35,12 +35,13 @@ object Parser {
     final case class Range(lowerInclusive: Int, upperInclusive: Option[Int]) extends RepeatCount
   }
 
+  private val escapableCharToLit: Map[Char, Char] = specialNonCharClassCharToLit + ('-' -> '-')
+
   /**
    * Matches on special characters that should be escaped like `*` and `{`.
    */
   def specialChar[_: P]: P[Char] =
-    CharPred(specialNonCharClassCharToLit.contains(_)).!.map(s =>
-      specialNonCharClassCharToLit(s.head))
+    CharPred(escapableCharToLit.contains(_)).!.map(s => escapableCharToLit(s.head))
       .opaque(
         s"special regular expression character that should be escaped such as '(', '}', '*', etc")
 
