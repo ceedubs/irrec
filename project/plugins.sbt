@@ -1,5 +1,5 @@
 addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.0.3")
-addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.0.1")
+addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.0.2")
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.6.0")
 addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.3.7")
 addSbtPlugin("com.geirsson" % "sbt-ci-release" % "1.4.31")
