@@ -1,5 +1,9 @@
 /* your custom css */
 
+.hidden {
+  display: none;
+}
+
 input.invalid {
   background-color: #ffdddd;
 }

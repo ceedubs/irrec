@@ -14,6 +14,8 @@ Since irrec cross-compiles with [Scala.js](https://www.scala-js.org/), it can be
 
 </ul>
 
+<div class="optimized-regex-container">This regex will match the same strings: <code class="optimized-regex"></code></div>
+
 Here are some strings that match your regular expression:
 <ul class="regex-matches"></ul>
 
@@ -41,6 +43,10 @@ val seedInput = node.querySelector("""input[name="rng-seed"]""").asInstanceOf[In
 
 val regexErrorText = node.querySelector("p.regex-error-msg")
 
+val optimizedRegexContainer = node.querySelector("div.optimized-regex-container")
+
+val optimizedRegex = node.querySelector("code.optimized-regex")
+
 val regexMatchesList = node.querySelector("ul.regex-matches")
 
 val nfaViz = node.querySelector("div.nfa-viz")
@@ -67,6 +73,7 @@ def update(): Unit = {
         Seed(s)
       })
   regexMatchesList.innerHTML = ""
+  optimizedRegexContainer.classList.add("hidden")
   fastparse.parse(regexValue, Parser.regexExpr(_), verboseFailures = true) match {
     case f @ Failure(_, _, _) =>
       regexInput.classList.add("invalid")
@@ -76,7 +83,13 @@ def update(): Unit = {
       regexErrorText.textContent = ""
       val isMatch = r.stringMatcher(matchValue)
       if (isMatch) matchInput.classList.remove("invalid") else matchInput.classList.add("invalid")
-      genMatches(r, seed).foreach{ s =>
+      val optimized = r.optimize
+      val optimizedPp = optimized.pprint
+      if (optimizedPp.length < regexValue.length) {
+        optimizedRegex.textContent = optimizedPp
+        optimizedRegexContainer.classList.remove("hidden")
+      }
+      genMatches(optimized, seed).foreach{ s =>
         val li = dom.document.createElement("li")
         li.textContent = s
         regexMatchesList.appendChild(li)
