@@ -17,7 +17,6 @@ import scala.collection.immutable.SortedMap
  * by Kenny Zhuo Ming Lu.
  */
 object Glushkov {
-
   // TODO ceedubs consider just always having a label on LocalLanguage and making it Unit when we don't care about it
   def kleeneLocalIsEmpty[I, A](k: KleeneF[LocalLanguage[I, A]]): Boolean = k match {
     case KleeneF.Times(l, r) => l.isEmpty && r.isEmpty
@@ -130,10 +129,11 @@ object Glushkov {
   // TODO ceedubs
   def bolth2[A](lk: LabeledKleene[Boolean, A])
     : State[CapturingRegexLabelState, LabeledKleene[Option[Int], (Int, A)]] =
-      for {
-        withLabelIndices <- CapturingRegexLabelState.zoomLeafIndex(indexedLabel(lk))
-        withLeafIndices <- CapturingRegexLabelState.zoomCaptureIndex(indexKleeneLeaves(withLabelIndices.value))
-      } yield  withLabelIndices.copy(value = withLeafIndices)
+    for {
+      withLabelIndices <- CapturingRegexLabelState.zoomLeafIndex(indexedLabel(lk))
+      withLeafIndices <- CapturingRegexLabelState.zoomCaptureIndex(
+        indexKleeneLeaves(withLabelIndices.value))
+    } yield withLabelIndices.copy(value = withLeafIndices)
 
   // TODO ceedubs naming
   //def bolth[A](x: SemirngF[LabeledKleene[Boolean, A]])
@@ -143,14 +143,18 @@ object Glushkov {
   //    .flatMap(x => CapturingRegexLabelState.zoomCaptureIndex(indexLabeledKleeneSemirng(x)))
 
   // TODO ceedubs
-  def bolthAlgebra[A]: AlgebraM[State[CapturingRegexLabelState, ?], CoattrF[SemirngF, LabeledKleene[Boolean, A], ?], LocalLanguage[Int, (Option[Int], A)]] =
+  def bolthAlgebra[A]: AlgebraM[
+    State[CapturingRegexLabelState, ?],
+    CoattrF[SemirngF, LabeledKleene[Boolean, A], ?],
+    LocalLanguage[Int, (Option[Int], A)]] =
     AlgebraM {
       CoattrF.un(_) match {
         // TODO ceedubs clean up
-        case Left(l) => bolth2(l).map{ x =>
-          val temp = scheme.cata(indexedKleeneToLocalLanguage[Int, A]).apply(x.value)
-          temp.map(a => (x.label, a))
-        }
+        case Left(l) =>
+          bolth2(l).map { x =>
+            val temp = scheme.cata(indexedKleeneToLocalLanguage[Int, A]).apply(x.value)
+            temp.map(a => (x.label, a))
+          }
         case Right(x) => State.pure(kleeneLocalLanguage[Int, (Option[Int], A)].apply(x.toKleeneF))
       }
     }

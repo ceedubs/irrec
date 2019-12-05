@@ -211,7 +211,7 @@ object Parser {
   // TODO handle nested stuff. Need to turn this into a term thing and then support |
   def capturingRegex[_: P]: P[CapturingRegex[Boolean, Char]] =
     regex.map(r => CapturingKleene.labeledKleene(LabeledKleene(false, r))) |
-  ("(" ~ regex.map(r => CapturingKleene.labeledKleene(LabeledKleene(true, r))) ~ ")")
+      ("(" ~ regex.map(r => CapturingKleene.labeledKleene(LabeledKleene(true, r))) ~ ")")
 
   /**
    * A parser for strings that are complete regular expressions, up until the end of the string.
