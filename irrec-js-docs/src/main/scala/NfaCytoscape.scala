@@ -81,7 +81,7 @@ object NfaCytoscape {
           "style" -> js
             .Dictionary[js.Any]("line-style" -> "dashed")),
         js.Dictionary(
-          "selector" -> "node[!initState, !finalState]",
+          "selector" -> "node[!initState][!finalState]",
           "style" -> js
             .Dictionary[js.Any]("shape" -> "ellipse", "height" -> "1px", "width" -> "1px")),
         js.Dictionary(
