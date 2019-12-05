@@ -14,5 +14,6 @@ package object regex {
 
   implicit def toCharRegexOps(r: Regex[Char]): CharRegexOps = new CharRegexOps(r)
 
-  implicit def toCapturingKleeneOps[L, A](k: CapturingKleene[L, A]): CapturingKleeneOps[L, A] = new CapturingKleeneOps(k)
+  implicit def toCapturingKleeneOps[L, A](k: CapturingKleene[L, A]): CapturingKleeneOps[L, A] =
+    new CapturingKleeneOps(k)
 }

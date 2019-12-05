@@ -393,21 +393,28 @@ class GlushkovTests extends IrrecSuite {
     }
   }
 
-  test("TODO ceedubs"){
+  test("TODO ceedubs") {
     // TODO ceedubs
     implicit val indexedSeqFoldable: cats.Foldable[IndexedSeq] =
       new IndexedSeqFoldable[IndexedSeq] {}
 
     val r = (lit('a').capture | lit('b').capture) * lit('c').star.capture
 
-    val compiled = NFA.runNFAWithEffect[IndexedSeq, Writer[Map[Int, String], ?], Int, (Option[Int], Match[Char]), Char](Glushkov.tempToNFA(r), { (_, _, x, c) =>
-      val matches = x._2.matches(c)
-      val log: Map[Int, String] = x._1 match {
-        case Some(label) if (matches) => Map((label, c.toString))
-        case _ => Map.empty 
+    val compiled = NFA.runNFAWithEffect[
+      IndexedSeq,
+      Writer[Map[Int, String], ?],
+      Int,
+      (Option[Int], Match[Char]),
+      Char](
+      Glushkov.tempToNFA(r), { (_, _, x, c) =>
+        val matches = x._2.matches(c)
+        val log: Map[Int, String] = x._1 match {
+          case Some(label) if (matches) => Map((label, c.toString))
+          case _ => Map.empty
+        }
+        Writer(log, matches)
       }
-      Writer(log, matches)
-      })
+    )
 
     val pairs: List[(String, Writer[Map[Int, String], Boolean])] = List(
       "acc" -> Writer(Map(1 -> "a", 3 -> "cc"), true),
@@ -415,8 +422,9 @@ class GlushkovTests extends IrrecSuite {
       "bd" -> Writer(Map(2 -> "b"), false),
       "x" -> Writer(Map.empty, false))
 
-    pairs foreach { case (input, expected) =>
-      compiled(input) should ===(expected)
+    pairs foreach {
+      case (input, expected) =>
+        compiled(input) should ===(expected)
     }
   }
 }
