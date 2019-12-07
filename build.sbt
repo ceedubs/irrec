@@ -34,7 +34,8 @@ inThisBuild(
 
 coverageExcludedPackages in ThisBuild := "ceedubs.irrec.bench"
 
-scalaVersion in Global := "2.12.8"
+val scala212Version = "2.12.10"
+scalaVersion in Global := scala212Version
 
 lazy val kleene = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Pure)
@@ -224,8 +225,8 @@ val scalacOptionSettings: Seq[Setting[_]] = {
 
 val commonSettings: Seq[Setting[_]] = Seq(
   addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3"),
-  scalaVersion := "2.12.8",
-  crossScalaVersions := List("2.11.12", "2.12.8"),
+  scalaVersion := scala212Version,
+  crossScalaVersions := List("2.11.12", scala212Version),
   autoAPIMappings := true
 ) ++ scalacOptionSettings
 
