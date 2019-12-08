@@ -44,13 +44,13 @@ class RegexPrettyPrinterTests extends IrrecSuite {
 
   // TODO ceedubs should I print as named capturing groups?
   // TODO ceedubs I should probably be passing an Option[Int] to captureAs?
-  test("char regex pretty print capturing examples") {
-    lit('a').captureAs(1).pprint should ===("(a)")
-    lit('a').star.captureAs(1).pprint should ===("(a*)")
-    lit('a').star.star.captureAs(1).pprint should ===("((?:a*)*)")
-    lit('a').star.star.star.captureAs(1).pprint should ===("((?:(?:a*)*)*)")
-    (lit('a').captureAs(1) | lit('b').captureAs(1)).pprint should ===("(a)|(b)")
-    (lit('a') | lit('b')).star.pprint should ===("(?:a|b)*")
-    (lit('a') * lit('b') * (lit('c') | lit('d')).star).pprint should ===("ab(?:c|d)*")
-  }
+  //test("char regex pretty print capturing examples") {
+  //  lit('a').captureAs(1).pprint should ===("(a)")
+  //  lit('a').star.captureAs(1).pprint should ===("(a*)")
+  //  lit('a').star.star.captureAs(1).pprint should ===("((?:a*)*)")
+  //  lit('a').star.star.star.captureAs(1).pprint should ===("((?:(?:a*)*)*)")
+  //  (lit('a').captureAs(1) | lit('b').captureAs(1)).pprint should ===("(a)|(b)")
+  //  (lit('a') | lit('b')).star.pprint should ===("(?:a|b)*")
+  //  (lit('a') * lit('b') * (lit('c') | lit('d')).star).pprint should ===("ab(?:c|d)*")
+  //}
 }

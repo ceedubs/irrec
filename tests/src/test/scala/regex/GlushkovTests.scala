@@ -7,7 +7,7 @@ import org.scalacheck.Gen
 import RegexAndCandidate._
 import RegexMatchGen._
 import org.scalacheck.Arbitrary, Arbitrary.arbitrary
-import cats.data.{NonEmptyList, Writer}
+import cats.data.NonEmptyList
 import cats.laws.discipline.arbitrary._
 import ceedubs.irrec.parse.{regex => parse}
 
@@ -394,33 +394,32 @@ class GlushkovTests extends IrrecSuite {
   }
 
   test("TODO ceedubs") {
-    // TODO ceedubs
     implicit val indexedSeqFoldable: cats.Foldable[IndexedSeq] =
       new IndexedSeqFoldable[IndexedSeq] {}
 
-    val r = (lit('a').capture | lit('b').capture) * lit('c').star.capture
+    val r = (seq("ab") | seq("ac")).capture * lit('c').star.capture
 
-    val compiled = NFA.runNFAWithEffect[
-      IndexedSeq,
-      Writer[Map[Int, String], ?],
-      Int,
-      (Option[Int], Match[Char]),
-      Char](
-      Glushkov.tempToNFA(r), { (_, _, x, c) =>
-        val matches = x._2.matches(c)
-        val log: Map[Int, String] = x._1 match {
-          case Some(label) if (matches) => Map((label, c.toString))
-          case _ => Map.empty
+    val nfa = Glushkov.tempToNFA(r)
+    import cats.data.Chain
+
+    val compiled: String => Option[Map[Int, String]] = {
+      val f: IndexedSeq[Char] => Option[Map[Int, Chain[Char]]] = NFA
+        .captureNFAPath[IndexedSeq, Map[Int, Chain[Char]], Int, (Option[Int], Match[Char]), Char](
+          nfa,
+          Map.empty) { (acc, n, c) =>
+          if (n._2.matches(c))
+            Some(n._1.fold(acc)(i => acc |+| Map(i -> Chain.one(c))))
+          else None
         }
-        Writer(log, matches)
-      }
-    )
+      f(_).map(_.mapValues(_.mkString_("", "", "")))
+    }
 
-    val pairs: List[(String, Writer[Map[Int, String], Boolean])] = List(
-      "acc" -> Writer(Map(1 -> "a", 3 -> "cc"), true),
-      "bc" -> Writer(Map(2 -> "b", 3 -> "c"), true),
-      "bd" -> Writer(Map(2 -> "b"), false),
-      "x" -> Writer(Map.empty, false))
+    val pairs: List[(String, Option[Map[Int, String]])] = List(
+      "acc" -> Some(Map(1 -> "ac", 2 -> "c")),
+      "abc" -> Some(Map(1 -> "ab", 2 -> "c")),
+      "abcc" -> Some(Map(1 -> "ab", 2 -> "cc")),
+      "abd" -> None,
+      "x" -> None)
 
     pairs foreach {
       case (input, expected) =>
