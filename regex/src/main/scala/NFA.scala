@@ -20,8 +20,8 @@ object NFA {
    * it processes, so if the input `F[A]` is short, then it can be faster than [[runNFA]].
    */
   def runNFAShortInput[F[_], I, B, A](nfa: NFA[I, B], matches: (B, A) => Boolean)(
-    implicit orderingI: Ordering[I],
-    foldableF: Foldable[F]): F[A] => Boolean = { (fa: F[A]) =>
+    implicit foldableF: Foldable[F]): F[A] => Boolean = { (fa: F[A]) =>
+    import nfa.initStates.ordering
     val finalStates: SortedSet[I] = fa.foldLeft(nfa.initStates)(
       (currentStates, a) =>
         currentStates
@@ -33,18 +33,41 @@ object NFA {
     nfa.finalStates.exists(finalStates.contains(_))
   }
 
+  // TODO would be more efficient to duplicate code
   def runNFA[F[_], I, B, A](nfa: NFA[I, B], matches: (B, A) => Boolean)(
-    implicit orderingI: Ordering[I],
-    foldableF: Foldable[F]): F[A] => Boolean = { (fa: F[A]) =>
-    val finalStates: Either[Unit, SortedSet[I]] = fa.foldM(nfa.initStates) { (currentStates, a) =>
-      val nextStates = currentStates.flatMap(
-        i =>
-          nfa.transitions
-            .getOrElse(i, List.empty)
-            .collect { case (i, b) if matches(b, a) => i })
-      if (nextStates.isEmpty) Left(()) else Right(nextStates)
+    implicit foldableF: Foldable[F]): F[A] => Boolean = {
+    val toOption: F[A] => Option[Unit] =
+      captureNFAPath(nfa, ())((_, b, a) => if (matches(b, a)) Some(()) else None)
+    fa => toOption(fa).isDefined
+  }
+
+  def captureNFAPath[F[_], S, I, B, A](nfa: NFA[I, B], s0: S)(doMatch: (S, B, A) => Option[S])(
+    implicit foldableF: Foldable[F]): F[A] => Option[S] = {
+    val init: List[(S, I)] = nfa.initStates.toList.map { node =>
+      (s0, node)
     }
-    finalStates.fold(_ => false, states => states.exists(nfa.finalStates.contains(_)))
+
+    { (fa: F[A]) =>
+      val finalStates: Either[Unit, Iterator[(S, I)]] =
+        fa.foldM[Either[Unit, ?], Iterator[(S, I)]](init.iterator) { (currentStates, a) =>
+          val nextStates = currentStates.flatMap {
+            case (s, i) =>
+              nfa.transitions
+                .getOrElse(i, List.empty)
+                .flatMap {
+                  case (i, b) =>
+                    doMatch(s, b, a).map(s => (s, i))
+                }
+          }
+          if (nextStates.isEmpty) Left(()) else Right(nextStates)
+        }
+      finalStates.fold(
+        _ => None,
+        states =>
+          states.collectFirst {
+            case s if nfa.finalStates.contains(s._2) => s._1
+          })
+    }
   }
 
   def runNFAWithEffect[F[_], G[_], I, B, A](nfa: NFA[I, B], matches: (I, I, B, A) => G[Boolean])(

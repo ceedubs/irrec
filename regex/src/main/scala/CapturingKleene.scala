@@ -13,3 +13,5 @@ object CapturingKleene {
   def andThen[L, A](x: CapturingKleene[L, A], y: CapturingKleene[L, A]): CapturingKleene[L, A] =
     Coattr.roll(SemirngF.Times(x, y))
 }
+
+final case class Derp(private val foo: String)
