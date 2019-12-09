@@ -202,10 +202,9 @@ val scalac211Options: Seq[String] = {
     "-Xlint:constant",
     "-Ywarn-extra-implicit"
   )
-  scalac212Options.filter(
-    s =>
-      !s.startsWith("-Ywarn-unused") &&
-        !exclusions.contains(s))
+  scalac212Options.filter(s =>
+    !s.startsWith("-Ywarn-unused") &&
+      !exclusions.contains(s))
 }
 
 val scalacOptionExclusionsForConsole: Seq[String] = Seq("-Ywarn-unused:imports", "-Xfatal-warnings")
