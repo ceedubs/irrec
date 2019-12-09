@@ -14,6 +14,7 @@ import higherkindness.droste.data.prelude._
 import org.scalacheck.{Arbitrary, Gen}, Gen.Choose
 
 object RegexGen {
+
   /**
    * Configuration for generating regular expressions.
    */
@@ -51,21 +52,20 @@ object RegexGen {
         (if (cfg.includeZero) 1 else 0) -> Gen.const(CoattrF.roll(KleeneF.Zero))
       )
 
-    CoalgebraM[Gen, CoattrF[KleeneF, Match[A], ?], Int](
-      (maxSize: Int) =>
-        Gen
-          .choose(0, maxSize)
-          .flatMap(size =>
-            if (size === 0) leafGen
-            else {
-              val newSize = size - 1
-              Gen.frequency(
-                10 -> Gen.const(CoattrF.roll(KleeneF.Times(newSize, newSize))),
-                5 -> leafGen,
-                4 -> Gen.const(CoattrF.roll(KleeneF.Plus(newSize, newSize))),
-                2 -> Gen.const(CoattrF.roll(KleeneF.Star(newSize)))
-              )
-            }))
+    CoalgebraM[Gen, CoattrF[KleeneF, Match[A], ?], Int]((maxSize: Int) =>
+      Gen
+        .choose(0, maxSize)
+        .flatMap(size =>
+          if (size === 0) leafGen
+          else {
+            val newSize = size - 1
+            Gen.frequency(
+              10 -> Gen.const(CoattrF.roll(KleeneF.Times(newSize, newSize))),
+              5 -> leafGen,
+              4 -> Gen.const(CoattrF.roll(KleeneF.Plus(newSize, newSize))),
+              2 -> Gen.const(CoattrF.roll(KleeneF.Star(newSize)))
+            )
+          }))
   }
 
   def genRegex[A](cfg: Config[A]): Gen[Regex[A]] =
