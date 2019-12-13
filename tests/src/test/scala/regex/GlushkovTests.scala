@@ -426,4 +426,74 @@ class GlushkovTests extends IrrecSuite {
         compiled(input) should ===(expected)
     }
   }
+
+  test("TODO ceedubs 2"){
+    // TODO create a case class instead of the tuple to help type inference?
+    //implicit def boop[M, In] = cats.free.FreeApplicative.freeApplicative[λ[c => (Kleene[M], cats.data.Chain[In] => c)]]
+    //println(boop)
+    val temp = lit('a').captcha[Char]
+    println(temp.fproduct(identity))
+    println(temp)
+    // TODO this is a mess
+    val res = (lit('a').captcha[Char] *> wildcard[Char].star.captcha, wildcard[Char].captcha[Char]).mapN{ (many, single) =>
+      (many, single)
+    //}
+    //println(res)
+    }
+    import cats.data.Chain
+    val r = GTests.barp[List, Match[Char], Char, (Chain[Char], Chain[Char])](res, _.matches(_))
+    r(('a' to 'e').toList) should ===(Some((Chain.fromSeq('b' to 'd'), Chain.one('e'))))
+    r(('b' to 'e').toList) should ===(None)
+    r('a' :: Nil) should ===(None)
+  }
+}
+
+object GTests {
+    import cats.data.Chain
+
+    final case class CapturingKleeneBuilderState[A](
+      cr: Option[CapturingKleene[Int, A]],
+      captureIndex: Int)
+
+    object CapturingKleeneBuilderState {
+      def empty[A]: CapturingKleeneBuilderState[A] = CapturingKleeneBuilderState(None, 1)
+    }
+
+    //type CK[A, B, C] = FreeApplicative[λ[c => (Kleene[A], Chain[B] => c)], C]
+    type CK[A, B, C] = CapturingKleeneA[A, B, C]
+
+    // TODO clean up
+    import cats.data.State
+    def boop[A, B, C](k: Kleene[A], f: Chain[B] => C): State[CapturingKleeneBuilderState[A], Map[Int, Chain[B]] => C] = State { st =>
+      val ck = k.captureAs(st.captureIndex)
+      val cr2 = st.cr.fold(ck)(_ * ck)
+      val st2 = CapturingKleeneBuilderState(Some(cr2), st.captureIndex + 1)
+      (st2, chains => f(chains.getOrElse(st.captureIndex, Chain.empty)))
+    }
+
+    // TODO clean up
+    import cats.{~>, Foldable}
+    def barp[F[_]:Foldable, A, B, C](fa: CK[A, B, C], doMatch: (A, B) => Boolean): F[B] => Option[C] = {
+      val f = λ[CaptureGroup[A, B, ?] ~> λ[c => State[CapturingKleeneBuilderState[A], Map[Int, Chain[B]] => c]]](kc =>
+        boop(kc.kleene, kc.mapCaptured))
+
+      import cats._
+      import cats.implicits._
+      val F = Applicative[State[CapturingKleeneBuilderState[A], ?]] compose Applicative[Map[Int, Chain[B]] => ?]
+      //val x = fa.compile[λ[c => State[CapturingKleeneBuilderState[A], Map[Int, Chain[B]] => c]]](f)
+      val y = fa.foldMap[λ[c => State[CapturingKleeneBuilderState[A], Map[Int, Chain[B]] => c]]](f)(F)
+      val (ckbs, mapToC) = y.run(CapturingKleeneBuilderState.empty).value
+      val booperDooper: F[B] => Option[C] = ckbs.cr.fold[F[B] => Option[C]](_ => Some(mapToC(Map.empty))){ ck =>
+        val nfa = Glushkov.capturingKleeneToNFA(ck)
+        val captureMap = nfa.capturePath[F, Map[Int, Chain[B]], B](Map.empty){(s, a, b) =>
+          if (doMatch(a._2, b)) {
+            Some(s |+| Map((a._1, Chain.one(b))))
+          } else {
+            None
+          }
+        }
+        fa => captureMap(fa).map(mapToC)
+      }
+      booperDooper
+    }
 }
