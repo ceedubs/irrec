@@ -135,12 +135,21 @@ object Glushkov {
         indexKleeneLeaves(withLabelIndices.value))
     } yield withLabelIndices.copy(value = withLeafIndices)
 
-  // TODO ceedubs naming
-  //def bolth[A](x: SemirngF[LabeledKleene[Boolean, A]])
-  //  : State[CapturingRegexLabelState, SemirngF[LabeledKleene[Option[Int], (Int, A)]]] =
-  //  CapturingRegexLabelState
-  //    .zoomLeafIndex(indexedLabels(x))
-  //    .flatMap(x => CapturingRegexLabelState.zoomCaptureIndex(indexLabeledKleeneSemirng(x)))
+  // TODO document (the Int in the state is the leaf index)
+  def labeledKleeneToLocalLanguageAlgebra[L, A]: AlgebraM[
+    State[Int, ?],
+    CoattrF[SemirngF, LabeledKleene[L, A], ?],
+    LocalLanguage[Int, (L, A)]] =
+    AlgebraM {
+      CoattrF.un(_) match {
+        case Left(lk) =>
+          indexKleeneLeaves(lk.value).map{ indexed => 
+            scheme.cata(indexedKleeneToLocalLanguage[Int, A]).apply(indexed)
+              .map(a => (lk.label, a))
+          }
+        case Right(x) => State.pure(kleeneLocalLanguage[Int, (L, A)].apply(x.toKleeneF))
+      }
+    }
 
   // TODO ceedubs
   def bolthAlgebra[A]: AlgebraM[
@@ -169,6 +178,12 @@ object Glushkov {
   // TODO ceedubs naming
   def tempToNFA[A](k: CapturingKleene[Boolean, A]): NFA[Int, (Option[Int], A)] = {
     val x = scheme.cataM(bolthAlgebra[A]).apply(k).runA(CapturingRegexLabelState.init).value
+    LocalLanguage.intLocalLanguageToNFA(x)
+  }
+
+  def capturingKleeneToNFA[L, A](k: CapturingKleene[L, A]): NFA[Int, (L, A)] = {
+    val x = scheme.cataM(labeledKleeneToLocalLanguageAlgebra[L, A]).apply(k)
+      .runA(CapturingRegexLabelState.init.leafIndex).value
     LocalLanguage.intLocalLanguageToNFA(x)
   }
 

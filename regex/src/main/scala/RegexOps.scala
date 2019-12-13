@@ -2,6 +2,7 @@ package ceedubs.irrec
 package regex
 
 import cats.{Foldable, Order}
+import cats.data.Chain
 import java.util.regex.Pattern
 import cats.collections.Discrete
 
@@ -25,6 +26,14 @@ final class KleeneOps[A](private val r: Kleene[A]) extends AnyVal {
   def noCapture: CapturingKleene[Boolean, A] = captureAs(false)
 
   def capture: CapturingKleene[Boolean, A] = captureAs(true)
+
+  // TODO temp name
+  def captcha[In]: CapturingKleeneA[A, In, Chain[In]] =
+    CapturingKleeneA.lift(r)
+
+  // TODO temp name
+  //def captcha2[In]: cats.free.FreeApplicative[CapturingKleeneA.Test[A, In, ?], Chain[In]] =
+  //  cats.free.FreeApplicative.lift(CapturingKleeneA.Test(r, identity))
 
   def captureAs[L](label: L): CapturingKleene[L, A] =
     CapturingKleene.labeledKleene(LabeledKleene(label, r))

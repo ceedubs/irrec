@@ -1,11 +1,13 @@
 package ceedubs.irrec
 
+import cats.free.FreeApplicative
 import higherkindness.droste.data.Coattr
 
 package object regex {
   type Kleene[A] = Coattr[KleeneF, A]
   type Regex[A] = Kleene[Match[A]]
   type CapturingKleene[L, A] = Coattr[SemirngF, LabeledKleene[L, A]]
+  type CapturingKleeneA[M, In, Out] = FreeApplicative[CaptureGroup[M, In, ?], Out]
   type CapturingRegex[L, A] = CapturingKleene[L, Match[A]]
 
   implicit def toKleeneOps[A](r: Kleene[A]): KleeneOps[A] = new KleeneOps(r)
