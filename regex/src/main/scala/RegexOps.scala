@@ -22,18 +22,8 @@ final class KleeneOps[A](private val r: Kleene[A]) extends AnyVal {
   def repeat(minInclusive: Int, maxInclusive: Option[Int]): Kleene[A] =
     Regex.repeat(minInclusive, maxInclusive, r)
 
-  // TODO ceedubs do these make sense?
-  def noCapture: CapturingKleene[Boolean, A] = captureAs(false)
-
-  def capture: CapturingKleene[Boolean, A] = captureAs(true)
-
-  // TODO temp name
-  def captcha[In]: CapturingKleeneA[A, In, Chain[In]] =
+  def !(implicit ev: CaptureAs[A]): CapturingKleeneA[A, ev.In, Chain[ev.In]] =
     CapturingKleeneA.lift(r)
-
-  // TODO temp name
-  //def captcha2[In]: cats.free.FreeApplicative[CapturingKleeneA.Test[A, In, ?], Chain[In]] =
-  //  cats.free.FreeApplicative.lift(CapturingKleeneA.Test(r, identity))
 
   def captureAs[L](label: L): CapturingKleene[L, A] =
     CapturingKleene.labeledKleene(LabeledKleene(label, r))

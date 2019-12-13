@@ -186,10 +186,4 @@ object Glushkov {
       .runA(CapturingRegexLabelState.init.leafIndex).value
     LocalLanguage.intLocalLanguageToNFA(x)
   }
-
-  // TODO ceedubs
-  // next steps:
-  // support labels other than Option[Int]
-  // update parser to support capturing
-  // future: Shapeless nice stuff?
 }
