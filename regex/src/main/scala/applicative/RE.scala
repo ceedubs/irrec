@@ -1,13 +1,14 @@
 package ceedubs.irrec
 package regex
+package applicative
 
-import cats.{Alternative, Applicative, Foldable}
+import cats.{Alternative, Applicative}
 import cats.data.{Chain, NonEmptyList, State}
 import cats.implicits._
+import higherkindness.droste.data.Coattr
 
-// TODO break things out into other files
-// TODO document type parameters (especially M)
 // This code was ported (with minor modifications) from https://hackage.haskell.org/package/regex-applicative
+// TODO document type parameters (especially M)
 sealed abstract class RE[-In, +M, A] extends Product with Serializable {
   import RE._
 
@@ -92,21 +93,22 @@ object RE {
   }
 
   // TODO name
-  // TODO could chnge this to return a natural transformation
+  // TODO could change this to return a natural transformation
+  // TODO make private or something?
   // TODO Stream is deprecated in 2.13, right?
   // TODO use Cont/ContT?
   // TODO return a custom type?
-  def compile2[In, M, A, R](
+  def compileCont[In, M, A, R](
     re: RE[In, (ThreadId, M), A]): Cont[A => Stream[Thread[In, R]]] => Stream[Thread[In, R]] =
     re match {
       case Eps => _.empty(())
 
       case x @ FMap(r, f) =>
-        val rc = compile2[In, M, x.Init, R](r)
+        val rc = compileCont[In, M, x.Init, R](r)
         cont => rc(cont.map(_ compose f))
 
       case Or(alternatives) =>
-        val alternativesC = alternatives.map(compile2[In, M, A, R](_)).toList.toStream
+        val alternativesC = alternatives.map(compileCont[In, M, A, R](_)).toList.toStream
         cont => alternativesC.flatMap(_.apply(cont))
 
       case Match((id, _), p) =>
@@ -117,7 +119,7 @@ object RE {
 
         // TODO document what's going on here
       case x @ Star(r, g, z, fold) =>
-        val rc = compile2[In, M, x.Init, R](r)
+        val rc = compileCont[In, M, x.Init, R](r)
         def threads(z: A, cont: Cont[A => Stream[Thread[In, R]]]): Stream[Thread[In, R]] = {
           def stop = cont.empty(z)
           // TODO think more about laziness
@@ -134,8 +136,8 @@ object RE {
       case Fail() => _ => Stream.empty
 
       case x @ AndThen(l, r) =>
-        val lc = compile2[In, M, x.Init => A, R](l)
-        val rc = compile2[In, M, x.Init, R](r)
+        val lc = compileCont[In, M, x.Init => A, R](l)
+        val rc = compileCont[In, M, x.Init, R](r)
         _ match {
           case Cont.Single(f) => lc(Cont.Single(lVal => rc(Cont.Single(f compose lVal))))
           case Cont.Choice(whenEmpty, whenNonEmpty) =>
@@ -143,122 +145,60 @@ object RE {
               Cont.Choice(
                 whenEmpty = lVal =>
                   rc(Cont.Choice(whenEmpty compose lVal, whenNonEmpty compose lVal)),
-                // TODO original code uses Choice here, but Single makes sense, right?
-                //whenNonEmpty = lVal => rc(Cont.Single(whenNonEmpty compose lVal))
-                whenNonEmpty = lVal =>
-                  rc(Cont.Choice(whenNonEmpty compose lVal, whenNonEmpty compose lVal))
+                whenNonEmpty = lVal => rc(Cont.Single(whenNonEmpty compose lVal))
               ))
         }
     }
 
   // TODO
-  def kompile[In, M, A](r: RE[In, M, A]): ParseState[In, A] = {
+  def compile[In, M, A](r: RE[In, M, A]): ParseState[In, A] = {
     val threads =
-      RE.compile2(assignThreadIds(r)).apply(Cont.Single((a: A) => Stream(Thread.Accept[In, A](a))))
+      RE.compileCont(assignThreadIds(r)).apply(Cont.Single((a: A) => Stream(Thread.Accept[In, A](a))))
     ParseState.fromThreads(threads)
   }
-}
 
-// TODO?
-final case class ThreadId(asInt: Int) extends AnyVal
-
-sealed abstract class Thread[In, A] extends Product with Serializable {
-  def result: Option[A] = this match {
-    case Thread.Accept(value) => Some(value)
-    case _ => None
-  }
-}
-
-object Thread {
-  final case class Accept[In, A](value: A) extends Thread[In, A]
-  final case class Cont[In, A](id: ThreadId, cont: In => Stream[Thread[In, A]])
-      extends Thread[In, A]
-}
-
-sealed abstract class Cont[+A] extends Product with Serializable {
-  import Cont._
-
-  def empty: A = this match {
-    case Single(a) => a
-    case Choice(whenEmpty, _) => whenEmpty
+  // TODO name?
+  // TODO should this exist?
+  def toKleene[M](r: RE[_, M, _]): Kleene[M] = r match {
+    case Eps => Regex.empty
+    case Fail() => Regex.impossible
+    case FMap(r, _) => toKleene(r)
+    case Star(r, _, _, _) => toKleene(r).star
+    case AndThen(l, r) => toKleene(l) * toKleene(r)
+    case RE.Match(m, _) => Coattr.pure(m)
+    case Or(alternatives) => Regex.oneOfFR(alternatives.map(toKleene))
   }
 
-  def nonEmpty: A = this match {
-    case Single(a) => a
-    case Choice(_, whenNonEmpty) => whenNonEmpty
-  }
-
-  def map[B](f: A => B): Cont[B] = this match {
-    case Single(value) => Single(f(value))
-    case Choice(whenEmpty, whenNonEmpty) => Choice(f(whenEmpty), f(whenNonEmpty))
-  }
-}
-
-object Cont {
-  final case class Single[+A](value: A) extends Cont[A]
-  final case class Choice[+A](whenEmpty: A, whenNonEmpty: A) extends Cont[A]
-}
-
-sealed abstract class Greediness extends Product with Serializable
-
-object Greediness {
-  case object Greedy extends Greediness
-  case object NonGreedy extends Greediness
-}
-
-// TODO should this use a stream instead of a List?
-final case class StateQueue[A](reversedElements: List[A], ids: Set[Int]) {
-  def insertUnique(id: Int, element: A): StateQueue[A] =
-    if (ids.contains(id)) this else StateQueue(element :: reversedElements, ids + id)
-
-  def insertWithoutId(element: A): StateQueue[A] = StateQueue(element :: reversedElements, ids)
-}
-
-object StateQueue {
-  def empty[A]: StateQueue[A] = StateQueue(Nil, Set.empty)
-}
-
-// TODO figure out where to put methods/data that are user-facing vs internal
-final case class ParseState[In, A](queue: StateQueue[Thread[In, A]]) extends AnyVal {
-  def threads: List[Thread[In, A]] = queue.reversedElements.reverse
-
-  def step(x: In): ParseState[In, A] =
-    // TODO would it make more sense to use another type of data structure?
-    threads.foldLeft(ParseState.empty[In, A]) { (st, thread) =>
-      thread match {
-        case Thread.Accept(_) => st
-        case Thread.Cont(_, cont) =>
-          cont(x).foldLeft(st)(_.addThread(_))
+  // TODO private?
+  import higherkindness.droste.Algebra
+  import higherkindness.droste.data.CoattrF
+  import higherkindness.droste.data.prelude._
+  def ofKleeneAlgebra[A, M](matches: (M, A) => Boolean): Algebra[CoattrF[KleeneF, M, ?], RE[A, M, Unit]] = Algebra{
+    CoattrF.un(_) match {
+      case Left(m) => RE.Match(m, a => if (matches(m, a)) Some(()) else None)
+      case Right(k) => k match {
+        case KleeneF.One => Eps
+        // TODO greediness
+        case KleeneF.Star(r) => r.star(Greediness.Greedy).void
+        case KleeneF.Times(l, r) => l *> r
+        case KleeneF.Zero => Fail()
+        case KleeneF.Plus(l, r) => l | r
       }
     }
-
-  // TODO maybe don't put the methods that you don't expect people to call directly on here?
-  // TODO also is this even needed?
-  def addThread(t: Thread[In, A]): ParseState[In, A] = t match {
-    case Thread.Accept(_) => ParseState(queue.insertWithoutId(t))
-    case Thread.Cont(id, _) => ParseState(queue.insertUnique(id.asInt, t))
   }
 
-  def results: List[A] = threads.flatMap(_.result)
-
-  // TODO document
-  // TODO use foldLeftM to short-circuit? I don't know if this will work
-  def anchoredMatch[F[_]](input: F[In])(implicit foldableF: Foldable[F]): Option[A] =
-    input.foldLeft(this)(_.step(_)).results.headOption
-}
-
-object ParseState {
-  def empty[In, A]: ParseState[In, A] = ParseState(StateQueue.empty)
-
-  def fromThreads[F[_], In, A](threads: F[Thread[In, A]])(
-    implicit foldableF: Foldable[F]): ParseState[In, A] =
-    threads.foldLeft(empty[In, A])(_.addThread(_))
+  def ofRegex[A:cats.Order](r: Regex[A]): RE[A, regex.Match[A], Unit] = higherkindness.droste.scheme.cata(ofKleeneAlgebra[A, regex.Match[A]](_.matches(_))).apply(r)
 }
 
 object CodyTesting {
   import Greediness._
+  import ceedubs.irrec.regex.Match.MatchSet
 
   type Regex[In, A] = RE[In, Unit, A]
+
+  type RegexM[A] = RE[A, regex.Match[A], Unit]
+
+  def matching[A:cats.Order](m: Match[A]): RegexM[A] = RE.Match(m, a => if (m.matches(a)) Some(()) else None)
 
   def pred[In](p: In => Boolean): Regex[In, In] = RE.Match((), in => if (p(in)) Some(in) else None)
 
@@ -269,5 +209,14 @@ object CodyTesting {
     pred[Char](_.isLower)
   ).mapN((d, us, uas, l) => d.toString + us.show + uas.show + l.toString)
 
-  val rc: ParseState[Char, String] = RE.kompile(r)
+  val rc: ParseState[Char, String] = RE.compile(r)
+
+  val r2: RE[Char, regex.Match[Char], Unit] =
+    (matching(MatchSet.allow(CharacterClasses.digit)) | matching(Match.lit('a'))) *>
+    matching(MatchSet.allow(CharacterClasses.upperAlpha)).star(Greediness.Greedy) *>
+    matching(Match.lit('A')).optional *>
+    matching(MatchSet.allow(CharacterClasses.lowerAlpha))
+  //).mapN((d, us, uas, l) => d.toString + us.show + uas.show + l.toString)
+  //
+  val r2c: ParseState[Char, Unit] = RE.compile(r2)
 }

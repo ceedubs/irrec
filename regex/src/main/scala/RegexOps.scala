@@ -30,15 +30,26 @@ final class KleeneOps[A](private val r: Kleene[A]) extends AnyVal {
 }
 
 final class RegexOps[A](private val r: Regex[A]) extends AnyVal {
-  def matcher[F[_]](implicit orderingA: Ordering[A], foldableF: Foldable[F]): F[A] => Boolean =
-    Regex.matcher(r)
+  // TODO
+  import applicative.RE
+  def matcher[F[_]](implicit orderingA: Ordering[A], foldableF: Foldable[F]): F[A] => Boolean = {
+    implicit val orderA = cats.Order.fromOrdering(orderingA)
+    val re = RE.compile(RE.ofRegex(r))
+    s => re.anchoredMatch(s).nonEmpty
+  }
 
   def optimize(implicit discreteA: Discrete[A], orderA: Order[A]): Regex[A] =
     RegexOptimization.optimizeRegex[A].apply(r)
 }
 
 final class CharRegexOps(private val r: Regex[Char]) extends AnyVal {
-  def stringMatcher: String => Boolean = Regex.stringMatcher(r)
+  // TODO
+  import applicative.RE
+  import cats.implicits._
+  def stringMatcher: String => Boolean = {
+    val re = RE.compile(RE.ofRegex(r))
+    s => re.anchoredMatch(s.toList).nonEmpty
+  }
 
   def toPattern: Pattern = Pattern.compile(pprint, Pattern.DOTALL)
 
