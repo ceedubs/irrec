@@ -2,8 +2,11 @@ package ceedubs.irrec
 package regex
 package applicative
 
+// TODO
+import ceedubs.irrec.regex.{Regex => RegexOld}
+
 import cats.{Alternative, Applicative}
-import cats.data.{Chain, NonEmptyList, State}
+import cats.data.{Chain, NonEmptyChain, NonEmptyList, State}
 import cats.implicits._
 import higherkindness.droste.data.Coattr
 
@@ -30,6 +33,29 @@ sealed abstract class RE[-In, +M, A] extends Product with Serializable {
 
   def few: RE[In, M, Chain[A]] = star(Greediness.NonGreedy)
 
+  // TODO document
+  def oneOrMore(greediness: Greediness): RE[In, M, NonEmptyChain[A]] =
+    this.map2(this.star(greediness))(NonEmptyChain.fromChainPrepend(_, _))
+
+  def count(n: Int): RE[In, M, Chain[A]] =
+    Chain.fromSeq(1 to n).traverse(_ => this)
+
+  // TODO is this handling greediness right? Test this.
+  def repeat(minInclusive: Int, maxInclusive: Option[Int], greediness: Greediness): RE[In, M, Chain[A]] = {
+    val tail = maxInclusive.fold(star(greediness).some){ max =>
+      (1 to (max - minInclusive)).toList.toNel.map { counts =>
+        val orderedCounts = greediness match {
+          case Greediness.Greedy => counts.reverse
+          case Greediness.NonGreedy => counts
+        }
+        // TODO this is a mess
+        Or(orderedCounts.map(i => count(i)))
+      }
+    }
+    val head = count(minInclusive)
+    tail.fold(head)(tail => head.map2(tail)(_ concat _))
+  }
+
   def optional[In2 <: In, M2 >: M]: RE[In2, M2, Option[A]] =
     this.map[Option[A]](Some(_)) | none[A].pure[RE[In2, M2, ?]]
 
@@ -47,6 +73,7 @@ object RE {
       extends RE[In, M, A] {
     type Init = I
   }
+  // TODO use a lazy structure like NonEmptyStream?
   final case class Or[-In, +M, A](alternatives: NonEmptyList[RE[In, M, A]]) extends RE[In, M, A]
   final case class FMap[-In, +M, I, A](r: RE[In, M, I], f: I => A) extends RE[In, M, A] {
     type Init = I
@@ -153,41 +180,45 @@ object RE {
   // TODO
   def compile[In, M, A](r: RE[In, M, A]): ParseState[In, A] = {
     val threads =
-      RE.compileCont(assignThreadIds(r)).apply(Cont.Single((a: A) => Stream(Thread.Accept[In, A](a))))
+      RE.compileCont(assignThreadIds(r))
+        .apply(Cont.Single((a: A) => Stream(Thread.Accept[In, A](a))))
     ParseState.fromThreads(threads)
   }
 
   // TODO name?
   // TODO should this exist?
   def toKleene[M](r: RE[_, M, _]): Kleene[M] = r match {
-    case Eps => Regex.empty
-    case Fail() => Regex.impossible
+    case Eps => RegexOld.empty
+    case Fail() => RegexOld.impossible
     case FMap(r, _) => toKleene(r)
     case Star(r, _, _, _) => toKleene(r).star
     case AndThen(l, r) => toKleene(l) * toKleene(r)
     case RE.Match(m, _) => Coattr.pure(m)
-    case Or(alternatives) => Regex.oneOfFR(alternatives.map(toKleene))
+    case Or(alternatives) => RegexOld.oneOfFR(alternatives.map(toKleene))
   }
 
   // TODO private?
   import higherkindness.droste.Algebra
   import higherkindness.droste.data.CoattrF
   import higherkindness.droste.data.prelude._
-  def ofKleeneAlgebra[A, M](matches: (M, A) => Boolean): Algebra[CoattrF[KleeneF, M, ?], RE[A, M, Unit]] = Algebra{
+  def ofKleeneAlgebra[A, M](
+    matches: (M, A) => Boolean): Algebra[CoattrF[KleeneF, M, ?], RE[A, M, Unit]] = Algebra {
     CoattrF.un(_) match {
       case Left(m) => RE.Match(m, a => if (matches(m, a)) Some(()) else None)
-      case Right(k) => k match {
-        case KleeneF.One => Eps
-        // TODO greediness
-        case KleeneF.Star(r) => r.star(Greediness.Greedy).void
-        case KleeneF.Times(l, r) => l *> r
-        case KleeneF.Zero => Fail()
-        case KleeneF.Plus(l, r) => l | r
-      }
+      case Right(k) =>
+        k match {
+          case KleeneF.One => Eps
+          // TODO greediness
+          case KleeneF.Star(r) => r.star(Greediness.Greedy).void
+          case KleeneF.Times(l, r) => l *> r
+          case KleeneF.Zero => Fail()
+          case KleeneF.Plus(l, r) => l | r
+        }
     }
   }
 
-  def ofRegex[A:cats.Order](r: Regex[A]): RE[A, regex.Match[A], Unit] = higherkindness.droste.scheme.cata(ofKleeneAlgebra[A, regex.Match[A]](_.matches(_))).apply(r)
+  def ofRegex[A: cats.Order](r: Regex[A]): RE[A, regex.Match[A], Unit] =
+    higherkindness.droste.scheme.cata(ofKleeneAlgebra[A, regex.Match[A]](_.matches(_))).apply(r)
 }
 
 object CodyTesting {
@@ -198,7 +229,8 @@ object CodyTesting {
 
   type RegexM[A] = RE[A, regex.Match[A], Unit]
 
-  def matching[A:cats.Order](m: Match[A]): RegexM[A] = RE.Match(m, a => if (m.matches(a)) Some(()) else None)
+  def matching[A: cats.Order](m: Match[A]): RegexM[A] =
+    RE.Match(m, a => if (m.matches(a)) Some(()) else None)
 
   def pred[In](p: In => Boolean): Regex[In, In] = RE.Match((), in => if (p(in)) Some(in) else None)
 
@@ -213,9 +245,9 @@ object CodyTesting {
 
   val r2: RE[Char, regex.Match[Char], Unit] =
     (matching(MatchSet.allow(CharacterClasses.digit)) | matching(Match.lit('a'))) *>
-    matching(MatchSet.allow(CharacterClasses.upperAlpha)).star(Greediness.Greedy) *>
-    matching(Match.lit('A')).optional *>
-    matching(MatchSet.allow(CharacterClasses.lowerAlpha))
+      matching(MatchSet.allow(CharacterClasses.upperAlpha)).star(Greediness.Greedy) *>
+      matching(Match.lit('A')).optional *>
+      matching(MatchSet.allow(CharacterClasses.lowerAlpha))
   //).mapN((d, us, uas, l) => d.toString + us.show + uas.show + l.toString)
   //
   val r2c: ParseState[Char, Unit] = RE.compile(r2)

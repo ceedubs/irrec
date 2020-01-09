@@ -42,6 +42,15 @@ class RegexPrettyPrinterTests extends IrrecSuite {
     range('\u0000', ' ').pprint should ===("[\\u0000-\\u0020]")
   }
 
+  test("TODO ceedubs 1"){
+    import applicative.RE
+    import CharRegexGen._
+    forAll { r0: Regex[Char] =>
+      val r = r0.optimize
+      applicative.RegexPrettyPrinter.pprintRE(RE.ofRegex(r)) should ===(r.pprint)
+    }
+  }
+
   // TODO ceedubs should I print as named capturing groups?
   // TODO ceedubs I should probably be passing an Option[Int] to captureAs?
   //test("char regex pretty print capturing examples") {
