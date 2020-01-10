@@ -2,6 +2,7 @@ package ceedubs.irrec
 package regex
 package applicative
 
+import cats.~>
 import cats.implicits._
 
 // TODO name
@@ -24,24 +25,35 @@ object RegexPrettyPrinter {
   // TODO naming
   // TODO documentation
   // TODO generalize to not be specific to Match?
-  def boop[A](f: (Boolean, A) => String)(implicit eqA: cats.Eq[A]): RE[_, Match[A], _] => String = {
+  // TODO In instead of A
+  // TODO this formatting is horrendous
+  def boop[In](f: (Boolean, In) => String)(
+    implicit eqA: cats.Eq[In]): RE[In, Match[In], _] => String = {
     val showMatch = regex.RegexPrettyPrinter.showMatch(f)
-    def go(r: RE[_, Match[A], _]): (Int, String) =
-      r match {
-        case RE.Or(alternatives) => (orPrecedence, alternatives.map(r => parensMaybe(orPrecedence, go(r), false)).mkString_("|"))
-        case RE.Fail() => (failPrecedence, "∅")
-        // TODO handle greediness
-        case RE.Star(r, _, _, _) => (starPrecedence, parensMaybe(starPrecedence, go(r), true) + "*")
-        case RE.Eps => (epsPrecedence, "")
-        case RE.Match(m, _) => (matchPrecedence, showMatch(m))
-        case RE.FMap(r, _) => go(r)
-        // TODO is this right?
-        case RE.AndThen(l, r) => (andThenPrecedence, parensMaybe(andThenPrecedence, go(l), false) + parensMaybe(andThenPrecedence, go(r), false))
-        // This is gross but _should_ be safe.
-        // I seem to be running into https://github.com/scala/bug/issues/10292
-        // TODO can I set up a fold method to avoid this issue?
-        case v => go(v.asInstanceOf[RE.Void[_, Match[A], _]].r)
-      }
+    def go[Out](r: RE[In, Match[In], Out]): (Int, String) =
+      RE.fold[In, Match[In], Out, (Int, String)](
+        eps = _ => (epsPrecedence, ""),
+        fail = () => (failPrecedence, "∅"),
+        mappedMatch = (m, _) => (matchPrecedence, showMatch(m)),
+        andThen =
+          λ[λ[i => (RE[In, Match[In], i => Out], RE[In, Match[In], i])] ~> λ[a => (Int, String)]](
+            t =>
+              (
+                andThenPrecedence,
+                parensMaybe(andThenPrecedence, go(t._1), false) + parensMaybe(
+                  andThenPrecedence,
+                  go(t._2),
+                  false))),
+        star = λ[λ[i => (RE[In, Match[In], i], Greediness, Out, (Out, i) => Out)] ~> λ[a => (
+          Int,
+          String)]](t => (starPrecedence, parensMaybe(starPrecedence, go(t._1), true) + "*")),
+        mapped = λ[λ[a => (RE[In, Match[In], a], a => Out)] ~> λ[a => (Int, String)]](t => go(t._1)),
+        or = alternatives =>
+          (
+            orPrecedence,
+            alternatives.map(r => parensMaybe(orPrecedence, go(r), false)).mkString_("|")),
+        void = _ => λ[RE[In, Match[In], ?] ~> λ[a => (Int, String)]](go(_))
+      )(r)
     go(_)._2
   }
 

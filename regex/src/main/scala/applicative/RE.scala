@@ -5,13 +5,15 @@ package applicative
 // TODO
 import ceedubs.irrec.regex.{Regex => RegexOld}
 
-import cats.{Alternative, Applicative}
+import cats.{~>, Alternative, Applicative}
 import cats.data.{Chain, NonEmptyChain, NonEmptyList, State}
+import cats.evidence.Is
 import cats.implicits._
 import higherkindness.droste.data.Coattr
 
 // This code was ported (with minor modifications) from https://hackage.haskell.org/package/regex-applicative
 // TODO document type parameters (especially M)
+// TODO change A to Out
 sealed abstract class RE[-In, +M, A] extends Product with Serializable {
   import RE._
 
@@ -41,8 +43,11 @@ sealed abstract class RE[-In, +M, A] extends Product with Serializable {
     Chain.fromSeq(1 to n).traverse(_ => this)
 
   // TODO is this handling greediness right? Test this.
-  def repeat(minInclusive: Int, maxInclusive: Option[Int], greediness: Greediness): RE[In, M, Chain[A]] = {
-    val tail = maxInclusive.fold(star(greediness).some){ max =>
+  def repeat(
+    minInclusive: Int,
+    maxInclusive: Option[Int],
+    greediness: Greediness): RE[In, M, Chain[A]] = {
+    val tail = maxInclusive.fold(star(greediness).some) { max =>
       (1 to (max - minInclusive)).toList.toNel.map { counts =>
         val orderedCounts = greediness match {
           case Greediness.Greedy => counts.reverse
@@ -104,6 +109,29 @@ object RE {
     case v @ Void(r) => traverseM[F, In, M, M2, v.Init](r)(f).map(Void(_))
   }
 
+  // TODO change name of Match and use more helpful name than m here
+  // TODO think about ordering?
+  // TODO can we carry around evidence that Out = Unit for Void?
+  def fold[In, M, Out, R](
+    eps: Is[Unit, Out] => R,
+    fail: () => R,
+    mappedMatch: (M, In => Option[Out]) => R,
+    andThen: λ[i => (RE[In, M, i => Out], RE[In, M, i])] ~> λ[a => R],
+    star: λ[i => (RE[In, M, i], Greediness, Out, (Out, i) => Out)] ~> λ[a => R],
+    mapped: λ[a => (RE[In, M, a], a => Out)] ~> λ[a => R],
+    or: NonEmptyList[RE[In, M, Out]] => R,
+    void: Is[Unit, Out] => RE[In, M, ?] ~> λ[a => R]
+    )(r: RE[In, M, Out]): R = r match {
+    case AndThen(l, r) => andThen((l, r))
+    case Or(alternatives) => or(alternatives)
+    case Match(m1, f) => mappedMatch(m1, f)
+    case Star(r, g, z, f) => star((r, g, z, f))
+    case FMap(r, f) => mapped((r, f))
+    case Eps => eps(Is.refl[Unit])
+    case Fail() => fail()
+    case Void(r) => void(Is.refl[Unit])(r)
+  }
+
   implicit def alternativeRE[In, M]: Alternative[RE[In, M, ?]] = new Alternative[RE[In, M, ?]] {
     def ap[A, B](ff: RE[In, M, A => B])(fa: RE[In, M, A]): RE[In, M, B] = AndThen(ff, fa)
     def combineK[A](x: RE[In, M, A], y: RE[In, M, A]): RE[In, M, A] = x | y
@@ -127,60 +155,65 @@ object RE {
   // TODO use Cont/ContT?
   // TODO return a custom type?
   def compileCont[In, M, A, R](
-    re: RE[In, (ThreadId, M), A]): Cont[A => Stream[Thread[In, R]]] => Stream[Thread[In, R]] =
-    re match {
-      case Eps => _.empty(())
-
-      case x @ FMap(r, f) =>
-        val rc = compileCont[In, M, x.Init, R](r)
-        cont => rc(cont.map(_ compose f))
-
-      case Or(alternatives) =>
-        val alternativesC = alternatives.map(compileCont[In, M, A, R](_)).toList.toStream
-        cont => alternativesC.flatMap(_.apply(cont))
-
-      case Match((id, _), p) =>
+    re: RE[In, (ThreadId, M), A]): Cont[A => Stream[Thread[In, R]]] => Stream[Thread[In, R]] = {
+    type ContOut = Cont[A => Stream[Thread[In, R]]] => Stream[Thread[In, R]]
+    RE.fold[In, (ThreadId, M), A, ContOut](
+      eps = ev => _.empty(ev.coerce(())),
+      fail = () => _ => Stream.empty,
+      // TODO clean up?
+      mappedMatch = (m, p) =>
         cont =>
           // TODO formatting
           Thread
-            .Cont[In, R](id, in => p(in).fold(Stream.empty[Thread[In, R]])(cont.nonEmpty(_))) #:: Stream.empty
-
-        // TODO document what's going on here
-      case x @ Star(r, g, z, fold) =>
-        val rc = compileCont[In, M, x.Init, R](r)
-        def threads(z: A, cont: Cont[A => Stream[Thread[In, R]]]): Stream[Thread[In, R]] = {
-          def stop = cont.empty(z)
-          // TODO think more about laziness
-          def go =
-            rc(Cont.Choice(whenEmpty = _ => Stream.empty, whenNonEmpty = { v =>
-              threads(fold(z, v), Cont.Single(cont.nonEmpty))
-            }))
-          g match {
-            case Greediness.Greedy => go #::: stop
-            case Greediness.NonGreedy => stop #::: go
+            .Cont[In, R](m._1, in => p(in).fold(Stream.empty[Thread[In, R]])(cont.nonEmpty(_))) #:: Stream.empty,
+      andThen = new (λ[i => (RE[In, (ThreadId, M), i => A], RE[In, (ThreadId, M), i])] ~> λ[a => ContOut]){
+        def apply[i](t: (RE[In, (ThreadId, M), i => A], RE[In, (ThreadId, M), i])): ContOut = {
+          val lc = compileCont[In, M, i => A, R](t._1)
+          val rc = compileCont[In, M, i, R](t._2)
+          _ match {
+            case Cont.Single(f) => lc(Cont.Single(lVal => rc(Cont.Single(f compose lVal))))
+            case Cont.Choice(whenEmpty, whenNonEmpty) =>
+              lc(
+                Cont.Choice(
+                  whenEmpty = lVal =>
+                    rc(Cont.Choice(whenEmpty compose lVal, whenNonEmpty compose lVal)),
+                  whenNonEmpty = lVal => rc(Cont.Single(whenNonEmpty compose lVal))
+                ))
           }
         }
-        threads(z, _)
-      case Fail() => _ => Stream.empty
-
-      case x @ AndThen(l, r) =>
-        val lc = compileCont[In, M, x.Init => A, R](l)
-        val rc = compileCont[In, M, x.Init, R](r)
-        _ match {
-          case Cont.Single(f) => lc(Cont.Single(lVal => rc(Cont.Single(f compose lVal))))
-          case Cont.Choice(whenEmpty, whenNonEmpty) =>
-            lc(
-              Cont.Choice(
-                whenEmpty = lVal =>
-                  rc(Cont.Choice(whenEmpty compose lVal, whenNonEmpty compose lVal)),
-                whenNonEmpty = lVal => rc(Cont.Single(whenNonEmpty compose lVal))
-              ))
+      },
+      star =  new (λ[i => (RE[In, (ThreadId, M), i], Greediness, A, (A, i) => A)] ~> λ[a => ContOut]){
+        def apply[i](t: (RE[In, (ThreadId, M), i], Greediness, A, (A, i) => A)): ContOut = {
+          val (r, g, z, f) = t
+          val rc = compileCont[In, M, i, R](r)
+          def threads(z: A, cont: Cont[A => Stream[Thread[In, R]]]): Stream[Thread[In, R]] = {
+            def stop = cont.empty(z)
+            // TODO think more about laziness
+            def go =
+              rc(Cont.Choice(whenEmpty = _ => Stream.empty, whenNonEmpty = { v =>
+                threads(f(z, v), Cont.Single(cont.nonEmpty))
+              }))
+            g match {
+              case Greediness.Greedy => go #::: stop
+              case Greediness.NonGreedy => stop #::: go
+            }
+          }
+          threads(z, _)
         }
-
-        // This is gross but _should_ be safe.
-        // I seem to be running into https://github.com/scala/bug/issues/10292
-          case v => compileCont(v.asInstanceOf[Void[In, (ThreadId, M), _]].map(_ => ())).asInstanceOf[Cont[A => Stream[Thread[In, R]]] => Stream[Thread[In, R]]]
-    }
+      },
+      mapped = new (λ[a => (RE[In, (ThreadId, M), a], a => A)] ~> λ[a => ContOut]){
+        def apply[i](t: (RE[In, (ThreadId, M), i], i => A)): ContOut = {
+          val rc = compileCont[In, M, i, R](t._1)
+          cont => rc(cont.map(_ compose t._2))
+        }
+      },
+      or = alternatives => {
+        val alternativesC = alternatives.map(compileCont[In, M, A, R](_)).toList.toStream
+        cont => alternativesC.flatMap(_.apply(cont))
+      },
+      void = ev => λ[RE[In, (ThreadId, M), ?] ~> λ[a => ContOut]](r => compileCont(r.map(_ => ev.coerce(()))))
+      )(re)
+  }
 
   // TODO
   def compile[In, M, A](r: RE[In, M, A]): ParseState[In, A] = {

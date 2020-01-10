@@ -11,18 +11,25 @@ import org.scalacheck.Gen
 import cats.implicits._
 
 object RegexMatchGen {
-  def regexMatchingStreamGen[In](matchGen: Match[In] => Gen[In]): Regex[In, ?] ~> λ[a => Gen[Stream[In]]] = new (Regex[In, ?] ~> λ[a => Gen[Stream[In]]]) {
-    def apply[A](fa: RE[In,Match[In],A]): Gen[Stream[In]] = fa match {
-      case RE.Or(alternatives) => Gen.oneOf(alternatives.toList).flatMap(apply)
-      case RE.Fail() => Gen.fail
-      case RE.Match(m, _) => matchGen(m).map(Stream(_))
-      case RE.Star(r, _, _, _) => Gen.containerOf[Stream, Stream[In]](apply(r)).map(_.flatten)
-      case RE.Eps => Gen.const(Stream.empty)
-      case RE.AndThen(l, r) => apply(l).map2(apply(r))(_ ++ _)
-      case RE.FMap(r, _) => apply(r)
-      // This is gross but _should_ be safe.
-      // I seem to be running into https://github.com/scala/bug/issues/10292
-      case v => apply(v.asInstanceOf[RE.Void[In, Match[In], _]].r)
+  def regexMatchingStreamGen[In](
+    matchGen: Match[In] => Gen[In]): Regex[In, ?] ~> λ[a => Gen[Stream[In]]] =
+    new (Regex[In, ?] ~> λ[a => Gen[Stream[In]]]) { outer =>
+      // TODO think about whether kind-projector literals are actually making this any cleaner
+      def apply[Out](fa: RE[In, Match[In], Out]): Gen[Stream[In]] =
+        RE.fold[In, Match[In], Out, Gen[Stream[In]]](
+          eps = _ => Gen.const(Stream.empty),
+          fail = () => Gen.fail,
+          mappedMatch = (m, _) => matchGen(m).map(Stream(_)),
+          andThen = λ[
+            λ[i => (RE[In, Match[In], i => Out], RE[In, Match[In], i])] ~> λ[a => Gen[Stream[In]]]](
+            t => outer.apply(t._1).map2(outer.apply(t._2))(_ ++ _)),
+          star = λ[λ[i => (RE[In, Match[In], i], Greediness, Out, (Out, i) => Out)] ~> λ[
+            a => Gen[Stream[In]]]](t =>
+            Gen.containerOf[Stream, Stream[In]](outer.apply(t._1)).map(_.flatten)),
+          mapped = λ[λ[a => (RE[In, Match[In], a], a => Out)] ~> λ[a => Gen[Stream[In]]]](t =>
+            outer.apply(t._1)),
+          or = alternatives => Gen.oneOf(alternatives.toList).flatMap(apply),
+          void = _ => λ[RE[In, Match[In], ?] ~> λ[a => Gen[Stream[In]]]](outer.apply(_))
+        )(fa)
     }
-  }
 }
