@@ -13,17 +13,6 @@ object RegexPrettyPrinter {
   private val failPrecedence: Int = 0
   private val matchPrecedence: Int = 0
 
-  // TODO is this needed?
-  val precedence: RE[_, _, _] => Int = _ match {
-    case RE.Eps => epsPrecedence
-    case RE.Or(_) => orPrecedence
-    case RE.Match(_, _) => matchPrecedence
-    case RE.FMap(r, _) => precedence(r)
-    case RE.Star(_, _, _, _) => starPrecedence
-    case RE.Fail() => failPrecedence
-    case RE.AndThen(_, _) => andThenPrecedence
-  }
-
   def parensMaybe(
     currentPrecedence: Int,
     value: (Int, String),
@@ -48,7 +37,10 @@ object RegexPrettyPrinter {
         case RE.FMap(r, _) => go(r)
         // TODO is this right?
         case RE.AndThen(l, r) => (andThenPrecedence, parensMaybe(andThenPrecedence, go(l), false) + parensMaybe(andThenPrecedence, go(r), false))
-
+        // This is gross but _should_ be safe.
+        // I seem to be running into https://github.com/scala/bug/issues/10292
+        // TODO can I set up a fold method to avoid this issue?
+        case v => go(v.asInstanceOf[RE.Void[_, Match[A], _]].r)
       }
     go(_)._2
   }

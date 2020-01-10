@@ -24,7 +24,10 @@ object Regex {
   type RegexC[A] = RE[Char, Match[Char], A]
 
   def matching[A: Order](m: Match[A]): Regex[A, A] =
-    RE.Match(m, a => if (m.matches(a)) Some(a) else None)
+    mapMatch(m, identity)
+
+  def mapMatch[In:Order, Out](m: Match[In], f: In => Out): Regex[In, Out] =
+    RE.Match(m, a => if (m.matches(a)) Some(f(a)) else None)
 
   /** alias for [[literal]] */
   def lit[A: Order](value: A): Regex[A, A] = literal(value)
@@ -69,4 +72,6 @@ object Regex {
 
   // TODO Regex vs RegexG, etc
   def empty[In, M]: RE[In, M, Unit] = RE.Eps
+
+  def fail[A]: RE[Any, Nothing, A] = RE.Fail()
 }

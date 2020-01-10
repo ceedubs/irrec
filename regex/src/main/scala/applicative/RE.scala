@@ -87,9 +87,9 @@ object RE {
     type Init = I
   }
   // TODO efficiently handle with NFA
-  //final case class Void[-In, +M, I](r: RE[In, M, I]) extends RE[In, M, Unit] {
-  //  type Init = I
-  //}
+  final case class Void[-In, +M, I](r: RE[In, M, I]) extends RE[In, M, Unit] {
+    type Init = I
+  }
 
   // TODO document
   def traverseM[F[_], In, M, M2, A](re: RE[In, M, A])(f: M => F[M2])(
@@ -101,6 +101,7 @@ object RE {
     case FMap(r, g) => traverseM(r)(f).map(FMap(_, g))
     case Or(alternatives) => alternatives.traverse(traverseM(_)(f)).map(Or(_))
     case AndThen(l, r) => traverseM(l)(f).map2(traverseM(r)(f))(AndThen(_, _))
+    case v @ Void(r) => traverseM[F, In, M, M2, v.Init](r)(f).map(Void(_))
   }
 
   implicit def alternativeRE[In, M]: Alternative[RE[In, M, ?]] = new Alternative[RE[In, M, ?]] {
@@ -175,6 +176,10 @@ object RE {
                 whenNonEmpty = lVal => rc(Cont.Single(whenNonEmpty compose lVal))
               ))
         }
+
+        // This is gross but _should_ be safe.
+        // I seem to be running into https://github.com/scala/bug/issues/10292
+          case v => compileCont(v.asInstanceOf[Void[In, (ThreadId, M), _]].map(_ => ())).asInstanceOf[Cont[A => Stream[Thread[In, R]]] => Stream[Thread[In, R]]]
     }
 
   // TODO
@@ -195,6 +200,7 @@ object RE {
     case AndThen(l, r) => toKleene(l) * toKleene(r)
     case RE.Match(m, _) => Coattr.pure(m)
     case Or(alternatives) => RegexOld.oneOfFR(alternatives.map(toKleene))
+    case Void(r) => toKleene(r)
   }
 
   // TODO private?
