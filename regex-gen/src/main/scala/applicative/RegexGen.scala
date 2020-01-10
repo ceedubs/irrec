@@ -20,6 +20,7 @@ object RegexGen {
   // TODO Should we take a Gen[A] instead of expecting an Arbitrary[A]?
   // TODO incorporate more constructors
   // TODO should the implicit parameters go into the config?
+  // TODO Unit version of this that includes Void and Eps
   def genRegex[In:Order:Cogen, Out:Arbitrary](cfg: RegexGenOld.Config[In]): Gen[Regex[In, Out]] = {
     // TODO maybe we don't need the go thing
     Gen.frequency(

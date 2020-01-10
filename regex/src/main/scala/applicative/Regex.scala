@@ -27,7 +27,7 @@ object Regex {
     mapMatch(m, identity)
 
   def mapMatch[In:Order, Out](m: Match[In], f: In => Out): Regex[In, Out] =
-    RE.Match(m, a => if (m.matches(a)) Some(f(a)) else None)
+    RE.Elem(m, a => if (m.matches(a)) Some(f(a)) else None)
 
   /** alias for [[literal]] */
   def lit[A: Order](value: A): Regex[A, A] = literal(value)
