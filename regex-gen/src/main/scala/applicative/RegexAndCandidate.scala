@@ -24,12 +24,19 @@ object RegexAndCandidate {
     cfg: RegexGenOld.Config[In],
     matchToGen: Match[In] => Gen[In]): Gen[RegexAndCandidate[In, Out]] =
     for {
-      r <- RegexGen.genRegex2(cfg)
+      r <- RegexGen.genRegex(cfg)
       c <- RegexMatchGen.regexMatchingStreamGen(matchToGen)(r)
     } yield RegexAndCandidate(r, c)
 
-    def codyTesting: Gen[List[(String, String, Option[Byte], Regex[Char, Byte])]] = Gen.listOfN(5, genRegexAndMatch[Char, Byte](RegexGenOld.Config.fromDiscreteDiet(CharacterClasses.alphaNumeric), RegexMatchGenOld.dietMatchToGen[Char](CharRegexGenOld.supportedCharacters, dietMatchingGen(_)))).map(_.map{ rc =>
+    val codyGen: Gen[String] = genRegexAndMatch[Char, Byte](RegexGenOld.Config.fromDiscreteDiet(CharacterClasses.alphaNumeric), RegexMatchGenOld.dietMatchToGen[Char](CharRegexGenOld.supportedCharacters, dietMatchingGen(_))).map { rc =>
       val compiledR = RE.compile(rc.r)
-      (RegexPrettyPrinter.pprintRE(rc.r), rc.candidate.mkString, compiledR.anchoredMatch(rc.candidate), rc.r)
-    })
+      s"""regex: ${RegexPrettyPrinter.pprintRE(rc.r)}
+          |candidate: ${rc.candidate.mkString}
+          |result: ${compiledR.anchoredMatch(rc.candidate)}""".stripMargin
+    }
+
+    //def codyTesting: Gen[List[(String, String, Option[Byte])]] = Gen.listOfN(5, genRegexAndMatch[Char, Byte](RegexGenOld.Config.fromDiscreteDiet(CharacterClasses.alphaNumeric), RegexMatchGenOld.dietMatchToGen[Char](CharRegexGenOld.supportedCharacters, dietMatchingGen(_)))).map(_.map{ rc =>
+    //  val compiledR = RE.compile(rc.r)
+    //  (RegexPrettyPrinter.pprintRE(rc.r), rc.candidate.mkString, compiledR.anchoredMatch(rc.candidate))
+    //})
 }
