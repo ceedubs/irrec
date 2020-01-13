@@ -26,7 +26,7 @@ object Regex {
   def matching[A: Order](m: Match[A]): Regex[A, A] =
     mapMatch(m, identity)
 
-  def mapMatch[In:Order, Out](m: Match[In], f: In => Out): Regex[In, Out] =
+  def mapMatch[In: Order, Out](m: Match[In], f: In => Out): Regex[In, Out] =
     RE.Elem(m, a => if (m.matches(a)) Some(f(a)) else None)
 
   /** alias for [[literal]] */
@@ -39,6 +39,12 @@ object Regex {
   def wildcard[A: Order]: Regex[A, A] = matching(Match.Wildcard())
 
   def or[In, M, Out](l: RE[In, M, Out], r: RE[In, M, Out]): RE[In, M, Out] = l | r
+
+  // TODO test
+  def either[In, M, Out1, Out2](
+    l: RE[In, M, Out1],
+    r: RE[In, M, Out2]): RE[In, M, Either[Out1, Out2]] =
+    l.map(Either.left[Out1, Out2](_)) | r.map(Either.right[Out1, Out2](_))
 
   // TODO tupled or something?
   //def andThen[A](l: Kleene[A], r: Kleene[A]): Kleene[A] = Coattr.roll(KleeneF.Times(l, r))
@@ -53,21 +59,23 @@ object Regex {
   def oneOfR[In, M, Out](r1: RE[In, M, Out], rs: RE[In, M, Out]*): RE[In, M, Out] =
     RE.Or(NonEmptyList.of(r1, rs: _*))
 
-  def oneOfF[F[_], A:Order](values: F[A])(implicit reducibleF: Reducible[F]): Regex[A, A] =
+  def oneOfF[F[_], A: Order](values: F[A])(implicit reducibleF: Reducible[F]): Regex[A, A] =
     RE.Or(NonEmptyList.fromReducible(values).map(lit(_)))
 
   // TODO are some of these even worth having? Can't people just create a NonEmptyList?
-  def oneOfFR[F[_], In, M, Out](values: F[RE[In, M, Out]])(implicit reducibleF: Reducible[F]): RE[In, M, Out] =
+  def oneOfFR[F[_], In, M, Out](values: F[RE[In, M, Out]])(
+    implicit reducibleF: Reducible[F]): RE[In, M, Out] =
     RE.Or(NonEmptyList.fromReducible(values))
 
   def noneOf[A](a1: A, as: A*)(implicit discreteA: Discrete[A], orderA: Order[A]): Regex[A, A] =
     notInSet(NonEmptyList.of(a1, as: _*).foldMap(Diet.one(_)))
 
   // TODO???
-  def allOfFR[F[_], In, M, Out](values: F[RE[In, M, Out]])(implicit traverseF: Traverse[F]): RE[In, M, F[Out]] =
+  def allOfFR[F[_], In, M, Out](values: F[RE[In, M, Out]])(
+    implicit traverseF: Traverse[F]): RE[In, M, F[Out]] =
     values.sequence
 
-  def seq[A:Order](values: Seq[A]): Regex[A, Chain[A]] =
+  def seq[A: Order](values: Seq[A]): Regex[A, Chain[A]] =
     Chain.fromSeq(values).traverse(lit(_))
 
   // TODO Regex vs RegexG, etc

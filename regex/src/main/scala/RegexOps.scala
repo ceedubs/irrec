@@ -35,7 +35,7 @@ final class RegexOps[A](private val r: Regex[A]) extends AnyVal {
   def matcher[F[_]](implicit orderingA: Ordering[A], foldableF: Foldable[F]): F[A] => Boolean = {
     implicit val orderA = cats.Order.fromOrdering(orderingA)
     val re = RE.compile(RE.ofRegex(r))
-    s => re.anchoredMatch(s).nonEmpty
+    s => re.parseOnly(s).nonEmpty
   }
 
   def optimize(implicit discreteA: Discrete[A], orderA: Order[A]): Regex[A] =
@@ -48,7 +48,7 @@ final class CharRegexOps(private val r: Regex[Char]) extends AnyVal {
   import cats.implicits._
   def stringMatcher: String => Boolean = {
     val re = RE.compile(RE.ofRegex(r))
-    s => re.anchoredMatch(s.toList).nonEmpty
+    s => re.parseOnly(s.toList).nonEmpty
   }
 
   def toPattern: Pattern = Pattern.compile(pprint, Pattern.DOTALL)

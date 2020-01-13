@@ -23,7 +23,9 @@ object Parser2 {
         Regex.matching(_).void))) |
       wildcard.map(_.void) |
       charClass.map(Regex.matching(_).void) |
-      ("(?:" ~ regex ~ ")")
+      // TODO distinguish between capturing and not?
+      ("(?:" ~ regex ~ ")") |
+      ("(" ~ regex ~ ")")
   )
 
   def factor[_: P]: P[Regex[Char, Unit]] = P {

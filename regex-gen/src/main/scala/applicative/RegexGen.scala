@@ -95,6 +95,7 @@ object RegexGen {
     )
     // TODO
     def go(maxSize: Int): Gen[TypeWith[RegexWithEv[In, Match[In], ?]]] =
+      if (maxSize <= 1) leafGen else
       Gen.choose(1, maxSize).flatMap(size =>
         if (size <= 1) leafGen
         else {

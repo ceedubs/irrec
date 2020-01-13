@@ -47,13 +47,16 @@ sealed abstract class RE[-In, +M, Out] extends Serializable {
     maxInclusive: Option[Int],
     greediness: Greediness): RE[In, M, Chain[Out]] = {
     val tail = maxInclusive.fold(star(greediness).some) { max =>
-      (1 to (max - minInclusive)).toList.toNel.map { counts =>
-        val orderedCounts = greediness match {
-          case Greediness.Greedy => counts.reverse
-          case Greediness.NonGreedy => counts
+      if (max <= minInclusive) None
+      else {
+        (0 to (max - minInclusive)).toList.toNel.map { counts =>
+          val orderedCounts = greediness match {
+            case Greediness.Greedy => counts.reverse
+            case Greediness.NonGreedy => counts
+          }
+          // TODO this is a mess
+          Or(orderedCounts.map(i => count(i)))
         }
-        // TODO this is a mess
-        Or(orderedCounts.map(i => count(i)))
       }
     }
     val head = count(minInclusive)
@@ -64,6 +67,8 @@ sealed abstract class RE[-In, +M, Out] extends Serializable {
     this.map[Option[Out]](Some(_)) | none[Out].pure[RE[In2, M2, ?]]
 
   def map[B](f: Out => B): RE[In, M, B] = FMap(this, f)
+
+  def compile[In2 <: In]: ParseState[In2, Out] = RE.compile(this)
 }
 
 object RE {

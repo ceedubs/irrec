@@ -94,7 +94,7 @@ class GlushkovTests extends IrrecSuite {
 
   test("oneOf second match") { assert(Regex.oneOf('a', 'b', 'c').stringMatcher("b")) }
 
-  test("oneOf second last match") { assert(Regex.oneOf('a', 'b', 'c').stringMatcher("c")) }
+  test("oneOf last match") { assert(Regex.oneOf('a', 'b', 'c').stringMatcher("c")) }
 
   test("oneOf non match") { assert(!Regex.oneOf('a', 'b', 'c').stringMatcher("d")) }
 

@@ -11,7 +11,7 @@ object char {
    * Matches a single digit character ('0', '3', '9', etc). Could be represented in a regular
    * expression as `\d` or `[0-9]`.
    */
-  val digit: RegexC[Int] = inSet(CharacterClasses.digit).map(_.toInt)
+  val digit: RegexC[Int] = inSet(CharacterClasses.digit).map(_.asDigit)
 
   /**
    * Opposite of [[digit]]. Could be represented in a regular expression as

@@ -32,11 +32,11 @@ object RegexAndCandidate {
       val compiledR = RE.compile(rc.r)
       s"""regex: ${RegexPrettyPrinter.pprintRE(rc.r)}
           |candidate: ${rc.candidate.mkString}
-          |result: ${compiledR.anchoredMatch(rc.candidate)}""".stripMargin
+          |result: ${compiledR.parseOnly(rc.candidate)}""".stripMargin
     }
 
     //def codyTesting: Gen[List[(String, String, Option[Byte])]] = Gen.listOfN(5, genRegexAndMatch[Char, Byte](RegexGenOld.Config.fromDiscreteDiet(CharacterClasses.alphaNumeric), RegexMatchGenOld.dietMatchToGen[Char](CharRegexGenOld.supportedCharacters, dietMatchingGen(_)))).map(_.map{ rc =>
     //  val compiledR = RE.compile(rc.r)
-    //  (RegexPrettyPrinter.pprintRE(rc.r), rc.candidate.mkString, compiledR.anchoredMatch(rc.candidate))
+    //  (RegexPrettyPrinter.pprintRE(rc.r), rc.candidate.mkString, compiledR.parseOnly(rc.candidate))
     //})
 }
