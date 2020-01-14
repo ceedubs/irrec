@@ -71,12 +71,22 @@ object Regex {
     notInSet(NonEmptyList.of(a1, as: _*).foldMap(Diet.one(_)))
 
   // TODO???
+  // TODO a lot of these aren't specific to Match are they?
   def allOfFR[F[_], In, M, Out](values: F[RE[In, M, Out]])(
     implicit traverseF: Traverse[F]): RE[In, M, F[Out]] =
     values.sequence
 
   def seq[A: Order](values: Seq[A]): Regex[A, Chain[A]] =
     Chain.fromSeq(values).traverse(lit(_))
+
+  def allOf[A:Order](values: A*): Regex[A, Chain[A]] =
+    Chain.fromSeq(values).traverse(lit(_))
+
+  def allOfF[F[_]:Traverse, A:Order](values: F[A]): Regex[A, F[A]] =
+    values.traverse(lit(_))
+
+  def allOfR[In, M, Out](values: RE[In, M, Out]*): RE[In, M, Chain[Out]] =
+    allOfFR(Chain.fromSeq(values))
 
   // TODO Regex vs RegexG, etc
   def empty[In, M]: RE[In, M, Unit] = RE.Eps

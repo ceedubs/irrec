@@ -13,6 +13,7 @@ import org.scalacheck.{Arbitrary, Cogen, Gen}, Arbitrary.arbitrary
 // we could generate regexes that aren't Match-based. It probably makes sense to distinguish between RegexG and Regex here...
 object RegexGen {
   val genGreediness: Gen[Greediness] = Gen.oneOf(Greediness.Greedy, Greediness.NonGreedy)
+  implicit val arbGreendiness: Arbitrary[Greediness] = Arbitrary(genGreediness)
 
   // TODO add ability to distribute the size across the elements
   //private def genNonEmptyList[A](genA: Gen[A]): Gen[NonEmptyList[A]] = genA.map2(Gen.listOf(genA))((head, tail) => NonEmptyList(head, tail))
@@ -140,16 +141,15 @@ object RegexGen {
     Gen.sized(go(_))
   }
 
-  // TODO not just Unit
-  val genByteRegex: Gen[Regex[Byte, Unit]] = genRegex(standardByteConfig)
+  def genByteRegex[Out:Arbitrary]: Gen[Regex[Byte, Out]] = genRegex(standardByteConfig)
 
-  implicit val arbByteRegex: Arbitrary[Regex[Byte, Unit]] = Arbitrary(genByteRegex)
+  implicit def arbByteRegex[Out:Arbitrary]: Arbitrary[Regex[Byte, Out]] = Arbitrary(genByteRegex)
 
-  val genIntRegex: Gen[Regex[Int, Unit]] = genRegex(standardIntConfig)
+  def genIntRegex[Out:Arbitrary]: Gen[Regex[Int, Out]] = genRegex(standardIntConfig)
 
-  implicit val arbIntRegex: Arbitrary[Regex[Int, Unit]] = Arbitrary(genIntRegex)
+  implicit def arbIntRegex[Out:Arbitrary]: Arbitrary[Regex[Int, Out]] = Arbitrary(genIntRegex)
 
-  val genLongRegex: Gen[Regex[Long, Unit]] = genRegex(standardLongConfig)
+  def genLongRegex[Out:Arbitrary]: Gen[Regex[Long, Out]] = genRegex(standardLongConfig)
 
-  implicit val arbLongRegex: Arbitrary[Regex[Long, Unit]] = Arbitrary(genLongRegex)
+  implicit def arbLongRegex[Out:Arbitrary]: Arbitrary[Regex[Long, Out]] = Arbitrary(genLongRegex)
 }

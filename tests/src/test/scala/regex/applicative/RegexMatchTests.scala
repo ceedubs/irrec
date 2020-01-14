@@ -4,14 +4,18 @@ package applicative
 
 import Regex._
 import char._
-import Greediness._
 import RegexGen._
 import ceedubs.irrec.parse.{regex2 => parse}
+import RegexAndCandidate.{genCandidateStream, genIntRegexAndMatch}
+import RegexMatchGen.regexMatchingStreamGen
+import ceedubs.irrec.regex.RegexMatchGen.{byteMatchingGen, intMatchingGen}
 
-import cats.data.{Chain, NonEmptyChain}
+import cats.data.{Chain, NonEmptyChain, NonEmptyList}
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary.arbitrary
+import cats.laws.discipline.arbitrary._
 
+// TODO move some of these out to CharMatchTests or whatever?
 class RegexMatchTests extends IrrecSuite {
   test("literal match") { literal('b').compile.parseOnlyS("b") should ===(Some('b')) }
 
@@ -101,40 +105,30 @@ class RegexMatchTests extends IrrecSuite {
 
   test("outside range") { range('a', 'c').compile.parseOnlyS("d") should ===(None) }
 
-  test("greedy oneOrMore zero") {
-    literal('b').oneOrMore(Greedy).compile.parseOnlyS("") should ===(None)
+  test("oneOrMore zero") {
+    forAll { (g: Greediness) =>
+      literal('b').oneOrMore(g).compile.parseOnlyS("") should ===(None)
+    }
   }
 
-  test("non-greedy oneOrMore zero") {
-    literal('b').oneOrMore(NonGreedy).compile.parseOnlyS("") should ===(None)
+  test("oneOrMore one") {
+    forAll { (g: Greediness) =>
+      literal('b').oneOrMore(g).compile.parseOnlyS("b") should ===(Some(NonEmptyChain('b')))
+    }
   }
 
-  test("greedy oneOrMore one") {
-    literal('b').oneOrMore(Greedy).compile.parseOnlyS("b") should ===(Some(NonEmptyChain('b')))
+  test("oneOrMore two") {
+    forAll { (g: Greediness) =>
+      literal('b').oneOrMore(g).compile.parseOnlyS("bb") should ===(
+        Some(NonEmptyChain('b', 'b')))
+    }
   }
 
-  test("non-greedy oneOrMore one") {
-    literal('b').oneOrMore(NonGreedy).compile.parseOnlyS("b") should ===(Some(NonEmptyChain('b')))
-  }
-
-  test("greedy oneOrMore two") {
-    literal('b').oneOrMore(Greedy).compile.parseOnlyS("bb") should ===(
-      Some(NonEmptyChain('b', 'b')))
-  }
-
-  test("non-greedy oneOrMore two") {
-    literal('b').oneOrMore(NonGreedy).compile.parseOnlyS("bb") should ===(
-      Some(NonEmptyChain('b', 'b')))
-  }
-
-  test("greedy oneOrMore three") {
-    literal('b').oneOrMore(Greedy).compile.parseOnlyS("bbb") should ===(
-      Some(NonEmptyChain('b', 'b', 'b')))
-  }
-
-  test("non-greedy oneOrMore three") {
-    literal('b').oneOrMore(NonGreedy).compile.parseOnlyS("bbb") should ===(
-      Some(NonEmptyChain('b', 'b', 'b')))
+  test("oneOrMore three") {
+    forAll { (g: Greediness) =>
+      literal('b').oneOrMore(g).compile.parseOnlyS("bbb") should ===(
+        Some(NonEmptyChain('b', 'b', 'b')))
+    }
   }
 
   test("count zero empty") {
@@ -244,21 +238,28 @@ class RegexMatchTests extends IrrecSuite {
 
   test("non-word character non-match") { nonWordChar.compile.parseOnlyS("a") should ===(None) }
 
-  test("whitespace character single match") { whitespaceChar.compile.parseOnlyS(" ") should ===(Some(' ')) }
+  test("whitespace character single match") {
+    whitespaceChar.compile.parseOnlyS(" ") should ===(Some(' '))
+  }
 
   test("whitespace character non-match") { whitespaceChar.compile.parseOnlyS("%") should ===(None) }
 
   test("whitespace character negated range match") {
-    lit('a').product(nonWhitespaceChar).product(lit('c')).compile.parseOnlyS("abc") should ===(Some((('a', 'b'), 'c')))
+    lit('a').product(nonWhitespaceChar).product(lit('c')).compile.parseOnlyS("abc") should ===(
+      Some((('a', 'b'), 'c')))
   }
 
   test("whitespace character negated range non-match") {
     lit('a').product(nonWhitespaceChar).product(lit('c')).compile.parseOnlyS("a c") should ===(None)
   }
 
-  test("non-whitespace character single match") { nonWhitespaceChar.compile.parseOnlyS("a") should ===(Some('a')) }
+  test("non-whitespace character single match") {
+    nonWhitespaceChar.compile.parseOnlyS("a") should ===(Some('a'))
+  }
 
-  test("non-whitespace character non-match") { nonWhitespaceChar.compile.parseOnlyS(" ") should ===(None) }
+  test("non-whitespace character non-match") {
+    nonWhitespaceChar.compile.parseOnlyS(" ") should ===(None)
+  }
 
   test("word character match") {
     val gen = Gen.oneOf(Gen.alphaNumChar, Gen.const('_'))
@@ -278,25 +279,204 @@ class RegexMatchTests extends IrrecSuite {
   }
 
   test("repeat examples") {
-    val m: String => Option[Chain[Char]] = lit('b').repeat(2, Some(4), Greedy).compile.parseOnlyS(_)
-    m("") should ===(None)
-    m("b") should ===(None)
-    m("bb") should ===(Some(Chain('b', 'b')))
-    m("bbb") should ===(Some(Chain('b', 'b', 'b')))
-    m("bbbb") should ===(Some(Chain('b', 'b', 'b', 'b')))
-    m("bbbbb") should ===(None)
-    m("bcb") should ===(None)
+    forAll { g: Greediness =>
+      val m: String => Option[Chain[Char]] = lit('b').repeat(2, Some(4), g).compile.parseOnlyS(_)
+      m("") should ===(None)
+      m("b") should ===(None)
+      m("bb") should ===(Some(Chain('b', 'b')))
+      m("bbb") should ===(Some(Chain('b', 'b', 'b')))
+      m("bbbb") should ===(Some(Chain('b', 'b', 'b', 'b')))
+      m("bbbbb") should ===(None)
+      m("bcb") should ===(None)
+    }
   }
 
   test("repeat(0, n) matches empty") {
-    forAll(arbitrary[Regex[Int, Unit]], Gen.option(Gen.chooseNum(0, 20))) { (r, max) =>
-      r.repeat(0, max, Greedy).void.compile.parseOnly(List.empty) should ===(Some(()))
+    forAll(arbitrary[Regex[Int, Unit]], Gen.option(Gen.chooseNum(0, 20)), arbitrary[Greediness]) { (r, max, g) =>
+      r.repeat(0, max, g).void.compile.parseOnly(List.empty) should ===(Some(()))
     }
   }
 
   test("repeat(0, 0) doesn't match non-empty") {
-    forAll(arbitrary[Regex[Int, Unit]], Gen.nonEmptyListOf(arbitrary[Int])) { (r, c) =>
-      r.repeat(0, Some(0), Greedy).void.compile.parseOnly(c) should ===(None)
+    forAll(arbitrary[Regex[Int, Unit]], Gen.nonEmptyListOf(arbitrary[Int]), arbitrary[Greediness]) { (r, c, g) =>
+      r.repeat(0, Some(0), g).void.compile.parseOnly(c) should ===(None)
+    }
+  }
+
+  test("general regex matching") {
+    forAll(genIntRegexAndMatch[Unit]) { rm =>
+      rm.r.compile.parseOnly(rm.candidate) should ===(Some(()))
+    }
+  }
+
+  test("or(r, r) is equivalent to r") {
+    forAll { (rc: RegexAndCandidate[Int, Long]) =>
+      val expected = rc.r.compile.parseOnly(rc.candidate)
+      val equivR = or(rc.r, rc.r)
+      val actual = equivR.compile.parseOnly(rc.candidate)
+      actual should ===(expected)
+    }
+  }
+
+  test("or(impossible, r) is equivalent to r") {
+    forAll { (rc: RegexAndCandidate[Int, Long]) =>
+      val expected = rc.r.compile.parseOnly(rc.candidate)
+      val equivR = or(Regex.fail, rc.r)
+      val actual = equivR.compile.parseOnly(rc.candidate)
+      actual should ===(expected)
+    }
+  }
+
+  test("or(r, impossible) is equivalent to r") {
+    forAll { (rc: RegexAndCandidate[Int, Long]) =>
+      val expected = rc.r.compile.parseOnly(rc.candidate)
+      val equivR = or(rc.r, Regex.fail)
+      val actual = equivR.compile.parseOnly(rc.candidate)
+      actual should ===(expected)
+    }
+  }
+
+  test("empty *> r is equivalent to r") {
+    forAll { (rc: RegexAndCandidate[Int, Long]) =>
+      val expected = rc.r.compile.parseOnly(rc.candidate)
+      val equivR = Regex.empty[Int, Match[Int]] *> rc.r
+      val actual = equivR.compile.parseOnly(rc.candidate)
+      actual should ===(expected)
+    }
+  }
+
+  test("r <* empty is equivalent to r") {
+    forAll { (rc: RegexAndCandidate[Int, Long]) =>
+      val expected = rc.r.compile.parseOnly(rc.candidate)
+      val equivR = rc.r <* Regex.empty
+      val actual = equivR.compile.parseOnly(rc.candidate)
+      actual should ===(expected)
+    }
+  }
+
+  test("if r matches, r.oneOrMore matches") {
+    forAll(genIntRegexAndMatch[Long], arbitrary[Greediness]) { (rc, g) =>
+      assert(rc.r.oneOrMore(g).matcher[Stream].apply(rc.candidate))
+    }
+  }
+
+  test("if r matches x, r.oneOrMore matches n * x") {
+    forAll(genIntRegexAndMatch[Long], Gen.chooseNum(1, 10), arbitrary[Greediness]) { (rc, n, g) =>
+      rc.r.oneOrMore(g).matcher[Stream].apply(Stream.fill(n)(rc.candidate).flatten) should ===(
+        true)
+    }
+  }
+
+  test("if r matches x, r.star matches n * x") {
+    forAll(genIntRegexAndMatch[Long], Gen.chooseNum(0, 10), arbitrary[Greediness]) { (rc, n, g) =>
+      rc.r.star(g).matcher[Stream].apply(Stream.fill(n)(rc.candidate).flatten) should ===(true)
+    }
+  }
+
+  test("repeat(n, n, r) is equivalent to count(n, r)") {
+    forAll(arbitrary[RegexAndCandidate[Int, Long]], Gen.chooseNum(1, 10), genGreediness) { (rc, n, g) =>
+      val expected = rc.r.count(n).compile.parseOnly(rc.candidate)
+      val equivR = rc.r.repeat(n, Some(n), g)
+      val actual = equivR.compile.parseOnly(rc.candidate)
+      actual should ===(expected)
+    }
+  }
+
+  test("r.repeat(m, n, g) consistent with r.count(n) then r.star") {
+    val gen = for {
+      min <- Gen.chooseNum(0, 10)
+      plus <- Gen.chooseNum(0, 5)
+      r <- arbitrary[Regex[Int, Long]]
+      g <- arbitrary[Greediness]
+      rRepeat = r.repeat(min, Some(min + plus), g)
+      c <- regexMatchingStreamGen(intMatchingGen).apply(rRepeat)
+      g <- arbitrary[Greediness]
+    } yield (min, r, rRepeat, g, c)
+
+    forAll(gen) {
+      case (min, r, rRepeat, g, c) =>
+        val rCount = r.count(min).map2(r.star(g))(_ ++ _)
+        rCount.compile.parseOnly(c) should ===(rRepeat.compile.parseOnly(c))
+    }
+  }
+
+  test("oneOfF consistent with oneOf") {
+    val gen = for {
+      values <- arbitrary[NonEmptyList[Byte]]
+      r1 = oneOfF(values)
+      c <- genCandidateStream(byteMatchingGen)(r1)
+    } yield (values, r1, c)
+    forAll(gen) {
+      case (values, r1, c) =>
+        val r2 = Regex.oneOf(values.head, values.tail: _*)
+        r1.compile.parseOnly(c) should ===(r2.compile.parseOnly(c))
+    }
+  }
+
+  test("oneOfF consistent with oneOfFR") {
+    val gen = for {
+      values <- arbitrary[NonEmptyList[Byte]]
+      r1 = oneOfF(values)
+      c <- genCandidateStream(byteMatchingGen)(r1)
+    } yield (values, r1, c)
+    forAll(gen) {
+      case (values, r1, c) =>
+        val r2 = oneOfFR(values.map(lit(_)))
+        r1.compile.parseOnly(c) should ===(r2.compile.parseOnly(c))
+    }
+  }
+
+  test("oneOfR consistent with oneOfFR") {
+    val gen = for {
+      values <- arbitrary[NonEmptyList[Byte]]
+      lits = values.map(lit(_))
+      r1 = oneOfFR(lits)
+      c <- genCandidateStream(byteMatchingGen)(r1)
+    } yield (lits, r1, c)
+    forAll(gen) {
+      case (lits, r1, c) =>
+        val r2 = oneOfR(lits.head, lits.tail: _*)
+        r1.compile.parseOnly(c) should ===(r2.compile.parseOnly(c))
+    }
+  }
+
+  test("seq consistent with allOf") {
+    val gen = for {
+      values <- arbitrary[List[Byte]]
+      r1 = seq(values)
+      c <- genCandidateStream(byteMatchingGen)(r1)
+    } yield (values, r1, c)
+    forAll(gen) {
+      case (values, r1, c) =>
+        val r2 = Regex.allOf(values: _*)
+        r1.compile.parseOnly(c) should ===(r2.compile.parseOnly(c))
+    }
+  }
+
+  test("allOfF consistent with allOfFR") {
+    val gen = for {
+      values <- arbitrary[List[Byte]]
+      r1 = allOfF(values)
+      c <- genCandidateStream(byteMatchingGen)(r1)
+    } yield (values, r1, c)
+    forAll(gen) {
+      case (values, r1, c) =>
+        val r2 = allOfFR(values.map(lit(_)))
+        r1.compile.parseOnly(c) should ===(r2.compile.parseOnly(c))
+    }
+  }
+
+  test("allOfR consistent with allOfFR") {
+    val gen = for {
+      values <- arbitrary[List[Byte]]
+      lits = values.map(lit(_))
+      r1 = allOfR(lits: _*)
+      c <- genCandidateStream(byteMatchingGen)(r1)
+    } yield (lits, r1, c)
+    forAll(gen) {
+      case (lits, r1, c) =>
+        val r2 = allOfFR(Chain.fromSeq(lits))
+        r1.compile.parseOnly(c) should ===(r2.compile.parseOnly(c))
     }
   }
 }

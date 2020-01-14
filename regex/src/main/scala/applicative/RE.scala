@@ -5,7 +5,7 @@ package applicative
 // TODO
 import ceedubs.irrec.regex.{Regex => RegexOld}
 
-import cats.{~>, Alternative, Applicative}
+import cats.{~>, Alternative, Applicative, Foldable}
 import cats.data.{Chain, NonEmptyChain, NonEmptyList, State}
 import cats.evidence.Is
 import cats.implicits._
@@ -69,6 +69,7 @@ sealed abstract class RE[-In, +M, Out] extends Serializable {
   def map[B](f: Out => B): RE[In, M, B] = FMap(this, f)
 
   def compile[In2 <: In]: ParseState[In2, Out] = RE.compile(this)
+
 }
 
 object RE {
@@ -276,6 +277,19 @@ object RE {
 
   def ofRegex[A: cats.Order](r: Regex[A]): RE[A, regex.Match[A], Unit] =
     higherkindness.droste.scheme.cata(ofKleeneAlgebra[A, regex.Match[A]](_.matches(_))).apply(r)
+
+  // TODO optimize
+  // TODO naming/documentation
+  // TODO ops class
+  def matcher[F[_]:Foldable, In, M, Out](r: RE[In, M, Out]): F[In] => Boolean = {
+    val rc = r.void.compile[In]
+    fin => rc.parseOnly(fin).isDefined
+  }
+
+  // TODO add more stuff to this?
+  implicit final class RegexOps[In, M, Out](private val r: RE[In, M, Out]) extends AnyVal {
+    def matcher[F[_]:Foldable]: F[In] => Boolean = RE.matcher(r)
+  }
 }
 
 // TODO remove
