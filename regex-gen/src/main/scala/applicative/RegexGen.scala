@@ -5,151 +5,194 @@ package regex.applicative
 import Regex.Regex
 import ceedubs.irrec.regex.{Match, RegexGen => RegexGenOld}
 import RegexGenOld.{standardByteConfig, standardIntConfig, standardLongConfig}
+import ceedubs.irrec.regex.ScalacheckSupport._
 
 import cats.implicits._
 import cats.Order
+import cats.data.NonEmptyList
 import org.scalacheck.{Arbitrary, Cogen, Gen}, Arbitrary.arbitrary
 
 // we could generate regexes that aren't Match-based. It probably makes sense to distinguish between RegexG and Regex here...
 object RegexGen {
+  import Support._
+
   val genGreediness: Gen[Greediness] = Gen.oneOf(Greediness.Greedy, Greediness.NonGreedy)
   implicit val arbGreendiness: Arbitrary[Greediness] = Arbitrary(genGreediness)
 
-  // TODO add ability to distribute the size across the elements
-  //private def genNonEmptyList[A](genA: Gen[A]): Gen[NonEmptyList[A]] = genA.map2(Gen.listOf(genA))((head, tail) => NonEmptyList(head, tail))
-
   // TODO Should we take a Gen[A] instead of expecting an Arbitrary[A]?
-  // TODO incorporate more constructors
   // TODO should the implicit parameters go into the config?
-  // TODO Unit version of this that includes Void and Eps
-  def genRegex[In:Order:Cogen, Out:Arbitrary](cfg: RegexGenOld.Config[In]): Gen[Regex[In, Out]] = {
-    // TODO maybe we don't need the go thing
-    Gen.frequency(
-      //10 -> go(newSize).map2(go(newSize))(_ *> _),
-      //4 -> genNonEmptyList(go(newSize)).map(RE.Or(_)),
-      //4 -> Gen.const(CoattrF.roll(KleeneF.Plus(newSize, newSize))),
-      //2 -> go(newSize).map2(genGreediness)(_.star(_).void)
-      2 -> (
-        for {
-          m <- cfg.genMatch
-          f <- arbitrary[In => Out]
-        } yield Regex.mapMatch(m, f)
-        ),
-      // TODO adjust weights
-      2 -> (
-        for {
-          regexGen <- genRegexWithEv[In](cfg)
-          r <- regexGen.evidence.regexGen
-          f <- Arbitrary.arbFunction1[regexGen.T, Out](implicitly, regexGen.evidence.cogen).arbitrary
-        } yield r.map(f)),
-      (if (cfg.includeZero) 1 else 0) -> Gen.const(Regex.fail),
-    )
-  }
-
-  // TODO should this have Order as well?
-  final case class GenAndCogen[A](gen: Gen[A], cogen: Cogen[A])
-
-  object GenAndCogen {
-    def of[A](implicit arb: Arbitrary[A], cogen: Cogen[A]): GenAndCogen[A] = GenAndCogen(arb.arbitrary, cogen)
-  }
-
-  // TODO ceedubs is this the right path?
-  // TODO naming
-  // it seems like we actually want a Gen[RE[In, M, Out]] in here instead of a single regex?
-  // TODO consider helper function for creating functions?
-  final case class RegexWithEv[In, M, Out](regexGen: Gen[RE[In, M, Out]], cogen: Cogen[Out])
-
-  object RegexWithEv {
-    def fromRegexGen[In, M, Out](regex: Gen[RE[In, M, Out]])(implicit cogenOut: Cogen[Out]): RegexWithEv[In, M, Out] = RegexWithEv(regex, cogenOut)
-  }
-
-  // TODO private?
-  val genTypeWithCogen: Gen[TypeWith[Cogen]] = Gen.oneOf(TypeWith(Cogen[Unit]), TypeWith(Cogen[Boolean]), TypeWith(Cogen[Int]), TypeWith(Cogen[Long]), TypeWith(Cogen[Double]), TypeWith(Cogen[String]))
-
-  // TODO private?
-  //val genTypeWithGen: Gen[TypeWith[Gen]] = Gen.oneOf(TypeWith(Gen[Unit]), TypeWith(Gen[Boolean]), TypeWith(Gen[Int]), TypeWith(Gen[Long]), TypeWith(Gen[Double]), TypeWith(Gen[String]))
-
-  val genTypeWithGenAndCogen: Gen[TypeWith[GenAndCogen]] = Gen.oneOf(TypeWith(GenAndCogen.of[Unit]), TypeWith(GenAndCogen.of[Boolean]), TypeWith(GenAndCogen.of[Int]), TypeWith(GenAndCogen.of[Long]), TypeWith(GenAndCogen.of[Double]), TypeWith(GenAndCogen.of[String]))
-
-  // TODO
-  private[irrec] implicit def ambGenConversion1[A](a: A): Gen[A] = sys.error(s"🍩 use implicit Gen conversion: $a")
-  private[irrec] implicit def ambGenConversion2[A](a: A): Gen[A] = sys.error(s"🍩 use implicit Gen conversion: $a")
-
-  // TODO how to prevent duplicating logic between this and the other?
-  // Seems like we should be able to pass in an explicit TypeWith?
-  def genRegexWithEv[In: Cogen : Order](cfg: RegexGenOld.Config[In]): Gen[TypeWith[RegexWithEv[In, Match[In], ?]]] = {
-    val leafGen: Gen[TypeWith[RegexWithEv[In, Match[In], ?]]] = Gen.frequency(
-      (if (cfg.includeOne) 2 else 0) -> Gen.const(TypeWith(RegexWithEv.fromRegexGen(Gen.const(Regex.empty[In, Match[In]])))),
-      (if (cfg.includeZero) 1 else 0) -> genTypeWithCogen.map(t => TypeWith(RegexWithEv(Gen.const(Regex.fail[t.T]), t.evidence))),
-      10 -> {
-        genTypeWithGenAndCogen.map{ t =>
-          val genR = for {
+  // TODO should this be public?
+  private def genRegexWithDepth[In: Order: Cogen, Out: Arbitrary: Cogen](
+    cfg: RegexGenOld.Config[In],
+    depth: Int): Gen[Regex[In, Out]] =
+    if (depth <= 1)
+      Gen.frequency(
+        // Elem
+        9 -> (
+          for {
             m <- cfg.genMatch
-            f <- {
-              implicit val genT = Arbitrary(t.evidence.gen)
-              Arbitrary.arbFunction1[In, t.T].arbitrary
-            }
+            f <- arbitrary[In => Out]
           } yield Regex.mapMatch(m, f)
-          TypeWith(RegexWithEv(genR, t.evidence.cogen))
-        }
-      }
-    )
-    // TODO
-    def go(maxSize: Int): Gen[TypeWith[RegexWithEv[In, Match[In], ?]]] =
-      if (maxSize <= 1) leafGen else
-      Gen.choose(1, maxSize).flatMap(size =>
-        if (size <= 1) leafGen
-        else {
-          // TODO it doesn't really make sense to constrain both branches to have the same size, does it?
-          // TODO other type that aren't covered
-          Gen.frequency(
-            //10 -> go(newSize).map2(go(newSize))(_ *> _),
-            // TODO handle sizing of nested gens appropriately
-            10 -> {
-              for {
-                rI <- go(size)
-                outType <- genTypeWithGenAndCogen
-              } yield {
-                val genR: Gen[RE[In, Match[In], outType.T]] = for {
-                ri <- rI.evidence.regexGen
-                rf <- Gen.resize(maxSize + 1 - size, genRegex[In, rI.T => outType.T](cfg)(implicitly, implicitly, Arbitrary.arbFunction1(Arbitrary(outType.evidence.gen), rI.evidence.cogen)))
-                } yield RE.AndThen(rf, ri)
-                TypeWith(RegexWithEv(genR, outType.evidence.cogen))
-              }
-            },
-            // TODO should we include leafGen in here? Probably not since we already checked the size
-            //1 -> leafGen,
-            // TODO clean up and modularize
-            // TODO maybe cleaner to create a helper method based on Gen instead of arb?
-            // Void
-            1 -> go(size - 1).map{ r =>
-              TypeWith(RegexWithEv.fromRegexGen(r.evidence.regexGen.map(_.void)))
-            },
-            // FMap
-            1 -> go(size - 1).flatMap { r =>
-              implicit val cogenT = r.evidence.cogen
-              genTypeWithGenAndCogen.map{ outType =>
-                implicit val arbOut = Arbitrary(outType.evidence.gen)
-                val genR = r.evidence.regexGen.flatMap{ regex =>
-                  arbitrary[r.T => outType.T].map(f => RE.FMap(regex, f))
-                }
-                TypeWith(RegexWithEv(genR, outType.evidence.cogen))
-              }
+        ),
+        // Fail
+        (if (cfg.includeZero) 1 else 0) -> Gen.const(Regex.fail)
+      )
+    else
+      Gen.frequency(
+        // AndThen
+        5 -> (
+          for {
+            rIDepth <- Gen.choose(1, depth - 1)
+            rIGen <- genRegexWithEv[In](cfg).apply(rIDepth)
+            rI <- rIGen.evidence.regexGen
+            rf <- {
+              implicit val arbI = Arbitrary(rIGen.evidence.genOut)
+              implicit val cogenI = rIGen.evidence.cogenOut
+              genRegexWithDepth[In, rIGen.T => Out](cfg, depth - rIDepth)
             }
-          )
-        })
-    Gen.sized(go(_))
+            // TODO add a helper method to avoid bad type inference here?
+          } yield (RE.AndThen(rf, rI): Regex[In, Out])
+        ),
+        // FMap
+        2 -> (for {
+          regexGen <- genRegexWithEv[In](cfg).apply(depth - 1)
+          r <- regexGen.evidence.regexGen
+          f <- {
+            implicit val cogenOut = regexGen.evidence.cogenOut
+            arbitrary[regexGen.T => Out]
+          }
+        } yield r.map(f)),
+        // Or
+        3 -> (
+          for {
+            rCount <- Gen.chooseNum(1, depth - 1)
+            depths <- distributeSumNel(entryCount = rCount, extra = depth - 1 - rCount)
+            nel <- depths.traverse(depth => genRegexWithDepth[In, Out](cfg, depth))
+          } yield RE.Or[In, Match[In], Out](nel)
+        ),
+        // Star
+        1 -> (
+          for {
+            rIGen <- genRegexWithEv[In](cfg).apply(depth - 1)
+            rI <- rIGen.evidence.regexGen
+            g <- arbitrary[Greediness]
+            z <- arbitrary[Out]
+            fold <- {
+              implicit val iCogen = rIGen.evidence.cogenOut
+              arbitrary[(Out, rIGen.T) => Out]
+            }
+            // TODO annoying to need to specify type
+          } yield (RE.Star[In, Match[In], rIGen.T, Out](rI, g, z, fold): Regex[In, Out])
+        )
+      )
+
+  def genRegex[In: Order: Cogen, Out: Arbitrary: Cogen](
+    cfg: RegexGenOld.Config[In]): Gen[Regex[In, Out]] =
+    Gen.sized(maxSize =>
+      Gen.choose(1, math.max(maxSize, 1)).flatMap(depth => genRegexWithDepth[In, Out](cfg, depth)))
+
+  /**
+   * Generates regular expressions with existential `Out` types.
+   *
+   * The returned function takes an `Int` that indicates the desired "depth" of the regex.
+   */
+  private def genRegexWithEv[In: Cogen: Order](
+    cfg: RegexGenOld.Config[In]): Int => Gen[TypeWith[RegexWithEv[In, Match[In], ?]]] = {
+    val leafGen: Gen[TypeWith[RegexWithEv[In, Match[In], ?]]] = Gen.frequency(
+      9 -> genTypeWithGenAndCogen.map { outType =>
+        implicit val arbOut = Arbitrary(outType.evidence.gen)
+        implicit val cogenOut = outType.evidence.cogen
+        TypeWith(RegexWithEv.fromRegexGen(genRegexWithDepth[In, outType.T](cfg, 1)))
+      },
+      // Eps
+      (if (cfg.includeOne) 2 else 0) -> Gen.const(
+        TypeWith(RegexWithEv.fromRegexGen(Gen.const(Regex.empty[In, Match[In]]))))
+    )
+    def go(depth: Int): Gen[TypeWith[RegexWithEv[In, Match[In], ?]]] =
+      if (depth <= 1) leafGen
+      else
+        Gen.frequency(
+          // Void
+          1 -> go(depth - 1).map { r =>
+            TypeWith(RegexWithEv.fromRegexGen(r.evidence.regexGen.map(_.void)))
+          },
+          9 -> genTypeWithGenAndCogen.map { outType =>
+            implicit val arbOut = Arbitrary(outType.evidence.gen)
+            implicit val cogenOut = outType.evidence.cogen
+            TypeWith(RegexWithEv.fromRegexGen(genRegexWithDepth[In, outType.T](cfg, depth)))
+          }
+        )
+    go(_)
   }
 
-  def genByteRegex[Out:Arbitrary]: Gen[Regex[Byte, Out]] = genRegex(standardByteConfig)
+  /**
+   * Create a NonEmptyList[Int] of size `entryCount` that sums to entryCount + extra. Every item in the list will be at least 1.
+   *
+   * This can be useful when you want to build a composite structure of some size and want to randomly distribute the size across `entryCount` pieces.
+   */
+  private def distributeSumNel(entryCount: Int, extra: Int): Gen[NonEmptyList[Int]] =
+    if (entryCount < 1)
+      Gen.fail
+    else {
+      Gen.listOfN(extra, Gen.choose(0, entryCount - 1)).map { indices =>
+        val sizes = Array.fill(entryCount)(1)
+        indices.foreach(i => sizes(i) += 1)
+        NonEmptyList.fromListUnsafe(sizes.toList)
+      }
+    }
 
-  implicit def arbByteRegex[Out:Arbitrary]: Arbitrary[Regex[Byte, Out]] = Arbitrary(genByteRegex)
+  def genByteRegex[Out: Arbitrary: Cogen]: Gen[Regex[Byte, Out]] = genRegex(standardByteConfig)
 
-  def genIntRegex[Out:Arbitrary]: Gen[Regex[Int, Out]] = genRegex(standardIntConfig)
+  implicit def arbByteRegex[Out: Arbitrary: Cogen]: Arbitrary[Regex[Byte, Out]] =
+    Arbitrary(genByteRegex)
 
-  implicit def arbIntRegex[Out:Arbitrary]: Arbitrary[Regex[Int, Out]] = Arbitrary(genIntRegex)
+  def genIntRegex[Out: Arbitrary: Cogen]: Gen[Regex[Int, Out]] = genRegex(standardIntConfig)
 
-  def genLongRegex[Out:Arbitrary]: Gen[Regex[Long, Out]] = genRegex(standardLongConfig)
+  implicit def arbIntRegex[Out: Arbitrary: Cogen]: Arbitrary[Regex[Int, Out]] =
+    Arbitrary(genIntRegex)
 
-  implicit def arbLongRegex[Out:Arbitrary]: Arbitrary[Regex[Long, Out]] = Arbitrary(genLongRegex)
+  def genLongRegex[Out: Arbitrary: Cogen]: Gen[Regex[Long, Out]] = genRegex(standardLongConfig)
+
+  implicit def arbLongRegex[Out: Arbitrary: Cogen]: Arbitrary[Regex[Long, Out]] =
+    Arbitrary(genLongRegex)
+
+  private[irrec] object Support {
+    // TODO should this have Order as well?
+    final case class GenAndCogen[A](gen: Gen[A], cogen: Cogen[A])
+
+    object GenAndCogen {
+      def of[A](implicit arb: Arbitrary[A], cogen: Cogen[A]): GenAndCogen[A] =
+        GenAndCogen(arb.arbitrary, cogen)
+    }
+
+    // TODO ceedubs is this the right path?
+    // TODO naming
+    // TODO consider helper function for creating functions?
+    final case class RegexWithEv[In, M, Out](
+      regexGen: Gen[RE[In, M, Out]],
+      genOut: Gen[Out],
+      cogenOut: Cogen[Out])
+
+    object RegexWithEv {
+      def fromRegexGen[In, M, Out](regex: Gen[RE[In, M, Out]])(
+        implicit arbOut: Arbitrary[Out],
+        cogenOut: Cogen[Out]): RegexWithEv[In, M, Out] =
+        RegexWithEv(regex, arbOut.arbitrary, cogenOut)
+    }
+
+    val genTypeWithGenAndCogen: Gen[TypeWith[GenAndCogen]] = Gen.oneOf(
+      TypeWith(GenAndCogen.of[Unit]),
+      TypeWith(GenAndCogen.of[Boolean]),
+      TypeWith(GenAndCogen.of[Int]),
+      TypeWith(GenAndCogen.of[Long]),
+      TypeWith(GenAndCogen.of[Double]),
+      TypeWith(GenAndCogen.of[String])
+    )
+
+    // Scalacheck includes an implicit converstion A => Gen[A], and it can cause hard-to-spot bugs
+    implicit private[irrec] def ambGenConversion1[A](a: A): Gen[A] =
+      sys.error(s"🍩 use implicit Gen conversion: $a")
+    implicit private[irrec] def ambGenConversion2[A](a: A): Gen[A] =
+      sys.error(s"🍩 use implicit Gen conversion: $a")
+  }
 }

@@ -396,7 +396,7 @@ class RegexMatchTests extends IrrecSuite {
     forAll(gen) {
       case (min, r, rRepeat, g, c) =>
         val rCount = r.count(min).map2(r.star(g))(_ ++ _)
-        rCount.compile.parseOnly(c) should ===(rRepeat.compile.parseOnly(c))
+        rCount.matcher[Stream].apply(c) should ===(rRepeat.matcher[Stream].apply(c))
     }
   }
 

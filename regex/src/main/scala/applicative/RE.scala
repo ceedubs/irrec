@@ -69,7 +69,6 @@ sealed abstract class RE[-In, +M, Out] extends Serializable {
   def map[B](f: Out => B): RE[In, M, B] = FMap(this, f)
 
   def compile[In2 <: In]: ParseState[In2, Out] = RE.compile(this)
-
 }
 
 object RE {
@@ -85,18 +84,19 @@ object RE {
   }
 
   object Elem {
-    def apply[In, M, Out](m: M, f: In => Option[Out]): Elem[In, M, Out] = new Elem[In, M, Out]{
+    def apply[In, M, Out](m: M, f: In => Option[Out]): Elem[In, M, Out] = new Elem[In, M, Out] {
       def metadata: M = m
       def apply(in: In): Option[Out] = f(in)
     }
   }
 
-  final case class AndThen[-In, +M, I, Out](l: RE[In, M, I =>Out], r: RE[In, M, I])
+  final case class AndThen[-In, +M, I, Out](l: RE[In, M, I => Out], r: RE[In, M, I])
       extends RE[In, M, Out] {
     type Init = I
   }
   // TODO use a lazy structure like NonEmptyStream?
-  final case class Or[-In, +M, Out](alternatives: NonEmptyList[RE[In, M, Out]]) extends RE[In, M, Out]
+  final case class Or[-In, +M, Out](alternatives: NonEmptyList[RE[In, M, Out]])
+      extends RE[In, M, Out]
 
   final case class FMap[-In, +M, I, Out](r: RE[In, M, I], f: I => Out) extends RE[In, M, Out] {
     type Init = I
@@ -140,7 +140,7 @@ object RE {
     mapped: λ[a => (RE[In, M, a], a => Out)] ~> λ[a => R],
     or: NonEmptyList[RE[In, M, Out]] => R,
     void: Is[Unit, Out] => RE[In, M, ?] ~> λ[a => R]
-    )(r: RE[In, M, Out]): R = r match {
+  )(r: RE[In, M, Out]): R = r match {
     case AndThen(l, r) => andThen((l, r))
     case Or(alternatives) => or(alternatives)
     case e: Elem[In, M, Out] => mappedMatch(e.metadata, e.apply)
@@ -185,42 +185,44 @@ object RE {
           // TODO formatting
           Thread
             .Cont[In, R](m._1, in => p(in).fold(Stream.empty[Thread[In, R]])(cont.nonEmpty(_))) #:: Stream.empty,
-      andThen = new (λ[i => (RE[In, (ThreadId, M), i => A], RE[In, (ThreadId, M), i])] ~> λ[a => ContOut]){
-        def apply[i](t: (RE[In, (ThreadId, M), i => A], RE[In, (ThreadId, M), i])): ContOut = {
-          val lc = compileCont[In, M, i => A, R](t._1)
-          val rc = compileCont[In, M, i, R](t._2)
-          _ match {
-            case Cont.Single(f) => lc(Cont.Single(lVal => rc(Cont.Single(f compose lVal))))
-            case Cont.Choice(whenEmpty, whenNonEmpty) =>
-              lc(
-                Cont.Choice(
-                  whenEmpty = lVal =>
-                    rc(Cont.Choice(whenEmpty compose lVal, whenNonEmpty compose lVal)),
-                  whenNonEmpty = lVal => rc(Cont.Single(whenNonEmpty compose lVal))
-                ))
-          }
-        }
-      },
-      star =  new (λ[i => (RE[In, (ThreadId, M), i], Greediness, A, (A, i) => A)] ~> λ[a => ContOut]){
-        def apply[i](t: (RE[In, (ThreadId, M), i], Greediness, A, (A, i) => A)): ContOut = {
-          val (r, g, z, f) = t
-          val rc = compileCont[In, M, i, R](r)
-          def threads(z: A, cont: Cont[A => Stream[Thread[In, R]]]): Stream[Thread[In, R]] = {
-            def stop = cont.empty(z)
-            // TODO think more about laziness
-            def go =
-              rc(Cont.Choice(whenEmpty = _ => Stream.empty, whenNonEmpty = { v =>
-                threads(f(z, v), Cont.Single(cont.nonEmpty))
-              }))
-            g match {
-              case Greediness.Greedy => go #::: stop
-              case Greediness.NonGreedy => stop #::: go
+      andThen =
+        new (λ[i => (RE[In, (ThreadId, M), i => A], RE[In, (ThreadId, M), i])] ~> λ[a => ContOut]) {
+          def apply[i](t: (RE[In, (ThreadId, M), i => A], RE[In, (ThreadId, M), i])): ContOut = {
+            val lc = compileCont[In, M, i => A, R](t._1)
+            val rc = compileCont[In, M, i, R](t._2)
+            _ match {
+              case Cont.Single(f) => lc(Cont.Single(lVal => rc(Cont.Single(f compose lVal))))
+              case Cont.Choice(whenEmpty, whenNonEmpty) =>
+                lc(
+                  Cont.Choice(
+                    whenEmpty = lVal =>
+                      rc(Cont.Choice(whenEmpty compose lVal, whenNonEmpty compose lVal)),
+                    whenNonEmpty = lVal => rc(Cont.Single(whenNonEmpty compose lVal))
+                  ))
             }
           }
-          threads(z, _)
-        }
-      },
-      mapped = new (λ[a => (RE[In, (ThreadId, M), a], a => A)] ~> λ[a => ContOut]){
+        },
+      star =
+        new (λ[i => (RE[In, (ThreadId, M), i], Greediness, A, (A, i) => A)] ~> λ[a => ContOut]) {
+          def apply[i](t: (RE[In, (ThreadId, M), i], Greediness, A, (A, i) => A)): ContOut = {
+            val (r, g, z, f) = t
+            val rc = compileCont[In, M, i, R](r)
+            def threads(z: A, cont: Cont[A => Stream[Thread[In, R]]]): Stream[Thread[In, R]] = {
+              def stop = cont.empty(z)
+              // TODO think more about laziness
+              def go =
+                rc(Cont.Choice(whenEmpty = _ => Stream.empty, whenNonEmpty = { v =>
+                  threads(f(z, v), Cont.Single(cont.nonEmpty))
+                }))
+              g match {
+                case Greediness.Greedy => go #::: stop
+                case Greediness.NonGreedy => stop #::: go
+              }
+            }
+            threads(z, _)
+          }
+        },
+      mapped = new (λ[a => (RE[In, (ThreadId, M), a], a => A)] ~> λ[a => ContOut]) {
         def apply[i](t: (RE[In, (ThreadId, M), i], i => A)): ContOut = {
           val rc = compileCont[In, M, i, R](t._1)
           cont => rc(cont.map(_ compose t._2))
@@ -230,8 +232,9 @@ object RE {
         val alternativesC = alternatives.map(compileCont[In, M, A, R](_)).toList.toStream
         cont => alternativesC.flatMap(_.apply(cont))
       },
-      void = ev => λ[RE[In, (ThreadId, M), ?] ~> λ[a => ContOut]](r => compileCont(r.map(_ => ev.coerce(()))))
-      )(re)
+      void = ev =>
+        λ[RE[In, (ThreadId, M), ?] ~> λ[a => ContOut]](r => compileCont(r.map(_ => ev.coerce(()))))
+    )(re)
   }
 
   // TODO
@@ -281,14 +284,14 @@ object RE {
   // TODO optimize
   // TODO naming/documentation
   // TODO ops class
-  def matcher[F[_]:Foldable, In, M, Out](r: RE[In, M, Out]): F[In] => Boolean = {
+  def matcher[F[_]: Foldable, In, M, Out](r: RE[In, M, Out]): F[In] => Boolean = {
     val rc = r.void.compile[In]
     fin => rc.parseOnly(fin).isDefined
   }
 
   // TODO add more stuff to this?
   implicit final class RegexOps[In, M, Out](private val r: RE[In, M, Out]) extends AnyVal {
-    def matcher[F[_]:Foldable]: F[In] => Boolean = RE.matcher(r)
+    def matcher[F[_]: Foldable]: F[In] => Boolean = RE.matcher(r)
   }
 }
 
