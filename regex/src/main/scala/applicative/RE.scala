@@ -134,7 +134,7 @@ object RE {
   def fold[In, M, Out, R](
     eps: Is[Unit, Out] => R,
     fail: () => R,
-    mappedMatch: (M, In => Option[Out]) => R,
+    elem: (M, In => Option[Out]) => R,
     andThen: λ[i => (RE[In, M, i => Out], RE[In, M, i])] ~> λ[a => R],
     star: λ[i => (RE[In, M, i], Greediness, Out, (Out, i) => Out)] ~> λ[a => R],
     mapped: λ[a => (RE[In, M, a], a => Out)] ~> λ[a => R],
@@ -143,7 +143,7 @@ object RE {
   )(r: RE[In, M, Out]): R = r match {
     case AndThen(l, r) => andThen((l, r))
     case Or(alternatives) => or(alternatives)
-    case e: Elem[In, M, Out] => mappedMatch(e.metadata, e.apply)
+    case e: Elem[In, M, Out] => elem(e.metadata, e.apply)
     case Star(r, g, z, f) => star((r, g, z, f))
     case FMap(r, f) => mapped((r, f))
     case Eps => eps(Is.refl[Unit])
@@ -180,7 +180,7 @@ object RE {
       eps = ev => _.empty(ev.coerce(())),
       fail = () => _ => Stream.empty,
       // TODO clean up?
-      mappedMatch = (m, p) =>
+      elem = (m, p) =>
         cont =>
           // TODO formatting
           Thread

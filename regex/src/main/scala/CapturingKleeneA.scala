@@ -10,7 +10,7 @@ object CapturingKleeneA {
   def lift[M, In](k: Kleene[M]): CapturingKleeneA[M, In, Chain[In]] =
     FreeApplicative.lift(CaptureGroup(k, identity))
 
-  private final case class CapturingKleeneBuilderState[A](
+  final private case class CapturingKleeneBuilderState[A](
     ck: Option[CapturingKleene[Int, A]],
     captureIndex: Int)
 

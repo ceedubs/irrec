@@ -11,9 +11,9 @@ final case class NFA[I, A](
   initStates: SortedSet[I],
   finalStates: SortedSet[I],
   transitions: SortedMap[I, List[(I, A)]]) {
-
   // TODO make partially-applied helper?
-  def capturePath[F[_], S, B](s0: S)(doMatch: (S, A, B) => Option[S])(implicit foldableF: Foldable[F]): F[B] => Option[S] =
+  def capturePath[F[_], S, B](s0: S)(doMatch: (S, A, B) => Option[S])(
+    implicit foldableF: Foldable[F]): F[B] => Option[S] =
     NFA.captureNFAPath(this, s0)(doMatch)
 }
 

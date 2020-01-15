@@ -72,7 +72,9 @@ class ParserTests2 extends IrrecSuite {
   }
 
   test("regex parsing handles precedence with *") {
-    val expected = Regex.lit('a').void | (Regex.lit('c') *> Regex.lit('d').star(Greediness.Greedy).void)
+    val expected = Regex
+      .lit('a')
+      .void | (Regex.lit('c') *> Regex.lit('d').star(Greediness.Greedy).void)
     val r = parse("a|cd*")
     sameRegex(r, expected)
   }
@@ -177,7 +179,9 @@ class ParserTests2 extends IrrecSuite {
   }
 
   test("regex parsing handles complex nested expressions") {
-    val expected = (lit('a').void | (lit('b') *> wildcard[Char].star(Greediness.Greedy).void)) *> lit('d').void
+    val expected = (lit('a').void | (lit('b') *> wildcard[Char]
+      .star(Greediness.Greedy)
+      .void)) *> lit('d').void
     val r = parse("(?:a|b.*)d")
     sameRegex(r, expected)
   }
@@ -322,7 +326,7 @@ class ParserTests2 extends IrrecSuite {
 
   test(
     "regex parsing handles characters that can only be unescaped inside character classes in negative classes") {
-      val expected = lit('a') *> Regex.noneOf('*', '<', '(', '{', '|').void
+    val expected = lit('a') *> Regex.noneOf('*', '<', '(', '{', '|').void
     val r = parse("""a[^*<({|]""")
     sameRegex(r, expected)
   }
@@ -340,9 +344,11 @@ class ParserTests2 extends IrrecSuite {
   }
 
   test("regex parsing handles character class union/intersection mixes") {
-    val expected = lit('a') *> Regex.matching(
-      MatchSet.allow(CharacterClasses.ascii + 'λ') intersect MatchSet.forbid(
-        CharacterClasses.punctuationChar)).void
+    val expected = lit('a') *> Regex
+      .matching(
+        MatchSet.allow(CharacterClasses.ascii + 'λ') intersect MatchSet.forbid(
+          CharacterClasses.punctuationChar))
+      .void
     val r = parse("""a[[:ascii:][λ]&&[^[:punct:]]]""")
     sameRegex(r, expected)
   }
@@ -397,7 +403,8 @@ class ParserTests2 extends IrrecSuite {
   }
 
   test("regex parsing handles + matches in nested bits") {
-    val expected = lit('a') *> (lit('b') *> lit('c').star(Greediness.Greedy)).oneOrMore(Greediness.Greedy) *> lit('d').void
+    val expected = lit('a') *> (lit('b') *> lit('c').star(Greediness.Greedy))
+      .oneOrMore(Greediness.Greedy) *> lit('d').void
     val r = parse("a(?:bc*)+d")
     sameRegex(r, expected)
   }

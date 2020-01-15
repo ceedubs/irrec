@@ -42,7 +42,7 @@ class RegexPrettyPrinterTests extends IrrecSuite {
     range('\u0000', ' ').pprint should ===("[\\u0000-\\u0020]")
   }
 
-  test("TODO ceedubs 1"){
+  test("TODO ceedubs 1") {
     import applicative.RE
     import CharRegexGen._
     forAll { r0: Regex[Char] =>

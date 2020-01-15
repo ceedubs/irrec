@@ -34,7 +34,7 @@ object RegexPrettyPrinter {
       RE.fold[In, Match[In], Out, (Int, String)](
         eps = _ => (epsPrecedence, ""),
         fail = () => (failPrecedence, "∅"),
-        mappedMatch = (m, _) => (matchPrecedence, showMatch(m)),
+        elem = (m, _) => (matchPrecedence, showMatch(m)),
         andThen =
           λ[λ[i => (RE[In, Match[In], i => Out], RE[In, Match[In], i])] ~> λ[a => (Int, String)]](
             t =>

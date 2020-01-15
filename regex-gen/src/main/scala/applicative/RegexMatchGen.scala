@@ -19,7 +19,7 @@ object RegexMatchGen {
         RE.fold[In, Match[In], Out, Gen[Stream[In]]](
           eps = _ => Gen.const(Stream.empty),
           fail = () => Gen.fail,
-          mappedMatch = (m, _) => matchGen(m).map(Stream(_)),
+          elem = (m, _) => matchGen(m).map(Stream(_)),
           andThen = λ[
             λ[i => (RE[In, Match[In], i => Out], RE[In, Match[In], i])] ~> λ[a => Gen[Stream[In]]]](
             t => outer.apply(t._1).map2(outer.apply(t._2))(_ ++ _)),

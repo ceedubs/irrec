@@ -12,6 +12,7 @@ import cats.implicits._
 // TODO capitalization convention of char vs Regex
 // TODO just change RE to Regex and add stuff there?
 // TODO what should go in here vs on the class? Both? Separate combinator object?
+// TODO star-like method that allows z/fold params
 object Regex {
   // TODO move (and generalize?)
   // TODO what should the different types be?
@@ -79,10 +80,10 @@ object Regex {
   def seq[A: Order](values: Seq[A]): Regex[A, Chain[A]] =
     Chain.fromSeq(values).traverse(lit(_))
 
-  def allOf[A:Order](values: A*): Regex[A, Chain[A]] =
+  def allOf[A: Order](values: A*): Regex[A, Chain[A]] =
     Chain.fromSeq(values).traverse(lit(_))
 
-  def allOfF[F[_]:Traverse, A:Order](values: F[A]): Regex[A, F[A]] =
+  def allOfF[F[_]: Traverse, A: Order](values: F[A]): Regex[A, F[A]] =
     values.traverse(lit(_))
 
   def allOfR[In, M, Out](values: RE[In, M, Out]*): RE[In, M, Chain[Out]] =

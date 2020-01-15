@@ -119,8 +119,7 @@ class RegexMatchTests extends IrrecSuite {
 
   test("oneOrMore two") {
     forAll { (g: Greediness) =>
-      literal('b').oneOrMore(g).compile.parseOnlyS("bb") should ===(
-        Some(NonEmptyChain('b', 'b')))
+      literal('b').oneOrMore(g).compile.parseOnlyS("bb") should ===(Some(NonEmptyChain('b', 'b')))
     }
   }
 
@@ -292,14 +291,16 @@ class RegexMatchTests extends IrrecSuite {
   }
 
   test("repeat(0, n) matches empty") {
-    forAll(arbitrary[Regex[Int, Unit]], Gen.option(Gen.chooseNum(0, 20)), arbitrary[Greediness]) { (r, max, g) =>
-      r.repeat(0, max, g).void.compile.parseOnly(List.empty) should ===(Some(()))
+    forAll(arbitrary[Regex[Int, Unit]], Gen.option(Gen.chooseNum(0, 20)), arbitrary[Greediness]) {
+      (r, max, g) =>
+        r.repeat(0, max, g).void.compile.parseOnly(List.empty) should ===(Some(()))
     }
   }
 
   test("repeat(0, 0) doesn't match non-empty") {
-    forAll(arbitrary[Regex[Int, Unit]], Gen.nonEmptyListOf(arbitrary[Int]), arbitrary[Greediness]) { (r, c, g) =>
-      r.repeat(0, Some(0), g).void.compile.parseOnly(c) should ===(None)
+    forAll(arbitrary[Regex[Int, Unit]], Gen.nonEmptyListOf(arbitrary[Int]), arbitrary[Greediness]) {
+      (r, c, g) =>
+        r.repeat(0, Some(0), g).void.compile.parseOnly(c) should ===(None)
     }
   }
 
@@ -362,8 +363,7 @@ class RegexMatchTests extends IrrecSuite {
 
   test("if r matches x, r.oneOrMore matches n * x") {
     forAll(genIntRegexAndMatch[Long], Gen.chooseNum(1, 10), arbitrary[Greediness]) { (rc, n, g) =>
-      rc.r.oneOrMore(g).matcher[Stream].apply(Stream.fill(n)(rc.candidate).flatten) should ===(
-        true)
+      rc.r.oneOrMore(g).matcher[Stream].apply(Stream.fill(n)(rc.candidate).flatten) should ===(true)
     }
   }
 
@@ -374,11 +374,12 @@ class RegexMatchTests extends IrrecSuite {
   }
 
   test("repeat(n, n, r) is equivalent to count(n, r)") {
-    forAll(arbitrary[RegexAndCandidate[Int, Long]], Gen.chooseNum(1, 10), genGreediness) { (rc, n, g) =>
-      val expected = rc.r.count(n).compile.parseOnly(rc.candidate)
-      val equivR = rc.r.repeat(n, Some(n), g)
-      val actual = equivR.compile.parseOnly(rc.candidate)
-      actual should ===(expected)
+    forAll(arbitrary[RegexAndCandidate[Int, Long]], Gen.chooseNum(1, 10), genGreediness) {
+      (rc, n, g) =>
+        val expected = rc.r.count(n).compile.parseOnly(rc.candidate)
+        val equivR = rc.r.repeat(n, Some(n), g)
+        val actual = equivR.compile.parseOnly(rc.candidate)
+        actual should ===(expected)
     }
   }
 

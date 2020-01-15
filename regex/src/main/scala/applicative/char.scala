@@ -102,7 +102,8 @@ object char {
    * Opposite of [[horizontalWhitespaceChar]]; this matches on any character that is not a tab
    * or a space. Could be represented in a regular expression as `\H`.
    */
-  val nonHorizontalWhitespaceChar: RegexC[Char] = notInSet(CharacterClasses.horizontalWhitespaceChar)
+  val nonHorizontalWhitespaceChar: RegexC[Char] = notInSet(
+    CharacterClasses.horizontalWhitespaceChar)
 
   /**
    * A single whitespace character `[\t\n\f\r ]`. Could be represented in a regular expression as

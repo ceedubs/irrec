@@ -143,8 +143,10 @@ object Glushkov {
     AlgebraM {
       CoattrF.un(_) match {
         case Left(lk) =>
-          indexKleeneLeaves(lk.value).map{ indexed => 
-            scheme.cata(indexedKleeneToLocalLanguage[Int, A]).apply(indexed)
+          indexKleeneLeaves(lk.value).map { indexed =>
+            scheme
+              .cata(indexedKleeneToLocalLanguage[Int, A])
+              .apply(indexed)
               .map(a => (lk.label, a))
           }
         case Right(x) => State.pure(kleeneLocalLanguage[Int, (L, A)].apply(x.toKleeneF))
@@ -182,8 +184,11 @@ object Glushkov {
   }
 
   def capturingKleeneToNFA[L, A](k: CapturingKleene[L, A]): NFA[Int, (L, A)] = {
-    val x = scheme.cataM(labeledKleeneToLocalLanguageAlgebra[L, A]).apply(k)
-      .runA(CapturingRegexLabelState.init.leafIndex).value
+    val x = scheme
+      .cataM(labeledKleeneToLocalLanguageAlgebra[L, A])
+      .apply(k)
+      .runA(CapturingRegexLabelState.init.leafIndex)
+      .value
     LocalLanguage.intLocalLanguageToNFA(x)
   }
 }
