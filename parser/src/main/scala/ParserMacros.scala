@@ -24,7 +24,7 @@ object ParserMacros {
     }
   }
 
-  def parseLiteral2Impl(c: Context)(regex: c.Expr[String]): c.Expr[Regex2.Regex[Char, Unit]] = {
+  def parseLiteral2Impl(c: Context)(regex: c.Expr[String]): c.Expr[Regex2.Regex[Char, String]] = {
     import c.universe._
     regex.tree match {
       case Literal(Constant(s: String)) =>

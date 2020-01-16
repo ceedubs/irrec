@@ -69,6 +69,11 @@ sealed abstract class RE[-In, +M, Out] extends Serializable {
   def map[B](f: Out => B): RE[In, M, B] = FMap(this, f)
 
   def compile[In2 <: In]: ParseState[In2, Out] = RE.compile(this)
+
+  def matched[In2 <: In]: RE[In2, M, Chain[In2]] = withMatched.map(_._1)
+
+  def withMatched[In2 <: In]: RE[In2, M, (Chain[In2], Out)] =
+    RE.withMatched(this)
 }
 
 object RE {
@@ -149,6 +154,28 @@ object RE {
     case Eps => eps(Is.refl[Unit])
     case Fail() => fail()
     case Void(r) => void(Is.refl[Unit])(r)
+  }
+
+  // TODO move?
+  def withMatched[In, M, Out](r: RE[In, M, Out]): RE[In, M, (Chain[In], Out)] = r match {
+    case AndThen(l, r) =>
+      withMatched(l).map2(withMatched(r)) {
+        case ((sl, f), (sr, i)) =>
+          (sl.concat(sr), f(i))
+      }
+    case Or(alternatives) => Or(alternatives.map(withMatched))
+    case e: Elem[In, M, Out] => Elem(e.metadata, in => e.apply(in).map(o => (Chain.one(in), o)))
+    // TODO clean up
+    // TODO test
+    case rs @ Star(r, g, z, f) =>
+      Star[In, M, (Chain[In], rs.Init), (Chain[In], Out)](withMatched(r), g, (Chain.empty[In], z), {
+        case ((s0, z), (s1, i)) =>
+          (s0 concat s1, f(z, i))
+      }): RE[In, M, (Chain[In], Out)]
+    case FMap(r, f) => withMatched(r).map { case (matched, out0) => (matched, f(out0)) }
+    case Eps => r.map(o => (Chain.empty, o))
+    case Fail() => Fail()
+    case v @ Void(r) => withMatched[In, M, v.Init](r).map { case (matched, _) => (matched, ()) }
   }
 
   implicit def alternativeRE[In, M]: Alternative[RE[In, M, ?]] = new Alternative[RE[In, M, ?]] {

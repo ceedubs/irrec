@@ -184,13 +184,12 @@ class RegexMatchTests extends IrrecSuite {
       Some((('a', None), 'c')))
   }
 
-  // TODO some of these might be better tests with a withMatching call
   test("character class literal match middle") {
-    parse("a[bd-fhj]l").compile.parseOnlyS("ahl") should ===(Some(()))
+    parse("a[bd-fhj]l").compile.parseOnlyS("ahl") should ===(Some("ahl"))
   }
 
   test("character class literal match end") {
-    parse("a[bd-fh]j").compile.parseOnlyS("ahj") should ===(Some(()))
+    parse("a[bd-fh]j").compile.parseOnlyS("ahj") should ===(Some("ahj"))
   }
 
   test("character class literal non-match") {
@@ -198,11 +197,11 @@ class RegexMatchTests extends IrrecSuite {
   }
 
   test("character class range match beginning") {
-    parse("a[d-fh]j").compile.parseOnlyS("aej") should ===(Some(()))
+    parse("a[d-fh]j").compile.parseOnlyS("aej") should ===(Some("aej"))
   }
 
   test("character class range match end") {
-    parse("a[bd-f]j").compile.parseOnlyS("aej") should ===(Some(()))
+    parse("a[bd-f]j").compile.parseOnlyS("aej") should ===(Some("aej"))
   }
 
   test("character class range non-match") {
@@ -210,11 +209,11 @@ class RegexMatchTests extends IrrecSuite {
   }
 
   test("character class range match low") {
-    parse("a[bd-fh]j").compile.parseOnlyS("adj") should ===(Some(()))
+    parse("a[bd-fh]j").compile.parseOnlyS("adj") should ===(Some("adj"))
   }
 
   test("character class range match high") {
-    parse("a[bd-fh]j").compile.parseOnlyS("afj") should ===(Some(()))
+    parse("a[bd-fh]j").compile.parseOnlyS("afj") should ===(Some("afj"))
   }
 
   test("digit character single match") { digit.compile.parseOnlyS("2") should ===(Some(2)) }
@@ -274,6 +273,32 @@ class RegexMatchTests extends IrrecSuite {
     val rc = whitespaceChar.compile[Char]
     forAll(gen) { c =>
       rc.parseOnlyS(c.toString) should ===(Some(c))
+    }
+  }
+
+  test("withMatched") {
+    val r = lit('a') *> parse("(b|c|d)e").void.withMatched <* lit('f')
+    r.compile.parseOnlyS("acef") should ===(Some((Chain('c', 'e'), ())))
+  }
+
+  test("withMatched captures entire input for parseOnly(s)") {
+    forAll { (rc: RegexAndCandidate[Int, Long]) =>
+      val actual = rc.r.withMatched.compile.parseOnly(rc.candidate)
+      val expected = rc.r.compile.parseOnly(rc.candidate).map(l => (Chain.fromSeq(rc.candidate), l))
+      actual should ===(expected)
+    }
+  }
+
+  test("matched") {
+    val r = lit('a') *> parse("(b|c|d)e").matched <* lit('f')
+    r.compile.parseOnlyS("acef") should ===(Some(Chain('c', 'e')))
+  }
+
+  test("matched captures entire input for parseOnly(s)") {
+    forAll { (rc: RegexAndCandidate[Int, Long]) =>
+      val actual = rc.r.matched.compile.parseOnly(rc.candidate)
+      val expected = if (rc.r.matcher[Stream].apply(rc.candidate)) Some(Chain.fromSeq(rc.candidate)) else None
+      actual should ===(expected)
     }
   }
 

@@ -57,9 +57,9 @@ object Parser2 {
   /**
    * A parser for strings that are complete regular expressions, up until the end of the string.
    */
-  def regexExpr[_: P]: P[Regex[Char, Unit]] = P(regex ~ End)
+  def regexExpr[_: P]: P[Regex[Char, String]] = P(regex ~ End).map(_.matched.map(_.mkString_("")))
 
-  def parseRegex(regex: String): Either[String, Regex[Char, Unit]] =
+  def parseRegex(regex: String): Either[String, Regex[Char, String]] =
     parse(regex, regexExpr(_), verboseFailures = true) match {
       case f @ Failure(_, _, _) => Left(f.msg)
       case Success(value, _) => Right(value)

@@ -18,7 +18,7 @@ import cats.collections.{Diet, Range}
 // TODO greediness?
 class ParserTests2 extends IrrecSuite {
   test("regex parsing works for single literal") {
-    val expected = Regex.lit('a').void
+    val expected = Regex.lit('a')
     val r = parse("a")
     sameRegex(r, expected)
   }
@@ -473,7 +473,7 @@ class ParserTests2 extends IrrecSuite {
 
   // TODO do we want this to just be unit?
   // TODO clean up pprint calls
-  def sameRegex(actual: Regex[Char, Unit], expected: Regex[Char, Unit]): Assertion = {
+  def sameRegex(actual: Regex[Char, _], expected: Regex[Char, _]): Assertion = {
     val clue =
       s"""(pprint not optimized):
          |    actual: ${RegexPrettyPrinter.pprintRE(actual)}
