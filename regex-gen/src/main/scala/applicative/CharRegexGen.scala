@@ -3,9 +3,11 @@ package regex.applicative
 // TODO package
 
 // TODO
-import Regex.Regex
+import Regex.{Regex, RegexC}
 import ceedubs.irrec.regex.{CharacterClasses, CharRegexGen => CharRegexGenOld}
 import ceedubs.irrec.regex.{RegexGen => RegexGenOld}
+import ceedubs.irrec.regex.DietGen.dietMatchingGen
+import ceedubs.irrec.regex.RegexMatchGen.{dietMatchToGen}
 
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 import cats.implicits._
@@ -29,6 +31,29 @@ object CharRegexGen {
     4 -> genAlphaNumRegex[Out],
     1 -> genSupportedCharRegex[Out]
   )
+
+  def genAlphaNumRegexAndMatch[Out: Arbitrary: Cogen]: Gen[RegexAndCandidate[Char, Out]] =
+    RegexAndCandidate.genRegexAndMatch(
+      RegexGenOld.Config.fromDiscreteDiet(CharacterClasses.alphaNumeric),
+      dietMatchToGen[Char](CharacterClasses.alphaNumeric, dietMatchingGen(_)))
+
+  def genAlphaNumRegexAndCandidate[Out: Arbitrary: Cogen]: Gen[RegexAndCandidate[Char, Out]] =
+    RegexAndCandidate.genRegexAndCandidate(
+      RegexGenOld.Config.fromDiscreteDiet(CharacterClasses.alphaNumeric),
+      dietMatchToGen[Char](CharacterClasses.alphaNumeric, dietMatchingGen(_)))
+
+  def genRegexAndCandidate[Out: Arbitrary: Cogen]: Gen[RegexAndCandidate[Char, Out]] =
+    RegexAndCandidate.genRegexAndCandidate(
+      RegexGenOld.Config.fromDiscreteDiet(supportedCharacters),
+      dietMatchToGen(supportedCharacters, dietMatchingGen(_)))
+
+  def regexMatchingStringGenFromDiet[Out](available: Diet[Char]): RegexC[Out] => Gen[String] = {
+    val streamGen = RegexMatchGen.dietRegexMatchingStreamGen[Char, Out](available)
+    r => streamGen(r).map(_.mkString)
+  }
+
+  def regexMatchingStringGen[Out]: RegexC[Out] => Gen[String] =
+    regexMatchingStringGenFromDiet(supportedCharacters)
 
   implicit def arbCharRegex[Out: Arbitrary: Cogen]: Arbitrary[Regex[Char, Out]] =
     Arbitrary(genStandardCharRegex[Out])

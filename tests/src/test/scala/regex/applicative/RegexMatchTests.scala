@@ -297,7 +297,8 @@ class RegexMatchTests extends IrrecSuite {
   test("matched captures entire input for parseOnly(s)") {
     forAll { (rc: RegexAndCandidate[Int, Long]) =>
       val actual = rc.r.matched.compile.parseOnly(rc.candidate)
-      val expected = if (rc.r.matcher[Stream].apply(rc.candidate)) Some(Chain.fromSeq(rc.candidate)) else None
+      val expected =
+        if (rc.r.matcher[Stream].apply(rc.candidate)) Some(Chain.fromSeq(rc.candidate)) else None
       actual should ===(expected)
     }
   }

@@ -184,7 +184,7 @@ object RE {
     def empty[A]: RE[In, M, A] = Fail()
     def pure[A](x: A): RE[In, M, A] = FMap[In, M, Unit, A](Eps, _ => x)
     override def map[A, B](fa: RE[In, M, A])(f: A => B): RE[In, M, B] = fa.map(f)
-    // TODO
+    // TODO override void, >*, <*, and as for performance
     //override def void[A](fa: RE[In,M,A]): RE[In,M,Unit] = Void(fa)
     // TODO override productL and productR to use Void
   }

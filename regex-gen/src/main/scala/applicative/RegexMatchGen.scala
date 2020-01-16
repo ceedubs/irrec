@@ -3,11 +3,14 @@ package regex.applicative
 // TODO package
 
 import Regex.Regex
+import ceedubs.irrec.regex.DietGen.dietMatchingGen
 import ceedubs.irrec.regex.Match
 import ceedubs.irrec.regex.ScalacheckSupport._
+import ceedubs.irrec.regex.RegexMatchGen.{dietMatchToGen}
 
-import cats.~>
-import org.scalacheck.Gen
+import cats.{~>, Order}
+import org.scalacheck.Gen, Gen.Choose
+import cats.collections.{Diet, Discrete}
 import cats.implicits._
 
 object RegexMatchGen {
@@ -32,4 +35,8 @@ object RegexMatchGen {
           void = _ => λ[RE[In, Match[In], ?] ~> λ[a => Gen[Stream[In]]]](outer.apply(_))
         )(fa)
     }
+
+  def dietRegexMatchingStreamGen[In: Choose: Discrete: Order, Out](
+    available: Diet[In]): Regex[In, Out] => Gen[Stream[In]] =
+    regexMatchingStreamGen[In](dietMatchToGen(available, dietMatchingGen(_))).apply
 }
