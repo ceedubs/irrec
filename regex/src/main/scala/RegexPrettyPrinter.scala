@@ -69,7 +69,7 @@ object RegexPrettyPrinter {
     value: (Int, String),
     parensForEqualPrecedence: Boolean): String =
     if (value._1 > currentPrecedence || parensForEqualPrecedence && value._1 === currentPrecedence)
-      s"(?:${value._2})"
+      s"(${value._2})"
     else value._2
 
   def pprintKleene[A]: RAlgebra[Int, KleeneF, String] = RAlgebra[Int, KleeneF, String] {

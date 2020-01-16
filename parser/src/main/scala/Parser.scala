@@ -182,7 +182,8 @@ object Parser {
         Regex.matching(_)))) |
       wildcard |
       charClass.map(Regex.matching(_)) |
-      ("(?:" ~ regex ~ ")")
+      ("(?:" ~ regex ~ ")") |
+      ("(" ~ regex ~ ")")
   )
 
   def factor[_: P]: P[Regex[Char]] = P {
