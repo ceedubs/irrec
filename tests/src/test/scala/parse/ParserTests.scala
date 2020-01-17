@@ -1,7 +1,8 @@
 package ceedubs.irrec
 package parse
 
-import ceedubs.irrec.regex._, Regex._, char._
+import ceedubs.irrec.regex._, char._, Combinator._
+import ceedubs.irrec.regex.{Combinator => C}
 import ceedubs.irrec.regex.CharacterClasses
 import ceedubs.irrec.regex.Match
 import ceedubs.irrec.regex.Match.MatchSet
@@ -15,30 +16,30 @@ import cats.collections.{Diet, Range}
 // TODO greediness?
 class ParserTests extends IrrecSuite {
   test("regex parsing works for single literal") {
-    val expected = Regex.lit('a')
+    val expected = lit('a')
     val r = parse("a")
     sameRegex(r, expected)
   }
 
   test("regex parsing works for literal then literal") {
-    val expected = Regex.lit('a') *> Regex.lit('b').void
+    val expected = lit('a') *> lit('b').void
     val r = parse("ab")
     sameRegex(r, expected)
   }
   test("regex parsing works for literal or literal") {
-    val expected = (Regex.lit('a') | Regex.lit('b')).void
+    val expected = (lit('a') | lit('b')).void
     val r = parse("a|b")
     sameRegex(r, expected)
   }
 
   test("regex parsing matches disjunction of literal sequences") {
-    val expected = (Regex.seq("ab") | Regex.seq("bc")).void
+    val expected = (seq("ab") | seq("bc")).void
     val r = parse("ab|bc")
     sameRegex(r, expected)
   }
 
   test("regex parsing matches unnecessary outer parens") {
-    val expected = Regex.seq("ab").void
+    val expected = seq("ab").void
     val r = parse("(?:ab)")
     sameRegex(r, expected)
   }
@@ -56,33 +57,31 @@ class ParserTests extends IrrecSuite {
   }
 
   test("regex parsing matches literal*") {
-    val expected = Regex.lit('a').star(Greediness.Greedy).void
+    val expected = lit('a').star(Greediness.Greedy).void
     val r = parse("a*")
     sameRegex(r, expected)
   }
 
   test("regex parsing matches literal* then another matcher") {
-    val expected = Regex.lit('a').star(Greediness.Greedy) *> lit('b').void
+    val expected = lit('a').star(Greediness.Greedy) *> lit('b').void
     val r = parse("a*b")
     sameRegex(r, expected)
   }
 
   test("regex parsing handles precedence with *") {
-    val expected = Regex
-      .lit('a')
-      .void | (Regex.lit('c') *> Regex.lit('d').star(Greediness.Greedy).void)
+    val expected = lit('a').void | (lit('c') *> lit('d').star(Greediness.Greedy).void)
     val r = parse("a|cd*")
     sameRegex(r, expected)
   }
 
   test("regex parsing respects parens") {
-    val expected = (Regex.lit('a') | Regex.lit('c')) *> Regex.lit('d').void
+    val expected = (lit('a') | lit('c')) *> lit('d').void
     val r = parse("(?:a|c)d")
     sameRegex(r, expected)
   }
 
   test("regex parsing is fine with nested parens") {
-    val expected = (Regex.lit('a') | Regex.lit('c')) *> Regex.lit('d').void
+    val expected = (lit('a') | lit('c')) *> lit('d').void
     val r = parse("(?:(?:(?:a|(?:c)))d)")
     sameRegex(r, expected)
   }
@@ -100,7 +99,7 @@ class ParserTests extends IrrecSuite {
   }
 
   test("regex parsing supports character classes") {
-    val expected = lit('a') *> Regex.range('b', 'd') *> lit('e').void
+    val expected = lit('a') *> range('b', 'd') *> lit('e').void
     val r = parse("a[bcd]e")
     sameRegex(r, expected)
   }
@@ -112,13 +111,13 @@ class ParserTests extends IrrecSuite {
   }
 
   test("regex parsing supports single negated character classes") {
-    val expected = lit('a') *> Regex.noneOf('b') *> lit('c').void
+    val expected = lit('a') *> C.noneOf('b') *> lit('c').void
     val r = parse("""a[^b]c""")
     sameRegex(r, expected)
   }
 
   test("regex parsing supports escaped special characters within negative character classes") {
-    val expected = lit('a') *> Regex.noneOf('*') *> lit('e').void
+    val expected = lit('a') *> C.noneOf('*') *> lit('e').void
     val r = parse("""a[^\*]e""")
     sameRegex(r, expected)
   }
@@ -269,7 +268,7 @@ class ParserTests extends IrrecSuite {
   }
 
   test("regex parsing handles horizontal whitespace classes in a negated character class") {
-    val expected = lit('a') *> Regex.noneOf('b', '\t', ' ', 'c').void
+    val expected = lit('a') *> C.noneOf('b', '\t', ' ', 'c').void
     sameRegex(parse("""a[^b\hc]"""), expected)
     sameRegex(parse("""a[^[b[:blank:]c]]"""), expected)
   }
@@ -279,7 +278,7 @@ class ParserTests extends IrrecSuite {
   }
 
   test("regex parsing handles ascii classes") {
-    val expected = lit('a') *> Regex.range('\u0000', '\u007F').void
+    val expected = lit('a') *> range('\u0000', '\u007F').void
     val r = parse("""a[b[:ascii:]c]""")
     sameRegex(r, expected)
   }
@@ -322,7 +321,7 @@ class ParserTests extends IrrecSuite {
 
   test(
     "regex parsing handles characters that can only be unescaped inside character classes in negative classes") {
-    val expected = lit('a') *> Regex.noneOf('*', '<', '(', '{', '|').void
+    val expected = lit('a') *> C.noneOf('*', '<', '(', '{', '|').void
     val r = parse("""a[^*<({|]""")
     sameRegex(r, expected)
   }
@@ -340,11 +339,9 @@ class ParserTests extends IrrecSuite {
   }
 
   test("regex parsing handles character class union/intersection mixes") {
-    val expected = lit('a') *> Regex
-      .matching(
-        MatchSet.allow(CharacterClasses.ascii + 'λ') intersect MatchSet.forbid(
-          CharacterClasses.punctuationChar))
-      .void
+    val expected = lit('a') *> matching(
+      MatchSet.allow(CharacterClasses.ascii + 'λ') intersect MatchSet.forbid(
+        CharacterClasses.punctuationChar)).void
     val r = parse("""a[[:ascii:][λ]&&[^[:punct:]]]""")
     sameRegex(r, expected)
   }
@@ -376,15 +373,15 @@ class ParserTests extends IrrecSuite {
   test("unicode character points") {
     val r = lit('陸')
     // TODO
-    val printed = RegexPrettyPrinter.pprintRE(r)
+    val printed = r.pprint
     printed should ===("\\uf9d3")
     val r2 = parse("\\uf9d3")
-    RegexPrettyPrinter.pprintRE(r2) should ===("\\uf9d3")
+    r2.pprint should ===("\\uf9d3")
   }
 
   // TODO
   test("regex parsing handles empty strings") {
-    val expected = Regex.empty[Char, Match[Char]]
+    val expected = C.empty[Char, Match[Char]]
     val r = parse("")
     sameRegex(r, expected)
     //val matcher = r.stringMatcher
@@ -406,7 +403,7 @@ class ParserTests extends IrrecSuite {
   }
 
   test("regex parsing handles unicode character points") {
-    val expected = Regex.lit('a').void
+    val expected = lit('a').void
     val r = parse("\\u0061")
     sameRegex(r, expected)
   }
@@ -418,7 +415,7 @@ class ParserTests extends IrrecSuite {
   }
 
   test("regex parsing only looks at 4 characters for unicode character points") {
-    val expected = Regex.lit('a') *> lit('1').void
+    val expected = lit('a') *> lit('1').void
     val r = parse("\\u00611")
     sameRegex(r, expected)
   }
@@ -469,11 +466,11 @@ class ParserTests extends IrrecSuite {
 
   // TODO do we want this to just be unit?
   // TODO clean up pprint calls
-  def sameRegex(actual: Regex[Char, _], expected: Regex[Char, _]): Assertion = {
+  def sameRegex(actual: RegexM[Char, _], expected: RegexM[Char, _]): Assertion = {
     val clue =
       s"""(pprint not optimized):
-         |    actual: ${RegexPrettyPrinter.pprintRE(actual)}
-         |  expected: ${RegexPrettyPrinter.pprintRE(expected)}
+         |    actual: ${actual.pprint}
+         |  expected: ${expected.pprint}
          |(structure):
          |    actual: ${actual}
          |  expected: ${expected}
@@ -485,7 +482,7 @@ class ParserTests extends IrrecSuite {
       // them by their pretty-printed equivalence. It's not perfect, but in practice it works pretty
       // well.
       //actual.optimize.pprint should ===(expected.optimize.pprint)
-      RegexPrettyPrinter.pprintRE(actual) should ===(RegexPrettyPrinter.pprintRE(expected))
+      actual.pprint should ===(expected.pprint)
     }
   }
 }

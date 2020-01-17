@@ -65,7 +65,7 @@ object RegexPrettyPrinter {
     _ match {
       case Literal(a) => f(false, a)
       case MatchSet.Allow(allowed) =>
-        if (allowed.isEmpty) pprintRE(Regex.fail) else s"[${showDiet(allowed)}]"
+        if (allowed.isEmpty) pprint(Combinator.fail) else s"[${showDiet(allowed)}]"
       case MatchSet.Forbid(forbidden) =>
         if (forbidden.isEmpty) "." else s"[^${showDiet(forbidden)}]"
       case Match.Wildcard() => "."
@@ -83,40 +83,41 @@ object RegexPrettyPrinter {
   // TODO naming
   // TODO documentation
   // TODO generalize to not be specific to Match?
-  // TODO In instead of A
   // TODO this formatting is horrendous
-  def boop[In](f: (Boolean, In) => String)(
-    implicit eqA: cats.Eq[In]): RE[In, Match[In], _] => String = {
+  def pprintWith[In](f: (Boolean, In) => String)(
+    implicit eqA: cats.Eq[In]): Regex[In, Match[In], _] => String = {
     val showMatch = regex.RegexPrettyPrinter.showMatch(f)
-    def go[Out](r: RE[In, Match[In], Out]): (Int, String) =
-      RE.fold[In, Match[In], Out, (Int, String)](
+    def go[Out](r: Regex[In, Match[In], Out]): (Int, String) =
+      Regex.fold[In, Match[In], Out, (Int, String)](
         eps = _ => (epsPrecedence, ""),
         fail = () => (failPrecedence, "∅"),
         elem = (m, _) => (matchPrecedence, showMatch(m)),
-        andThen =
-          λ[λ[i => (RE[In, Match[In], i => Out], RE[In, Match[In], i])] ~> λ[a => (Int, String)]](
-            t =>
-              (
+        andThen = λ[λ[i => (Regex[In, Match[In], i => Out], Regex[In, Match[In], i])] ~> λ[a => (
+          Int,
+          String)]](
+          t =>
+            (
+              andThenPrecedence,
+              parensMaybe(andThenPrecedence, go(t._1), false) + parensMaybe(
                 andThenPrecedence,
-                parensMaybe(andThenPrecedence, go(t._1), false) + parensMaybe(
-                  andThenPrecedence,
-                  go(t._2),
-                  false))),
-        star = λ[λ[i => (RE[In, Match[In], i], Greediness, Out, (Out, i) => Out)] ~> λ[a => (
+                go(t._2),
+                false))),
+        star = λ[λ[i => (Regex[In, Match[In], i], Greediness, Out, (Out, i) => Out)] ~> λ[a => (
           Int,
           String)]](t => (starPrecedence, parensMaybe(starPrecedence, go(t._1), true) + "*")),
-        mapped = λ[λ[a => (RE[In, Match[In], a], a => Out)] ~> λ[a => (Int, String)]](t => go(t._1)),
+        mapped =
+          λ[λ[a => (Regex[In, Match[In], a], a => Out)] ~> λ[a => (Int, String)]](t => go(t._1)),
         or = alternatives =>
           (
             orPrecedence,
             alternatives.map(r => parensMaybe(orPrecedence, go(r), false)).mkString_("|")),
-        void = _ => λ[RE[In, Match[In], ?] ~> λ[a => (Int, String)]](go(_))
+        void = _ => λ[Regex[In, Match[In], ?] ~> λ[a => (Int, String)]](go(_))
       )(r)
     go(_)._2
   }
 
   // TODO name
-  val pprintRE: RE[Char, regex.Match[Char], _] => String = {
-    boop((inRange, c) => regex.RegexPrettyPrinter.showChar(inRange)(c))
+  val pprint: Regex[Char, regex.Match[Char], _] => String = {
+    pprintWith((inRange, c) => regex.RegexPrettyPrinter.showChar(inRange)(c))
   }
 }

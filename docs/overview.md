@@ -11,7 +11,7 @@ The name is a shameless rip-off of [irreg](https://github.com/non/irreg), which 
 ## creating regular expressions
 
 ```scala mdoc:silent
-import ceedubs.irrec.regex._, Regex._, char._
+import ceedubs.irrec.regex._, Combinator._, char._
 import ceedubs.irrec.parse.{regex => r}
 import ceedubs.irrec.regex.Greediness._
 import cats.implicits._
@@ -23,9 +23,9 @@ case object Feisty extends Mood
 
 case class Animals(count: Int, mood: Mood, kind: String)
 
-val animal: Regex[Char, String] = r("(b|c|r|gn)at")
-val mood: Regex[Char, Mood] = r("happy").as[Mood](Happy) | r("tired").as(Tired) | r("feisty").as(Feisty)
-val animalsR: Regex[Char, Animals] =
+val animal: RegexC[String] = r("(b|c|r|gn)at")
+val mood: RegexC[Mood] = r("happy").as[Mood](Happy) | r("tired").as(Tired) | r("feisty").as(Feisty)
+val animalsR: RegexC[Animals] =
   (digit <* horizontalWhitespaceChar.repeat(1, Some(2), Greedy),
   mood <* horizontalWhitespaceChar.repeat(1, Some(2), NonGreedy),
   animal <* lit('s').optional

@@ -3,13 +3,12 @@ package regex
 
 import ceedubs.irrec.regex.{RegexGen => RegexGenOld}
 import ceedubs.irrec.regex.{RegexMatchGen => RegexMatchGenOld}
-import Regex.Regex
 
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 import cats.Order
 import cats.implicits._
 
-final case class RegexAndCandidate[In, Out](r: Regex[In, Out], candidate: Stream[In])
+final case class RegexAndCandidate[In, Out](r: RegexM[In, Out], candidate: Stream[In])
 
 object RegexAndCandidate {
   /**
@@ -34,7 +33,7 @@ object RegexAndCandidate {
    *
    * @see also [[genRegexAndMatch]].
    */
-  def genCandidateStream[In](matchToGen: Match[In] => Gen[In]): Regex[In, _] => Gen[Stream[In]] = {
+  def genCandidateStream[In](matchToGen: Match[In] => Gen[In]): RegexM[In, _] => Gen[Stream[In]] = {
     val matching = RegexMatchGen.regexMatchingStreamGen(matchToGen)
     r => Gen.oneOf(matching(r), Gen.containerOf[Stream, In](matchToGen(Match.wildcard)))
   }

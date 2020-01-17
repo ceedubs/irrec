@@ -19,7 +19,7 @@ Here are some strings that match your regular expression:
 ---
 
 {
-import ceedubs.irrec.regex._, Regex._
+import ceedubs.irrec.regex._
 import ceedubs.irrec.parse.Parser
 import org.scalajs.dom
 import org.scalajs.dom.html.Input

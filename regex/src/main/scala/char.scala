@@ -1,10 +1,11 @@
 package ceedubs.irrec
 package regex
 
-import Regex._
+import Combinator._
 
 import cats.implicits._
 
+// TODO uppercase vs lower case inconsistencies
 object char {
   /**
    * Matches a single digit character ('0', '3', '9', etc). Could be represented in a regular

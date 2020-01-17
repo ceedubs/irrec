@@ -1,7 +1,7 @@
 package ceedubs.irrec
 package bench
 
-import regex._, Regex._
+import regex._, Combinator._
 import Greediness.Greedy
 
 import cats.implicits._
@@ -12,7 +12,7 @@ import org.openjdk.jmh.annotations.{Benchmark, Scope, State}
 class ZeroStarStarABenchmarks {
   val manyZeros: String = "0" * 20
   val java: Pattern = Pattern.compile("(0*)*A")
-  val irrec: Regex[Char, Unit] = lit('0').star(Greedy).star(Greedy).void <* lit('A')
+  val irrec: RegexC[Unit] = lit('0').star(Greedy).star(Greedy).void <* lit('A')
   val irrecMatcher: String => Boolean = irrec.stringMatcher
 
   @Benchmark

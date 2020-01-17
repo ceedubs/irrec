@@ -11,7 +11,7 @@ sidebar_label: examples
 You can create a regular expression via a `String` literal:
 
 ```scala mdoc:silent
-import ceedubs.irrec.regex._, Regex._
+import ceedubs.irrec.regex._, Combinator._
 import ceedubs.irrec.parse.{regex => r}
 
 val animalLit: RegexC[String] = r("(b|c|r|gn)at")
@@ -31,7 +31,6 @@ Alternatively, you can build up a regular expression using the methods in the
 * Applicative methods such as `<*`, `*>`, and `mapN` indicate one match followed by another.
 
 ```scala mdoc:silent
-import ceedubs.irrec.regex.Regex._
 import cats.implicits._
 
 val animalDSL: RegexC[Unit] = (oneOf('b', 'c', 'r').void | seq("gn").void) <* seq("at")
@@ -64,7 +63,7 @@ While `RegexC` is the most common choice, irrec supports regular expressions for
 ```scala mdoc:silent
 import Greediness._
 
-val numRegex: Regex[Int, Unit] = lit(1).many.void <* range(2, 4).repeat(1, Some(3), Greedy) <* oneOf(5, 6).oneOrMore(Greedy)
+val numRegex: RegexM[Int, Unit] = lit(1).many.void <* range(2, 4).repeat(1, Some(3), Greedy) <* oneOf(5, 6).oneOrMore(Greedy)
 
 val numMatcher: Stream[Int] => Boolean = numRegex.matcher[Stream]
 ```
@@ -76,6 +75,8 @@ numMatcher(Stream(1, 1, 1, 2, 4, 5, 6, 5))
 
 numMatcher(Stream(0, 5, 42))
 ```
+
+The `M` in `RegexM` stands for [Match](https://ceedubs.github.io/irrec/api/ceedubs/irrec/regex/Match.html). It is useful for matches on any discrete input type such as characters or numbers.
 
 ## pretty printing
 
@@ -116,9 +117,9 @@ Gen.listOfN(3, phraseGen).apply(Gen.Parameters.default, Seed(1046525L))
 Irrec provies support for creating random (valid) regular expressions along with potential matches for them.
 
 ```scala mdoc:silent
-val regexGen: Gen[Regex[Char, List[Long]]] = Gen.resize(12, CharRegexGen.genAsciiRegex)
+val regexGen: Gen[RegexC[List[Long]]] = Gen.resize(12, CharRegexGen.genAsciiRegex)
 
-val randomRegex1: Regex[Char, List[Long]] = regexGen.apply(Gen.Parameters.default, Seed(105769L)).get
+val randomRegex1: RegexC[List[Long]] = regexGen.apply(Gen.Parameters.default, Seed(105769L)).get
 ```
 
 ```scala mdoc
@@ -157,6 +158,6 @@ val regexesAndCandidates: List[RegexAndCandidate[Char, Double]] = regexesAndCand
 
 ```scala mdoc
 regexesAndCandidates.map(x =>
-  (x.r.pprint, x.candidate.mkString, x.r.matcher[Stream].apply(x.candidate))
+  (x.r.pprint, x.candidate.mkString, x.r.compile.parseOnly(x.candidate))
 )
 ```

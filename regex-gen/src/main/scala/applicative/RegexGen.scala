@@ -1,7 +1,6 @@
 package ceedubs.irrec
 package regex
 
-import Regex.Regex
 import DietGen._
 import ceedubs.irrec.regex.Match.MatchSet
 import ceedubs.irrec.regex.ScalacheckSupport._
@@ -62,7 +61,7 @@ object RegexGen {
   // TODO should this be public?
   private def genRegexWithDepth[In: Order: Cogen, Out: Arbitrary: Cogen](
     cfg: Config[In],
-    depth: Int): Gen[Regex[In, Out]] =
+    depth: Int): Gen[RegexM[In, Out]] =
     if (depth <= 1)
       Gen.frequency(
         // Elem
@@ -70,10 +69,10 @@ object RegexGen {
           for {
             m <- cfg.genMatch
             f <- arbitrary[In => Out]
-          } yield Regex.mapMatch(m, f)
+          } yield Combinator.mapMatch(m, f)
         ),
         // Fail
-        (if (cfg.includeZero) 1 else 0) -> Gen.const(Regex.fail)
+        (if (cfg.includeZero) 1 else 0) -> Gen.const(Combinator.fail)
       )
     else
       Gen.frequency(
@@ -89,7 +88,7 @@ object RegexGen {
               genRegexWithDepth[In, rIGen.T => Out](cfg, depth - rIDepth)
             }
             // TODO add a helper method to avoid bad type inference here?
-          } yield (RE.AndThen(rf, rI): Regex[In, Out])
+          } yield (Regex.AndThen(rf, rI): RegexM[In, Out])
         ),
         // FMap
         2 -> (for {
@@ -106,7 +105,7 @@ object RegexGen {
             rCount <- Gen.chooseNum(1, depth - 1)
             depths <- distributeSumNel(entryCount = rCount, extra = depth - 1 - rCount)
             nel <- depths.traverse(depth => genRegexWithDepth[In, Out](cfg, depth))
-          } yield RE.Or[In, Match[In], Out](nel)
+          } yield Regex.Or[In, Match[In], Out](nel)
         ),
         // Star
         1 -> (
@@ -120,11 +119,11 @@ object RegexGen {
               arbitrary[(Out, rIGen.T) => Out]
             }
             // TODO annoying to need to specify type
-          } yield (RE.Star[In, Match[In], rIGen.T, Out](rI, g, z, fold): Regex[In, Out])
+          } yield (Regex.Star[In, Match[In], rIGen.T, Out](rI, g, z, fold): RegexM[In, Out])
         )
       )
 
-  def genRegex[In: Order: Cogen, Out: Arbitrary: Cogen](cfg: Config[In]): Gen[Regex[In, Out]] =
+  def genRegex[In: Order: Cogen, Out: Arbitrary: Cogen](cfg: Config[In]): Gen[RegexM[In, Out]] =
     Gen.sized(maxSize =>
       Gen.choose(1, math.max(maxSize, 1)).flatMap(depth => genRegexWithDepth[In, Out](cfg, depth)))
 
@@ -143,7 +142,7 @@ object RegexGen {
       },
       // Eps
       (if (cfg.includeOne) 2 else 0) -> Gen.const(
-        TypeWith(RegexWithEv.fromRegexGen(Gen.const(Regex.empty[In, Match[In]]))))
+        TypeWith(RegexWithEv.fromRegexGen(Gen.const(Combinator.empty[In, Match[In]]))))
     )
     def go(depth: Int): Gen[TypeWith[RegexWithEv[In, Match[In], ?]]] =
       if (depth <= 1) leafGen
@@ -178,19 +177,19 @@ object RegexGen {
       }
     }
 
-  def genByteRegex[Out: Arbitrary: Cogen]: Gen[Regex[Byte, Out]] = genRegex(standardByteConfig)
+  def genByteRegex[Out: Arbitrary: Cogen]: Gen[RegexM[Byte, Out]] = genRegex(standardByteConfig)
 
-  implicit def arbByteRegex[Out: Arbitrary: Cogen]: Arbitrary[Regex[Byte, Out]] =
+  implicit def arbByteRegex[Out: Arbitrary: Cogen]: Arbitrary[RegexM[Byte, Out]] =
     Arbitrary(genByteRegex)
 
-  def genIntRegex[Out: Arbitrary: Cogen]: Gen[Regex[Int, Out]] = genRegex(standardIntConfig)
+  def genIntRegex[Out: Arbitrary: Cogen]: Gen[RegexM[Int, Out]] = genRegex(standardIntConfig)
 
-  implicit def arbIntRegex[Out: Arbitrary: Cogen]: Arbitrary[Regex[Int, Out]] =
+  implicit def arbIntRegex[Out: Arbitrary: Cogen]: Arbitrary[RegexM[Int, Out]] =
     Arbitrary(genIntRegex)
 
-  def genLongRegex[Out: Arbitrary: Cogen]: Gen[Regex[Long, Out]] = genRegex(standardLongConfig)
+  def genLongRegex[Out: Arbitrary: Cogen]: Gen[RegexM[Long, Out]] = genRegex(standardLongConfig)
 
-  implicit def arbLongRegex[Out: Arbitrary: Cogen]: Arbitrary[Regex[Long, Out]] =
+  implicit def arbLongRegex[Out: Arbitrary: Cogen]: Arbitrary[RegexM[Long, Out]] =
     Arbitrary(genLongRegex)
 
   private[irrec] object Support {
@@ -206,12 +205,12 @@ object RegexGen {
     // TODO naming
     // TODO consider helper function for creating functions?
     final case class RegexWithEv[In, M, Out](
-      regexGen: Gen[RE[In, M, Out]],
+      regexGen: Gen[Regex[In, M, Out]],
       genOut: Gen[Out],
       cogenOut: Cogen[Out])
 
     object RegexWithEv {
-      def fromRegexGen[In, M, Out](regex: Gen[RE[In, M, Out]])(
+      def fromRegexGen[In, M, Out](regex: Gen[Regex[In, M, Out]])(
         implicit arbOut: Arbitrary[Out],
         cogenOut: Cogen[Out]): RegexWithEv[In, M, Out] =
         RegexWithEv(regex, arbOut.arbitrary, cogenOut)

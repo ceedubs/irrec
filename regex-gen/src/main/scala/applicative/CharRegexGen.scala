@@ -1,8 +1,6 @@
 package ceedubs.irrec
 package regex
 
-// TODO
-import Regex.{Regex, RegexC}
 import ceedubs.irrec.regex.DietGen.dietMatchingGen
 import ceedubs.irrec.regex.RegexMatchGen.dietMatchToGen
 
@@ -18,16 +16,16 @@ object CharRegexGen {
     RegexGen.Config
       .fromDiscreteDiet(supportedCharacters)
 
-  def genSupportedCharRegex[Out: Arbitrary: Cogen]: Gen[Regex[Char, Out]] =
-    RegexGen.genRegex(supportedCharRegexGenConfig)
+  def genSupportedCharRegex[Out: Arbitrary: Cogen]: Gen[RegexC[Out]] =
+    RegexGen.genRegex[Char, Out](supportedCharRegexGenConfig)
 
-  def genAlphaNumRegex[Out: Arbitrary: Cogen]: Gen[Regex[Char, Out]] =
-    RegexGen.genRegex(RegexGen.Config.fromDiscreteDiet(CharacterClasses.alphaNumeric))
+  def genAlphaNumRegex[Out: Arbitrary: Cogen]: Gen[RegexC[Out]] =
+    RegexGen.genRegex[Char, Out](RegexGen.Config.fromDiscreteDiet(CharacterClasses.alphaNumeric))
 
-  def genAsciiRegex[Out: Arbitrary: Cogen]: Gen[Regex[Char, Out]] =
-    RegexGen.genRegex(RegexGen.Config.fromDiscreteDiet(CharacterClasses.ascii))
+  def genAsciiRegex[Out: Arbitrary: Cogen]: Gen[RegexC[Out]] =
+    RegexGen.genRegex[Char, Out](RegexGen.Config.fromDiscreteDiet(CharacterClasses.ascii))
 
-  def genStandardCharRegex[Out: Arbitrary: Cogen]: Gen[Regex[Char, Out]] = Gen.frequency(
+  def genStandardCharRegex[Out: Arbitrary: Cogen]: Gen[RegexC[Out]] = Gen.frequency(
     5 -> genAsciiRegex[Out],
     4 -> genAlphaNumRegex[Out],
     1 -> genSupportedCharRegex[Out]
@@ -61,6 +59,6 @@ object CharRegexGen {
   def regexMatchingStringGen[Out]: RegexC[Out] => Gen[String] =
     regexMatchingStringGenFromDiet(supportedCharacters)
 
-  implicit def arbCharRegex[Out: Arbitrary: Cogen]: Arbitrary[Regex[Char, Out]] =
+  implicit def arbCharRegex[Out: Arbitrary: Cogen]: Arbitrary[RegexC[Out]] =
     Arbitrary(genStandardCharRegex[Out])
 }

@@ -2,7 +2,7 @@ package ceedubs.irrec
 package bench
 
 import cats.implicits._
-import regex._, Regex._
+import regex._, Combinator._
 import java.util.regex.Pattern
 import org.openjdk.jmh.annotations.{Benchmark, Scope, State}
 
@@ -12,7 +12,7 @@ class AndThenAndOrRegexBenchmarks {
   val nonMatchingString: String = "abcdefg"
   val longNonMatchingString: String = "abcdefg" * 10
   val java: Pattern = Pattern.compile("ab(c|d)efg")
-  val irrec: Regex[Char, Unit] = seq("ab").void <* oneOf('c', 'd') <* seq("efg")
+  val irrec: RegexC[Unit] = seq("ab").void <* oneOf('c', 'd') <* seq("efg")
   val irrecMatcher: String => Boolean = irrec.stringMatcher
 
   @Benchmark

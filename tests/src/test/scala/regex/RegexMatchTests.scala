@@ -1,7 +1,8 @@
 package ceedubs.irrec
 package regex
 
-import Regex._
+import Combinator._
+import ceedubs.irrec.regex.{Combinator => C}
 import char._
 import RegexGen._
 import ceedubs.irrec.parse.{regex => parse}
@@ -150,18 +151,18 @@ class RegexMatchTests extends IrrecSuite {
   test("count 2 non-match") { literal('b').count(2).compile.parseOnlyS("bc") should ===(None) }
 
   test("oneOf first match") {
-    Regex.oneOf('a', 'b', 'c').compile.parseOnlyS("a") should ===(Some('a'))
+    C.oneOf('a', 'b', 'c').compile.parseOnlyS("a") should ===(Some('a'))
   }
 
   test("oneOf second match") {
-    Regex.oneOf('a', 'b', 'c').compile.parseOnlyS("b") should ===(Some('b'))
+    C.oneOf('a', 'b', 'c').compile.parseOnlyS("b") should ===(Some('b'))
   }
 
   test("oneOf last match") {
-    Regex.oneOf('a', 'b', 'c').compile.parseOnlyS("c") should ===(Some('c'))
+    C.oneOf('a', 'b', 'c').compile.parseOnlyS("c") should ===(Some('c'))
   }
 
-  test("oneOf non match") { Regex.oneOf('a', 'b', 'c').compile.parseOnlyS("d") should ===(None) }
+  test("oneOf non match") { C.oneOf('a', 'b', 'c').compile.parseOnlyS("d") should ===(None) }
 
   test("seq empty match") { seq("").compile.parseOnlyS("") should ===(Some(Chain.empty)) }
 
@@ -316,14 +317,14 @@ class RegexMatchTests extends IrrecSuite {
   }
 
   test("repeat(0, n) matches empty") {
-    forAll(arbitrary[Regex[Int, Unit]], Gen.option(Gen.chooseNum(0, 20)), arbitrary[Greediness]) {
+    forAll(arbitrary[RegexM[Int, Unit]], Gen.option(Gen.chooseNum(0, 20)), arbitrary[Greediness]) {
       (r, max, g) =>
         r.repeat(0, max, g).void.compile.parseOnly(List.empty) should ===(Some(()))
     }
   }
 
   test("repeat(0, 0) doesn't match non-empty") {
-    forAll(arbitrary[Regex[Int, Unit]], Gen.nonEmptyListOf(arbitrary[Int]), arbitrary[Greediness]) {
+    forAll(arbitrary[RegexM[Int, Unit]], Gen.nonEmptyListOf(arbitrary[Int]), arbitrary[Greediness]) {
       (r, c, g) =>
         r.repeat(0, Some(0), g).void.compile.parseOnly(c) should ===(None)
     }
@@ -347,7 +348,7 @@ class RegexMatchTests extends IrrecSuite {
   test("or(impossible, r) is equivalent to r") {
     forAll { (rc: RegexAndCandidate[Int, Long]) =>
       val expected = rc.r.compile.parseOnly(rc.candidate)
-      val equivR = or(Regex.fail, rc.r)
+      val equivR = or(C.fail, rc.r)
       val actual = equivR.compile.parseOnly(rc.candidate)
       actual should ===(expected)
     }
@@ -356,7 +357,7 @@ class RegexMatchTests extends IrrecSuite {
   test("or(r, impossible) is equivalent to r") {
     forAll { (rc: RegexAndCandidate[Int, Long]) =>
       val expected = rc.r.compile.parseOnly(rc.candidate)
-      val equivR = or(rc.r, Regex.fail)
+      val equivR = or(rc.r, C.fail)
       val actual = equivR.compile.parseOnly(rc.candidate)
       actual should ===(expected)
     }
@@ -365,7 +366,7 @@ class RegexMatchTests extends IrrecSuite {
   test("empty *> r is equivalent to r") {
     forAll { (rc: RegexAndCandidate[Int, Long]) =>
       val expected = rc.r.compile.parseOnly(rc.candidate)
-      val equivR = Regex.empty[Int, Match[Int]] *> rc.r
+      val equivR = C.empty[Int, Match[Int]] *> rc.r
       val actual = equivR.compile.parseOnly(rc.candidate)
       actual should ===(expected)
     }
@@ -374,7 +375,7 @@ class RegexMatchTests extends IrrecSuite {
   test("r <* empty is equivalent to r") {
     forAll { (rc: RegexAndCandidate[Int, Long]) =>
       val expected = rc.r.compile.parseOnly(rc.candidate)
-      val equivR = rc.r <* Regex.empty
+      val equivR = rc.r <* C.empty
       val actual = equivR.compile.parseOnly(rc.candidate)
       actual should ===(expected)
     }
@@ -412,7 +413,7 @@ class RegexMatchTests extends IrrecSuite {
     val gen = for {
       min <- Gen.chooseNum(0, 10)
       plus <- Gen.chooseNum(0, 5)
-      r <- arbitrary[Regex[Int, Long]]
+      r <- arbitrary[RegexM[Int, Long]]
       g <- arbitrary[Greediness]
       rRepeat = r.repeat(min, Some(min + plus), g)
       c <- regexMatchingStreamGen(intMatchingGen).apply(rRepeat)
@@ -434,7 +435,7 @@ class RegexMatchTests extends IrrecSuite {
     } yield (values, r1, c)
     forAll(gen) {
       case (values, r1, c) =>
-        val r2 = Regex.oneOf(values.head, values.tail: _*)
+        val r2 = C.oneOf(values.head, values.tail: _*)
         r1.compile.parseOnly(c) should ===(r2.compile.parseOnly(c))
     }
   }
@@ -474,7 +475,7 @@ class RegexMatchTests extends IrrecSuite {
     } yield (values, r1, c)
     forAll(gen) {
       case (values, r1, c) =>
-        val r2 = Regex.allOf(values: _*)
+        val r2 = C.allOf(values: _*)
         r1.compile.parseOnly(c) should ===(r2.compile.parseOnly(c))
     }
   }

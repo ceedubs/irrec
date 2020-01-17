@@ -1,96 +1,289 @@
 package ceedubs.irrec
 package regex
 
-import ceedubs.irrec.regex.Match.MatchSet
-
-import cats.{Order, Reducible, Traverse}
-import cats.collections.{Diet, Discrete, Range}
-import cats.data.{Chain, NonEmptyList}
+import cats.{~>, Alternative, Applicative, Foldable}
+import cats.data.{Chain, NonEmptyChain, NonEmptyList, State}
+import cats.evidence.Is
 import cats.implicits._
 
-// TODO capitalization convention of char vs Regex
-// TODO just change RE to Regex and add stuff there?
-// TODO what should go in here vs on the class? Both? Separate combinator object?
-// TODO star-like method that allows z/fold params
+// This code was ported (with minor modifications) from https://hackage.haskell.org/package/regex-applicative
+// TODO document type parameters (especially M)
+sealed abstract class Regex[-In, +M, Out] extends Serializable {
+  import Regex._
+
+  // TODO add ops on to avoid variance shenanigans?
+  // TODO add in optimizations during constructions like this or have a separate method to optimize?
+  def |[In2 <: In, M2 >: M](o: Regex[In2, M2, Out]): Regex[In2, M2, Out] = (this, o) match {
+    case (Or(xs), Or(ys)) => Or(xs ::: ys)
+    case (_, Fail()) => this
+    case (Fail(), _) => o
+    case (Or(xs), _) => Or(o :: xs)
+    case (_, Or(ys)) => Or(this :: ys)
+    case _ => Or(NonEmptyList(this, o :: Nil))
+  }
+
+  def star(greediness: Greediness): Regex[In, M, Chain[Out]] =
+    Regex.Star(this, greediness, Chain.empty[Out], (as: Chain[Out], a: Out) => as.append(a))
+
+  def many: Regex[In, M, Chain[Out]] = star(Greediness.Greedy)
+
+  def few: Regex[In, M, Chain[Out]] = star(Greediness.NonGreedy)
+
+  // TODO document
+  def oneOrMore(greediness: Greediness): Regex[In, M, NonEmptyChain[Out]] =
+    this.map2(this.star(greediness))(NonEmptyChain.fromChainPrepend(_, _))
+
+  def count(n: Int): Regex[In, M, Chain[Out]] =
+    Chain.fromSeq(1 to n).traverse(_ => this)
+
+  // TODO is this handling greediness right? Test this.
+  def repeat(
+    minInclusive: Int,
+    maxInclusive: Option[Int],
+    greediness: Greediness): Regex[In, M, Chain[Out]] = {
+    val tail = maxInclusive.fold(star(greediness).some) { max =>
+      if (max <= minInclusive) None
+      else {
+        (0 to (max - minInclusive)).toList.toNel.map { counts =>
+          val orderedCounts = greediness match {
+            case Greediness.Greedy => counts.reverse
+            case Greediness.NonGreedy => counts
+          }
+          // TODO this is a mess
+          Or(orderedCounts.map(i => count(i)))
+        }
+      }
+    }
+    val head = count(minInclusive)
+    tail.fold(head)(tail => head.map2(tail)(_ concat _))
+  }
+
+  def optional[In2 <: In, M2 >: M]: Regex[In2, M2, Option[Out]] =
+    this.map[Option[Out]](Some(_)) | none[Out].pure[Regex[In2, M2, ?]]
+
+  def map[B](f: Out => B): Regex[In, M, B] = FMap(this, f)
+
+  def compile[In2 <: In]: ParseState[In2, Out] = Regex.compile(this)
+
+  def matched[In2 <: In]: Regex[In2, M, Chain[In2]] = withMatched.map(_._1)
+
+  def withMatched[In2 <: In]: Regex[In2, M, (Chain[In2], Out)] =
+    Regex.withMatched(this)
+}
+
 object Regex {
-  // TODO move (and generalize?)
-  // TODO what should the different types be?
-  // type RegexC[Out] = RE[Char, Match[Char], Out]
-  // type RegexG[In, M, Out] =  RE[In, M, Out] // rename?
-  // type Regex[In, Out] = RE[In, Match[In], Out]
-  // if we did something like this, then Regex._ would be a somewhat reasonable place for these things to go, right?
-  // TODO move
-  type RegexG[In, M, Out] = RE[In, M, Out]
-  type Regex[In, Out] = RE[In, Match[In], Out]
-  type RegexC[A] = RE[Char, Match[Char], A]
+  // TODO A vs Out
+  case object Eps extends Regex[Any, Nothing, Unit]
+  final case class Fail[A]() extends Regex[Any, Nothing, A]
+  // TODO should this actually have both? Instead could just rely on doing a `map` and changing `M`.
+  // But that assumes that the conversion will be the same for all M
+  // Also that's probably going to mess with type inference
+  abstract class Elem[-In, +M, Out] extends Regex[In, M, Out] {
+    def metadata: M
+    def apply(in: In): Option[Out]
+  }
 
-  def matching[A: Order](m: Match[A]): Regex[A, A] =
-    mapMatch(m, identity)
+  object Elem {
+    def apply[In, M, Out](m: M, f: In => Option[Out]): Elem[In, M, Out] = new Elem[In, M, Out] {
+      def metadata: M = m
+      def apply(in: In): Option[Out] = f(in)
+    }
+  }
 
-  def mapMatch[In: Order, Out](m: Match[In], f: In => Out): Regex[In, Out] =
-    RE.Elem(m, a => if (m.matches(a)) Some(f(a)) else None)
+  final case class AndThen[-In, +M, I, Out](l: Regex[In, M, I => Out], r: Regex[In, M, I])
+      extends Regex[In, M, Out] {
+    type Init = I
+  }
+  // TODO use a lazy structure like NonEmptyStream?
+  final case class Or[-In, +M, Out](alternatives: NonEmptyList[Regex[In, M, Out]])
+      extends Regex[In, M, Out]
 
-  /** alias for [[literal]] */
-  def lit[A: Order](value: A): Regex[A, A] = literal(value)
+  final case class FMap[-In, +M, I, Out](r: Regex[In, M, I], f: I => Out)
+      extends Regex[In, M, Out] {
+    type Init = I
+  }
 
-  def literal[A: Order](value: A): Regex[A, A] = matching(Match.Literal(value))
+  final case class Star[-In, +M, I, Out](
+    r: Regex[In, M, I],
+    greediness: Greediness,
+    z: Out,
+    fold: (Out, I) => Out)
+      extends Regex[In, M, Out] {
+    type Init = I
+  }
+  // TODO efficiently handle with NFA
+  final case class Void[-In, +M, I](r: Regex[In, M, I]) extends Regex[In, M, Unit] {
+    type Init = I
+  }
 
-  def range[A: Order](l: A, r: A): Regex[A, A] = inSet(Diet.fromRange(Range(l, r)))
+  // TODO document
+  def traverseM[F[_], In, M, M2, Out](re: Regex[In, M, Out])(f: M => F[M2])(
+    implicit F: Applicative[F]): F[Regex[In, M2, Out]] = re match {
+    case e: Elem[In, M, Out] => f(e.metadata).map(Elem(_, e.apply))
+    case Eps => F.pure(Eps)
+    case x @ Fail() => F.pure(x)
+    case Star(r, g, z, fold) => traverseM(r)(f).map(Star(_, g, z, fold))
+    case FMap(r, g) => traverseM(r)(f).map(FMap(_, g))
+    case Or(alternatives) => alternatives.traverse(traverseM(_)(f)).map(Or(_))
+    case AndThen(l, r) => traverseM(l)(f).map2(traverseM(r)(f))(AndThen(_, _))
+    case v @ Void(r) => traverseM[F, In, M, M2, v.Init](r)(f).map(Void(_))
+  }
 
-  def wildcard[A: Order]: Regex[A, A] = matching(Match.Wildcard())
+  // TODO change name of Match and use more helpful name than m here
+  // TODO think about ordering?
+  // TODO can we carry around evidence that Out = Unit for Void?
+  def fold[In, M, Out, R](
+    eps: Is[Unit, Out] => R,
+    fail: () => R,
+    elem: (M, In => Option[Out]) => R,
+    andThen: λ[i => (Regex[In, M, i => Out], Regex[In, M, i])] ~> λ[a => R],
+    star: λ[i => (Regex[In, M, i], Greediness, Out, (Out, i) => Out)] ~> λ[a => R],
+    mapped: λ[a => (Regex[In, M, a], a => Out)] ~> λ[a => R],
+    or: NonEmptyList[Regex[In, M, Out]] => R,
+    void: Is[Unit, Out] => Regex[In, M, ?] ~> λ[a => R]
+  )(r: Regex[In, M, Out]): R = r match {
+    case AndThen(l, r) => andThen((l, r))
+    case Or(alternatives) => or(alternatives)
+    case e: Elem[In, M, Out] => elem(e.metadata, e.apply)
+    case Star(r, g, z, f) => star((r, g, z, f))
+    case FMap(r, f) => mapped((r, f))
+    case Eps => eps(Is.refl[Unit])
+    case Fail() => fail()
+    case Void(r) => void(Is.refl[Unit])(r)
+  }
 
-  def or[In, M, Out](l: RE[In, M, Out], r: RE[In, M, Out]): RE[In, M, Out] = l | r
+  // TODO move?
+  def withMatched[In, M, Out](r: Regex[In, M, Out]): Regex[In, M, (Chain[In], Out)] = r match {
+    case AndThen(l, r) =>
+      withMatched(l).map2(withMatched(r)) {
+        case ((sl, f), (sr, i)) =>
+          (sl.concat(sr), f(i))
+      }
+    case Or(alternatives) => Or(alternatives.map(withMatched))
+    case e: Elem[In, M, Out] => Elem(e.metadata, in => e.apply(in).map(o => (Chain.one(in), o)))
+    // TODO clean up
+    // TODO test
+    case rs @ Star(r, g, z, f) =>
+      Star[In, M, (Chain[In], rs.Init), (Chain[In], Out)](withMatched(r), g, (Chain.empty[In], z), {
+        case ((s0, z), (s1, i)) =>
+          (s0 concat s1, f(z, i))
+      }): Regex[In, M, (Chain[In], Out)]
+    case FMap(r, f) => withMatched(r).map { case (matched, out0) => (matched, f(out0)) }
+    case Eps => r.map(o => (Chain.empty, o))
+    case Fail() => Fail()
+    case v @ Void(r) => withMatched[In, M, v.Init](r).map { case (matched, _) => (matched, ()) }
+  }
 
-  // TODO test
-  def either[In, M, Out1, Out2](
-    l: RE[In, M, Out1],
-    r: RE[In, M, Out2]): RE[In, M, Either[Out1, Out2]] =
-    l.map(Either.left[Out1, Out2](_)) | r.map(Either.right[Out1, Out2](_))
+  // TODO this will probably get created a lot. Reuse a singleton instance?
+  implicit def alternativeRegex[In, M]: Alternative[Regex[In, M, ?]] =
+    new Alternative[Regex[In, M, ?]] {
+      def ap[A, B](ff: Regex[In, M, A => B])(fa: Regex[In, M, A]): Regex[In, M, B] = AndThen(ff, fa)
+      def combineK[A](x: Regex[In, M, A], y: Regex[In, M, A]): Regex[In, M, A] = x | y
+      def empty[A]: Regex[In, M, A] = Fail()
+      def pure[A](x: A): Regex[In, M, A] = FMap[In, M, Unit, A](Eps, _ => x)
+      override def map[A, B](fa: Regex[In, M, A])(f: A => B): Regex[In, M, B] = fa.map(f)
+      // TODO override void, >*, <*, and as for performance
+      //override def void[A](fa: Regex[In,M,A]): Regex[In,M,Unit] = Void(fa)
+      // TODO override productL and productR to use Void
+    }
 
-  // TODO tupled or something?
-  //def andThen[A](l: Kleene[A], r: Kleene[A]): Kleene[A] = Coattr.roll(KleeneF.Times(l, r))
+  def assignThreadIds[In, M, A](re: Regex[In, M, A]): Regex[In, (ThreadId, M), A] = {
+    val freshId: State[ThreadId, ThreadId] = State(id => (ThreadId(id.asInt + 1), id))
+    traverseM(re)(m => freshId.map(id => (id, m))).runA(ThreadId(0)).value
+  }
 
-  def inSet[A: Order](allowed: Diet[A]): Regex[A, A] = matching(MatchSet.allow(allowed))
+  // TODO name
+  // TODO could change this to return a natural transformation
+  // TODO make private or something?
+  // TODO Stream is deprecated in 2.13, right?
+  // TODO use Cont/ContT?
+  // TODO return a custom type?
+  def compileCont[In, M, A, R](
+    re: Regex[In, (ThreadId, M), A]): Cont[A => Stream[Thread[In, R]]] => Stream[Thread[In, R]] = {
+    type ContOut = Cont[A => Stream[Thread[In, R]]] => Stream[Thread[In, R]]
+    Regex.fold[In, (ThreadId, M), A, ContOut](
+      eps = ev => _.empty(ev.coerce(())),
+      fail = () => _ => Stream.empty,
+      // TODO clean up?
+      elem = (m, p) =>
+        cont =>
+          // TODO formatting
+          Thread
+            .Cont[In, R](m._1, in => p(in).fold(Stream.empty[Thread[In, R]])(cont.nonEmpty(_))) #:: Stream.empty,
+      andThen = new (λ[i => (Regex[In, (ThreadId, M), i => A], Regex[In, (ThreadId, M), i])] ~> λ[
+        a => ContOut]) {
+        def apply[i](
+          t: (Regex[In, (ThreadId, M), i => A], Regex[In, (ThreadId, M), i])): ContOut = {
+          val lc = compileCont[In, M, i => A, R](t._1)
+          val rc = compileCont[In, M, i, R](t._2)
+          _ match {
+            case Cont.Single(f) => lc(Cont.Single(lVal => rc(Cont.Single(f compose lVal))))
+            case Cont.Choice(whenEmpty, whenNonEmpty) =>
+              lc(
+                Cont.Choice(
+                  whenEmpty = lVal =>
+                    rc(Cont.Choice(whenEmpty compose lVal, whenNonEmpty compose lVal)),
+                  whenNonEmpty = lVal => rc(Cont.Single(whenNonEmpty compose lVal))
+                ))
+          }
+        }
+      },
+      star =
+        new (λ[i => (Regex[In, (ThreadId, M), i], Greediness, A, (A, i) => A)] ~> λ[a => ContOut]) {
+          def apply[i](t: (Regex[In, (ThreadId, M), i], Greediness, A, (A, i) => A)): ContOut = {
+            val (r, g, z, f) = t
+            val rc = compileCont[In, M, i, R](r)
+            def threads(z: A, cont: Cont[A => Stream[Thread[In, R]]]): Stream[Thread[In, R]] = {
+              def stop = cont.empty(z)
+              // TODO think more about laziness
+              def go =
+                rc(Cont.Choice(whenEmpty = _ => Stream.empty, whenNonEmpty = { v =>
+                  threads(f(z, v), Cont.Single(cont.nonEmpty))
+                }))
+              g match {
+                case Greediness.Greedy => go #::: stop
+                case Greediness.NonGreedy => stop #::: go
+              }
+            }
+            threads(z, _)
+          }
+        },
+      mapped = new (λ[a => (Regex[In, (ThreadId, M), a], a => A)] ~> λ[a => ContOut]) {
+        def apply[i](t: (Regex[In, (ThreadId, M), i], i => A)): ContOut = {
+          val rc = compileCont[In, M, i, R](t._1)
+          cont => rc(cont.map(_ compose t._2))
+        }
+      },
+      or = alternatives => {
+        val alternativesC = alternatives.map(compileCont[In, M, A, R](_)).toList.toStream
+        cont => alternativesC.flatMap(_.apply(cont))
+      },
+      void = ev =>
+        λ[Regex[In, (ThreadId, M), ?] ~> λ[a => ContOut]](r =>
+          compileCont(r.map(_ => ev.coerce(()))))
+    )(re)
+  }
 
-  def notInSet[A: Order](forbidden: Diet[A]): Regex[A, A] = matching(MatchSet.forbid(forbidden))
+  // TODO
+  def compile[In, M, Out](r: Regex[In, M, Out]): ParseState[In, Out] = {
+    val threads =
+      Regex
+        .compileCont(assignThreadIds(r))
+        .apply(Cont.Single((out: Out) => Stream(Thread.Accept[In, Out](out))))
+    ParseState.fromThreads(threads)
+  }
 
-  def oneOf[A: Order](a1: A, as: A*): Regex[A, A] =
-    RE.Or(NonEmptyList.of(a1, as: _*).map(lit(_)))
+  // TODO optimize
+  // TODO naming/documentation
+  // TODO ops class
+  def matcher[F[_]: Foldable, In, M, Out](r: Regex[In, M, Out]): F[In] => Boolean = {
+    val rc = r.void.compile[In]
+    fin => rc.parseOnly(fin).isDefined
+  }
 
-  def oneOfR[In, M, Out](r1: RE[In, M, Out], rs: RE[In, M, Out]*): RE[In, M, Out] =
-    RE.Or(NonEmptyList.of(r1, rs: _*))
+  // TODO names
+  implicit def toRegexCOps[Out](r: Regex[Char, Match[Char], Out]): RegexCOps[Out] = new RegexCOps(r)
 
-  def oneOfF[F[_], A: Order](values: F[A])(implicit reducibleF: Reducible[F]): Regex[A, A] =
-    RE.Or(NonEmptyList.fromReducible(values).map(lit(_)))
-
-  // TODO are some of these even worth having? Can't people just create a NonEmptyList?
-  def oneOfFR[F[_], In, M, Out](values: F[RE[In, M, Out]])(
-    implicit reducibleF: Reducible[F]): RE[In, M, Out] =
-    RE.Or(NonEmptyList.fromReducible(values))
-
-  def noneOf[A](a1: A, as: A*)(implicit discreteA: Discrete[A], orderA: Order[A]): Regex[A, A] =
-    notInSet(NonEmptyList.of(a1, as: _*).foldMap(Diet.one(_)))
-
-  // TODO???
-  // TODO a lot of these aren't specific to Match are they?
-  def allOfFR[F[_], In, M, Out](values: F[RE[In, M, Out]])(
-    implicit traverseF: Traverse[F]): RE[In, M, F[Out]] =
-    values.sequence
-
-  def seq[A: Order](values: Seq[A]): Regex[A, Chain[A]] =
-    Chain.fromSeq(values).traverse(lit(_))
-
-  def allOf[A: Order](values: A*): Regex[A, Chain[A]] =
-    Chain.fromSeq(values).traverse(lit(_))
-
-  def allOfF[F[_]: Traverse, A: Order](values: F[A]): Regex[A, F[A]] =
-    values.traverse(lit(_))
-
-  def allOfR[In, M, Out](values: RE[In, M, Out]*): RE[In, M, Chain[Out]] =
-    allOfFR(Chain.fromSeq(values))
-
-  // TODO Regex vs RegexG, etc
-  def empty[In, M]: RE[In, M, Unit] = RE.Eps
-
-  def fail[A]: RE[Any, Nothing, A] = RE.Fail()
+  // TODO name
+  implicit def toRegexOps[In, M, Out](r: Regex[In, M, Out]): RegexOps[In, M, Out] = new RegexOps(r)
 }

@@ -2,12 +2,13 @@ package ceedubs.irrec
 package parse
 
 import ceedubs.irrec.regex._, Match.MatchSet
-import ceedubs.irrec.regex.Regex.Regex
+import ceedubs.irrec.regex.RegexC
 import ceedubs.irrec.regex.RegexPrettyPrinter.{
   charClassCharsToEscape,
   nonCharClassCharsToEscape,
   specialNonCharClassCharToLit
 }
+import Combinator._
 
 import fastparse._, NoWhitespace._
 import fastparse.Parsed.{Failure, Success}
@@ -83,7 +84,7 @@ object Parser {
   /**
    * Matches the wildcard character `.`.
    */
-  def wildcard[_: P]: P[Regex[Char, Char]] = P(".").map(_ => Regex.wildcard)
+  def wildcard[_: P]: P[RegexC[Char]] = P(".").map(_ => Combinator.wildcard)
 
   /**
    * Positive integers within the max range of Scala's `Int`.
@@ -174,18 +175,18 @@ object Parser {
     )
 
   // TODO
-  def base[_: P]: P[Regex[Char, Unit]] = P(
-    standardMatchChar.map(Regex.lit(_).void) |
-      ("\\" ~/ (("u" ~ unicodeCodePoint | specialChar).map(Regex.lit(_).void) | shorthandClass.map(
-        Regex.matching(_).void))) |
+  def base[_: P]: P[RegexC[Unit]] = P(
+    standardMatchChar.map(lit(_).void) |
+      ("\\" ~/ (("u" ~ unicodeCodePoint | specialChar).map(lit(_).void) | shorthandClass.map(
+        matching(_).void))) |
       wildcard.map(_.void) |
-      charClass.map(Regex.matching(_).void) |
+      charClass.map(matching(_).void) |
       // TODO distinguish between capturing and not?
       ("(?:" ~ regex ~ ")") |
       ("(" ~ regex ~ ")")
   )
 
-  def factor[_: P]: P[Regex[Char, Unit]] = P {
+  def factor[_: P]: P[RegexC[Unit]] = P {
     base.flatMap { r =>
       // TODO greediness
       // TODO voids
@@ -198,13 +199,13 @@ object Parser {
   }
 
   // TODO can probably do better than toList call. Do we care?
-  def term[_: P]: P[Regex[Char, Unit]] = P(factor.rep(0).map(_.toList.sequence_))
+  def term[_: P]: P[RegexC[Unit]] = P(factor.rep(0).map(_.toList.sequence_))
 
   /**
    * A parser for a regular expression. You probably want to use [[regexExpr]] instead, as this
    * parser will succeed even if there are trailing characters after a valid regular expression.
    */
-  def regex[_: P]: P[Regex[Char, Unit]] = P(
+  def regex[_: P]: P[RegexC[Unit]] = P(
     term.flatMap { r1 =>
       ("|" ~/ regex).map(r2 => r1 | r2) |
         Pass(r1)
@@ -214,9 +215,9 @@ object Parser {
   /**
    * A parser for strings that are complete regular expressions, up until the end of the string.
    */
-  def regexExpr[_: P]: P[Regex[Char, String]] = P(regex ~ End).map(_.matched.map(_.mkString_("")))
+  def regexExpr[_: P]: P[RegexC[String]] = P(regex ~ End).map(_.matched.map(_.mkString_("")))
 
-  def parseRegex(regex: String): Either[String, Regex[Char, String]] =
+  def parseRegex(regex: String): Either[String, RegexC[String]] =
     parse(regex, regexExpr(_), verboseFailures = true) match {
       case f @ Failure(_, _, _) => Left(f.msg)
       case Success(value, _) => Right(value)

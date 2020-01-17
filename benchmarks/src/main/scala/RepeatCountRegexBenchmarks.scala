@@ -1,7 +1,7 @@
 package ceedubs.irrec
 package bench
 
-import regex._, Regex._
+import regex._, Combinator._
 import Greediness.Greedy
 
 import cats.data.Chain
@@ -15,7 +15,7 @@ class RepeatCountRegexBenchmarks {
   val nonMatchingString: String = ("a" * 9) + ("b" * 9)
   val longNonMatchingString: String = matchingString + ("c" * 20)
   val java: Pattern = Pattern.compile("(a|b){20,25}")
-  val irrec: Regex[Char, Chain[Char]] = oneOf('a', 'b').repeat(20, Some(25), Greedy)
+  val irrec: RegexC[Chain[Char]] = oneOf('a', 'b').repeat(20, Some(25), Greedy)
   val irrecMatcher: String => Boolean = irrec.stringMatcher
 
   @Benchmark
