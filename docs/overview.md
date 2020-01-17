@@ -6,7 +6,7 @@ sidebar_label: overview
 
 Irrec allows you to build, match, and generate regular expressions with a functional API.
 
-The name is a shameless rip-off of [irreg](https://github.com/non/irreg), which this library was inspired by. It's different than irreg in that it uses `rec`ursion schemes, hence the name.
+The name is a shameless rip-off of [irreg](https://github.com/non/irreg), which this library was inspired by. The `rec` in `irrec` originall came from `rec`ursion schemes. The current version does not use recursion schemes and is based off of the Haskell [regex-applicative](https://hackage.haskell.org/package/regex-applicative) library.
 
 ## creating regular expressions
 
