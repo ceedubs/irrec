@@ -7,10 +7,12 @@ import ceedubs.irrec.regex.CharacterClasses
 import ceedubs.irrec.regex.Match
 import ceedubs.irrec.regex.Match.MatchSet
 import ceedubs.irrec.parse.{regex => parse}
+import CharRegexGen._
 import Parser.parseRegex
 
 import fastparse._
 import org.scalatest.compatible.Assertion
+import cats.data.NonEmptyList
 import cats.collections.{Diet, Range}
 
 // TODO greediness?
@@ -358,35 +360,39 @@ class ParserTests extends IrrecSuite {
     sameRegex(r, expected)
   }
 
-  // TODO
-  //test("pretty print parser round trip") {
-  //  implicit val regexShrink = RegexShrink.shrinkForRegex[Char]
-  //  forAll(genStandardRegexChar) { r =>
-  //    val clue = s"regex: (${r.pprint})"
-  //    parseRegex(r.pprint) match {
-  //      case Left(label) => withClue(clue)(fail(s"parsing failure: $label"))
-  //      case Right(parsed) => sameRegex(parsed, r)
-  //    }
-  //  }
-  //}
+  test("pprint Or with single value in nel") {
+    val m1: RegexC[String] = Regex.Or(NonEmptyList.one(parse("""[^2Aq]""")))
+    val m2 = lit('o')
+    val expected = m1.void <* m2
+    val actual = parseRegex(expected.pprint).getOrElse(fail("parse failure"))
+    sameRegex(actual, expected)
+  }
+
+  test("pretty print parser round trip") {
+    forAll(genStandardCharRegex[Unit]) { r =>
+      val clue = s"regex: (${r.pprint})"
+      parseRegex(r.pprint) match {
+        case Left(label) => withClue(clue)(fail(s"parsing failure: $label"))
+        case Right(parsed) => sameRegex(parsed, r)
+      }
+    }
+  }
 
   test("unicode character points") {
     val r = lit('陸')
-    // TODO
     val printed = r.pprint
     printed should ===("\\uf9d3")
     val r2 = parse("\\uf9d3")
     r2.pprint should ===("\\uf9d3")
   }
 
-  // TODO
   test("regex parsing handles empty strings") {
     val expected = C.empty[Char, Match[Char]]
     val r = parse("")
     sameRegex(r, expected)
-    //val matcher = r.stringMatcher
-    //matcher("") should ===(true)
-    //matcher("a") should ===(false)
+    val matcher = r.stringMatcher
+    matcher("") should ===(true)
+    matcher("a") should ===(false)
   }
 
   test("regex parsing handles + matches") {

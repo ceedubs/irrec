@@ -2,6 +2,7 @@ package ceedubs.irrec
 package regex
 
 import cats.{~>, Eq}
+import cats.data.NonEmptyList
 import cats.collections.Diet
 import cats.implicits._
 
@@ -76,11 +77,10 @@ object RegexPrettyPrinter {
     currentPrecedence: Int,
     value: (Int, String),
     parensForEqualPrecedence: Boolean): String =
-    if (value._1 > currentPrecedence || parensForEqualPrecedence && value._1 === currentPrecedence)
+    if (value._1 > currentPrecedence || (parensForEqualPrecedence && value._1 === currentPrecedence))
       s"(?:${value._2})"
     else value._2
 
-  // TODO naming
   // TODO documentation
   // TODO generalize to not be specific to Match?
   // TODO this formatting is horrendous
@@ -107,16 +107,18 @@ object RegexPrettyPrinter {
           String)]](t => (starPrecedence, parensMaybe(starPrecedence, go(t._1), true) + "*")),
         mapped =
           λ[λ[a => (Regex[In, Match[In], a], a => Out)] ~> λ[a => (Int, String)]](t => go(t._1)),
-        or = alternatives =>
-          (
-            orPrecedence,
-            alternatives.map(r => parensMaybe(orPrecedence, go(r), false)).mkString_("|")),
+        or = {
+          case NonEmptyList(r, Nil) => go(r)
+          case alternatives =>
+            (
+              orPrecedence,
+              alternatives.map(r => parensMaybe(orPrecedence, go(r), false)).mkString_("|"))
+        },
         void = _ => λ[Regex[In, Match[In], ?] ~> λ[a => (Int, String)]](go(_))
       )(r)
     go(_)._2
   }
 
-  // TODO name
   val pprint: Regex[Char, regex.Match[Char], _] => String = {
     pprintWith((inRange, c) => regex.RegexPrettyPrinter.showChar(inRange)(c))
   }
