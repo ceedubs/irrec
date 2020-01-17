@@ -1,15 +1,10 @@
 package ceedubs.irrec
 package regex
-package applicative
-
-// TODO
-import ceedubs.irrec.regex.{Regex => RegexOld}
 
 import cats.{~>, Alternative, Applicative, Foldable}
 import cats.data.{Chain, NonEmptyChain, NonEmptyList, State}
 import cats.evidence.Is
 import cats.implicits._
-import higherkindness.droste.data.Coattr
 
 // This code was ported (with minor modifications) from https://hackage.haskell.org/package/regex-applicative
 // TODO document type parameters (especially M)
@@ -272,42 +267,6 @@ object RE {
     ParseState.fromThreads(threads)
   }
 
-  // TODO name?
-  // TODO should this exist?
-  def toKleene[M](r: RE[_, M, _]): Kleene[M] = r match {
-    case Eps => RegexOld.empty
-    case Fail() => RegexOld.impossible
-    case FMap(r, _) => toKleene(r)
-    case Star(r, _, _, _) => toKleene(r).star
-    case AndThen(l, r) => toKleene(l) * toKleene(r)
-    case e: Elem[_, M, _] => Coattr.pure(e.metadata)
-    case Or(alternatives) => RegexOld.oneOfFR(alternatives.map(toKleene))
-    case Void(r) => toKleene(r)
-  }
-
-  // TODO private?
-  import higherkindness.droste.Algebra
-  import higherkindness.droste.data.CoattrF
-  import higherkindness.droste.data.prelude._
-  def ofKleeneAlgebra[A, M](
-    matches: (M, A) => Boolean): Algebra[CoattrF[KleeneF, M, ?], RE[A, M, Unit]] = Algebra {
-    CoattrF.un(_) match {
-      case Left(m) => Elem(m, a => if (matches(m, a)) Some(()) else None)
-      case Right(k) =>
-        k match {
-          case KleeneF.One => Eps
-          // TODO greediness
-          case KleeneF.Star(r) => r.star(Greediness.Greedy).void
-          case KleeneF.Times(l, r) => l *> r
-          case KleeneF.Zero => Fail()
-          case KleeneF.Plus(l, r) => l | r
-        }
-    }
-  }
-
-  def ofRegex[A: cats.Order](r: Regex[A]): RE[A, regex.Match[A], Unit] =
-    higherkindness.droste.scheme.cata(ofKleeneAlgebra[A, regex.Match[A]](_.matches(_))).apply(r)
-
   // TODO optimize
   // TODO naming/documentation
   // TODO ops class
@@ -316,42 +275,8 @@ object RE {
     fin => rc.parseOnly(fin).isDefined
   }
 
-  // TODO add more stuff to this?
-  implicit final class RegexOps[In, M, Out](private val r: RE[In, M, Out]) extends AnyVal {
-    def matcher[F[_]: Foldable]: F[In] => Boolean = RE.matcher(r)
-  }
-}
+  // TODO names
+  implicit def toRegexCOps[Out](r: RE[Char, Match[Char], Out]): RegexCOps[Out] = new RegexCOps(r)
 
-// TODO remove
-//object CodyTesting {
-//  import Greediness._
-//  import ceedubs.irrec.regex.Match.MatchSet
-//
-//  type Regex[In, A] = RE[In, Unit, A]
-//
-//  type RegexM[A] = RE[A, regex.Match[A], Unit]
-//
-//  def matching[A: cats.Order](m: Match[A]): RegexM[A] =
-//    RE.Elem.MatchElem[A](m): RE[A, Match[A], A]
-//    //RE.Match(m, a => if (m.matches(a)) Some(()) else None)
-//
-//  def pred[In](p: In => Boolean): Regex[In, In] = RE.Match((), in => if (p(in)) Some(in) else None)
-//
-//  val r: Regex[Char, String] = (
-//    pred[Char](_.isDigit) | pred(_ === 'a'),
-//    pred[Char](_.isUpper).star(NonGreedy),
-//    pred[Char](_ == 'A').optional,
-//    pred[Char](_.isLower)
-//  ).mapN((d, us, uas, l) => d.toString + us.show + uas.show + l.toString)
-//
-//  val rc: ParseState[Char, String] = RE.compile(r)
-//
-//  val r2: RE[Char, regex.Match[Char], Unit] =
-//    (matching(MatchSet.allow(CharacterClasses.digit)) | matching(Match.lit('a'))) *>
-//      matching(MatchSet.allow(CharacterClasses.upperAlpha)).star(Greediness.Greedy) *>
-//      matching(Match.lit('A')).optional *>
-//      matching(MatchSet.allow(CharacterClasses.lowerAlpha))
-//  //).mapN((d, us, uas, l) => d.toString + us.show + uas.show + l.toString)
-//  //
-//  val r2c: ParseState[Char, Unit] = RE.compile(r2)
-//}
+  implicit def toRegexGOps[In, M, Out](r: RE[In, M, Out]): RegexGOps[In, M, Out] = new RegexGOps(r)
+}

@@ -4,6 +4,7 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 val catsVersion = "1.6.1"
 val catsCollectionsVersion = "0.8.0"
 val scalacheckVersion = "1.13.5"
+// TODO remove
 val drosteVersion = "0.7.0"
 val fastParseVersion = "2.1.2"
 val scalaJsDomVersion = "0.9.8"
@@ -37,6 +38,7 @@ coverageExcludedPackages in ThisBuild := "ceedubs.irrec.bench"
 val scala212Version = "2.12.10"
 scalaVersion in Global := scala212Version
 
+// TODO delete
 lazy val kleene = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Pure)
   .in(file("kleene"))

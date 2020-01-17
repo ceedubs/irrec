@@ -1,13 +1,10 @@
 package ceedubs.irrec
-package regex.applicative
-// TODO package
+package regex
 
 // TODO
 import Regex.{Regex, RegexC}
-import ceedubs.irrec.regex.{CharacterClasses, CharRegexGen => CharRegexGenOld}
-import ceedubs.irrec.regex.{RegexGen => RegexGenOld}
 import ceedubs.irrec.regex.DietGen.dietMatchingGen
-import ceedubs.irrec.regex.RegexMatchGen.{dietMatchToGen}
+import ceedubs.irrec.regex.RegexMatchGen.dietMatchToGen
 
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 import cats.implicits._
@@ -17,14 +14,18 @@ object CharRegexGen {
   val supportedCharacters: Diet[Char] =
     Diet.fromRange(Range('\u0000', '\uD7FF')).addRange(Range('\uF900', '\uFFFD'))
 
+  val supportedCharRegexGenConfig: RegexGen.Config[Char] =
+    RegexGen.Config
+      .fromDiscreteDiet(supportedCharacters)
+
   def genSupportedCharRegex[Out: Arbitrary: Cogen]: Gen[Regex[Char, Out]] =
-    RegexGen.genRegex(CharRegexGenOld.standardCharRegexGenConfig)
+    RegexGen.genRegex(supportedCharRegexGenConfig)
 
   def genAlphaNumRegex[Out: Arbitrary: Cogen]: Gen[Regex[Char, Out]] =
-    RegexGen.genRegex(RegexGenOld.Config.fromDiscreteDiet(CharacterClasses.alphaNumeric))
+    RegexGen.genRegex(RegexGen.Config.fromDiscreteDiet(CharacterClasses.alphaNumeric))
 
   def genAsciiRegex[Out: Arbitrary: Cogen]: Gen[Regex[Char, Out]] =
-    RegexGen.genRegex(RegexGenOld.Config.fromDiscreteDiet(CharacterClasses.ascii))
+    RegexGen.genRegex(RegexGen.Config.fromDiscreteDiet(CharacterClasses.ascii))
 
   def genStandardCharRegex[Out: Arbitrary: Cogen]: Gen[Regex[Char, Out]] = Gen.frequency(
     5 -> genAsciiRegex[Out],
@@ -32,19 +33,24 @@ object CharRegexGen {
     1 -> genSupportedCharRegex[Out]
   )
 
+  def genSupportedRegexAndMatch[Out: Arbitrary: Cogen]: Gen[RegexAndCandidate[Char, Out]] =
+    RegexAndCandidate.genRegexAndMatch(
+      RegexGen.Config.fromDiscreteDiet(supportedCharacters),
+      dietMatchToGen[Char](supportedCharacters, dietMatchingGen(_)))
+
   def genAlphaNumRegexAndMatch[Out: Arbitrary: Cogen]: Gen[RegexAndCandidate[Char, Out]] =
     RegexAndCandidate.genRegexAndMatch(
-      RegexGenOld.Config.fromDiscreteDiet(CharacterClasses.alphaNumeric),
+      RegexGen.Config.fromDiscreteDiet(CharacterClasses.alphaNumeric),
       dietMatchToGen[Char](CharacterClasses.alphaNumeric, dietMatchingGen(_)))
 
   def genAlphaNumRegexAndCandidate[Out: Arbitrary: Cogen]: Gen[RegexAndCandidate[Char, Out]] =
     RegexAndCandidate.genRegexAndCandidate(
-      RegexGenOld.Config.fromDiscreteDiet(CharacterClasses.alphaNumeric),
+      RegexGen.Config.fromDiscreteDiet(CharacterClasses.alphaNumeric),
       dietMatchToGen[Char](CharacterClasses.alphaNumeric, dietMatchingGen(_)))
 
   def genRegexAndCandidate[Out: Arbitrary: Cogen]: Gen[RegexAndCandidate[Char, Out]] =
     RegexAndCandidate.genRegexAndCandidate(
-      RegexGenOld.Config.fromDiscreteDiet(supportedCharacters),
+      RegexGen.Config.fromDiscreteDiet(supportedCharacters),
       dietMatchToGen(supportedCharacters, dietMatchingGen(_)))
 
   def regexMatchingStringGenFromDiet[Out](available: Diet[Char]): RegexC[Out] => Gen[String] = {

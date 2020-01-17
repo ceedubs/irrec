@@ -1,57 +1,32 @@
 package ceedubs.irrec
 package regex
 
-import cats.{Foldable, Order}
-import cats.data.Chain
+// TODO
+import Regex.{RegexC, RegexG}
+
+import cats.Foldable
+import cats.implicits._
 import java.util.regex.Pattern
-import cats.collections.Discrete
 
-final class KleeneOps[A](private val r: Kleene[A]) extends AnyVal {
-  def |(o: Kleene[A]): Kleene[A] = Regex.or(r, o)
+// TODO package
 
-  def *(o: Kleene[A]): Kleene[A] = Regex.andThen(r, o)
-
-  def oneOrMore: Kleene[A] = Regex.oneOrMore(r)
-
-  def star: Kleene[A] = Regex.star(r)
-
-  def count(n: Int): Kleene[A] = Regex.count(n, r)
-
-  def optional: Kleene[A] = Regex.optional(r)
-
-  def repeat(minInclusive: Int, maxInclusive: Option[Int]): Kleene[A] =
-    Regex.repeat(minInclusive, maxInclusive, r)
-
-  def !(implicit ev: CaptureAs[A]): CapturingKleeneA[A, ev.In, Chain[ev.In]] =
-    CapturingKleeneA.lift(r)
-
-  def captureAs[L](label: L): CapturingKleene[L, A] =
-    CapturingKleene.labeledKleene(LabeledKleene(label, r))
+final class RegexGOps[In, M, Out](private val r: RegexG[In, M, Out]) extends AnyVal {
+  def matcher[F[_]: Foldable]: F[In] => Boolean = RE.matcher(r)
 }
 
-final class RegexOps[A](private val r: Regex[A]) extends AnyVal {
-  // TODO
-  import applicative.RE
-  def matcher[F[_]](implicit orderingA: Ordering[A], foldableF: Foldable[F]): F[A] => Boolean = {
-    implicit val orderA = cats.Order.fromOrdering(orderingA)
-    val re = RE.compile(RE.ofRegex(r))
-    s => re.parseOnly(s).nonEmpty
+final class RegexCOps[Out](private val r: RegexC[Out]) extends AnyVal {
+  def pprint: String = RegexPrettyPrinter.pprintRE(r)
+
+  def withMatchedS: RegexC[(String, Out)] = r.withMatched.map {
+    case (s, o) => (s.mkString_(""), o)
   }
 
-  def optimize(implicit discreteA: Discrete[A], orderA: Order[A]): Regex[A] =
-    RegexOptimization.optimizeRegex[A].apply(r)
-}
+  def matchedS: RegexC[String] = r.matched.map(_.mkString_(""))
 
-final class CharRegexOps(private val r: Regex[Char]) extends AnyVal {
-  // TODO
-  import applicative.RE
-  import cats.implicits._
   def stringMatcher: String => Boolean = {
-    val re = RE.compile(RE.ofRegex(r))
-    s => re.parseOnly(s.toList).nonEmpty
+    val m = RE.matcher(r)(IndexedSeqFoldable.instance)
+    m(_)
   }
 
   def toPattern: Pattern = Pattern.compile(pprint, Pattern.DOTALL)
-
-  def pprint: String = RegexPrettyPrinter.pprintCharRegex(r)
 }

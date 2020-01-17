@@ -1,20 +1,58 @@
 package ceedubs.irrec
-package regex.applicative
-// TODO package
+package regex
 
 import Regex.Regex
-import ceedubs.irrec.regex.{Match, RegexGen => RegexGenOld}
-import RegexGenOld.{standardByteConfig, standardIntConfig, standardLongConfig}
+import DietGen._
+import ceedubs.irrec.regex.Match.MatchSet
 import ceedubs.irrec.regex.ScalacheckSupport._
 
 import cats.implicits._
 import cats.Order
 import cats.data.NonEmptyList
-import org.scalacheck.{Arbitrary, Cogen, Gen}, Arbitrary.arbitrary
+import cats.collections.{Diet, Discrete, Range}
+import org.scalacheck.{Arbitrary, Cogen, Gen}, Arbitrary.arbitrary, Gen.Choose
 
 // we could generate regexes that aren't Match-based. It probably makes sense to distinguish between RegexG and Regex here...
 object RegexGen {
   import Support._
+
+  /**
+   * Configuration for generating regular expressions.
+   */
+  final class Config[A](
+    val genA: Gen[A],
+    val genMatch: Gen[Match[A]],
+    val includeZero: Boolean,
+    val includeOne: Boolean)
+
+  object Config {
+    def fromDiscreteDiet[A: Choose: Discrete: Order](available: Diet[A]): Config[A] = {
+      val genA = dietMatchingGen(available)
+      new Config(
+        genA = genA,
+        genMatch = genMatch(genA, genNonEmptySubDiet(available, _ => 1)),
+        includeZero = false,
+        includeOne = false
+      )
+    }
+  }
+
+  def genMatch[A: Discrete: Order](genA: Gen[A], genDietA: Gen[Diet[A]]): Gen[Match[A]] =
+    Gen.frequency(
+      9 -> genA.map(Match.lit(_)),
+      3 -> genDietA.map(MatchSet.allow(_)),
+      2 -> genDietA.map(MatchSet.forbid(_)),
+      1 -> Gen.const(Match.wildcard)
+    )
+
+  val standardByteConfig: Config[Byte] =
+    Config.fromDiscreteDiet(Diet.fromRange(Range(Byte.MinValue, Byte.MaxValue)))
+
+  val standardIntConfig: Config[Int] =
+    Config.fromDiscreteDiet(Diet.fromRange(Range(Int.MinValue, Int.MaxValue)))
+
+  val standardLongConfig: Config[Long] =
+    Config.fromDiscreteDiet(Diet.fromRange(Range(Long.MinValue, Long.MaxValue)))
 
   val genGreediness: Gen[Greediness] = Gen.oneOf(Greediness.Greedy, Greediness.NonGreedy)
   implicit val arbGreendiness: Arbitrary[Greediness] = Arbitrary(genGreediness)
@@ -23,7 +61,7 @@ object RegexGen {
   // TODO should the implicit parameters go into the config?
   // TODO should this be public?
   private def genRegexWithDepth[In: Order: Cogen, Out: Arbitrary: Cogen](
-    cfg: RegexGenOld.Config[In],
+    cfg: Config[In],
     depth: Int): Gen[Regex[In, Out]] =
     if (depth <= 1)
       Gen.frequency(
@@ -86,8 +124,7 @@ object RegexGen {
         )
       )
 
-  def genRegex[In: Order: Cogen, Out: Arbitrary: Cogen](
-    cfg: RegexGenOld.Config[In]): Gen[Regex[In, Out]] =
+  def genRegex[In: Order: Cogen, Out: Arbitrary: Cogen](cfg: Config[In]): Gen[Regex[In, Out]] =
     Gen.sized(maxSize =>
       Gen.choose(1, math.max(maxSize, 1)).flatMap(depth => genRegexWithDepth[In, Out](cfg, depth)))
 
@@ -97,7 +134,7 @@ object RegexGen {
    * The returned function takes an `Int` that indicates the desired "depth" of the regex.
    */
   private def genRegexWithEv[In: Cogen: Order](
-    cfg: RegexGenOld.Config[In]): Int => Gen[TypeWith[RegexWithEv[In, Match[In], ?]]] = {
+    cfg: Config[In]): Int => Gen[TypeWith[RegexWithEv[In, Match[In], ?]]] = {
     val leafGen: Gen[TypeWith[RegexWithEv[In, Match[In], ?]]] = Gen.frequency(
       9 -> genTypeWithGenAndCogen.map { outType =>
         implicit val arbOut = Arbitrary(outType.evidence.gen)

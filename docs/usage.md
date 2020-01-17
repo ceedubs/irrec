@@ -11,8 +11,8 @@ sidebar_label: examples
 You can create a regular expression via a `String` literal:
 
 ```scala mdoc:silent
-import ceedubs.irrec.regex.applicative._, Regex._
-import ceedubs.irrec.parse.{regex2 => r}
+import ceedubs.irrec.regex._, Regex._
+import ceedubs.irrec.parse.{regex => r}
 
 val animalLit: RegexC[String] = r("(b|c|r|gn)at")
 ```
@@ -31,7 +31,7 @@ Alternatively, you can build up a regular expression using the methods in the
 * Applicative methods such as `<*`, `*>`, and `mapN` indicate one match followed by another.
 
 ```scala mdoc:silent
-import ceedubs.irrec.regex.applicative.Regex._
+import ceedubs.irrec.regex.Regex._
 import cats.implicits._
 
 val animalDSL: RegexC[Unit] = (oneOf('b', 'c', 'r').void | seq("gn").void) <* seq("at")
@@ -100,7 +100,7 @@ animalLit.toPattern
 Irrec provides support for creating [Scalacheck](https://www.scalacheck.org/) generators that produce values that match a regular expression. This generation is done efficiently as opposed to generating a bunch of random values and then filtering the ones that don't match the regular expression (which would quickly lead to Scalacheck giving up on generating matching values).
 
 ```scala mdoc:silent
-import ceedubs.irrec.regex.applicative.CharRegexGen._
+import ceedubs.irrec.regex.CharRegexGen._
 import org.scalacheck.Gen
 import org.scalacheck.rng.Seed
 

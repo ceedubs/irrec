@@ -1,11 +1,10 @@
 package ceedubs.irrec
 package regex
-package applicative
 
 import Regex._
 import char._
 import RegexGen._
-import ceedubs.irrec.parse.{regex2 => parse}
+import ceedubs.irrec.parse.{regex => parse}
 import RegexAndCandidate.{genCandidateStream, genIntRegexAndMatch}
 import RegexMatchGen.regexMatchingStreamGen
 import ceedubs.irrec.regex.RegexMatchGen.{byteMatchingGen, intMatchingGen}

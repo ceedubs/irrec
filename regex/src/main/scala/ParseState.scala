@@ -1,6 +1,5 @@
 package ceedubs.irrec
 package regex
-package applicative
 
 import cats.Foldable
 import cats.evidence.Is

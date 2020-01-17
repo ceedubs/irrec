@@ -1,7 +1,6 @@
 package ceedubs.irrec
 package parse
 
-import ceedubs.irrec.regex._
 import Parser.parseRegex
 
 import java.util.regex.Pattern

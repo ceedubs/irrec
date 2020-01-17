@@ -1,6 +1,5 @@
 package ceedubs.irrec
 package regex
-package applicative
 
 sealed abstract class Cont[+A] extends Product with Serializable {
   import Cont._

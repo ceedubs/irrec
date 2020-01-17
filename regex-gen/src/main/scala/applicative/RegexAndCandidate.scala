@@ -1,11 +1,9 @@
 package ceedubs.irrec
-package regex.applicative
-// TODO package
+package regex
 
 import ceedubs.irrec.regex.{RegexGen => RegexGenOld}
 import ceedubs.irrec.regex.{RegexMatchGen => RegexMatchGenOld}
 import Regex.Regex
-import ceedubs.irrec.regex.Match
 
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 import cats.Order
@@ -26,7 +24,7 @@ object RegexAndCandidate {
     } yield RegexAndCandidate(r, c)
 
   def genIntRegexAndMatch[Out: Arbitrary: Cogen]: Gen[RegexAndCandidate[Int, Out]] =
-    genRegexAndMatch(RegexGenOld.standardIntConfig, RegexMatchGenOld.intMatchingGen)
+    genRegexAndMatch(RegexGenOld.standardIntConfig, RegexMatchGen.intMatchingGen)
 
   // TODO universal instead of existential type for Regex[In, _]?
   /**

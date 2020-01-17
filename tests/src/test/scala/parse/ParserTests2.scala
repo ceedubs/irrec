@@ -1,22 +1,19 @@
 package ceedubs.irrec
 package parse
 
-import ceedubs.irrec.regex.applicative._, Regex._, char._
+import ceedubs.irrec.regex._, Regex._, char._
 import ceedubs.irrec.regex.CharacterClasses
 import ceedubs.irrec.regex.Match
 import ceedubs.irrec.regex.Match.MatchSet
-import ceedubs.irrec.parse.{regex2 => parse}
-// TODO ceeeubs
-//import Parser.{parseCapturingRegex, parseRegex}
+import ceedubs.irrec.parse.{regex => parse}
 import Parser.parseRegex
 
 import fastparse._
 import org.scalatest.compatible.Assertion
 import cats.collections.{Diet, Range}
 
-// TODO ceedubs add tests for capturing
 // TODO greediness?
-class ParserTests2 extends IrrecSuite {
+class ParserTests extends IrrecSuite {
   test("regex parsing works for single literal") {
     val expected = Regex.lit('a')
     val r = parse("a")
@@ -46,16 +43,15 @@ class ParserTests2 extends IrrecSuite {
     sameRegex(r, expected)
   }
 
-  // TODO ceedubs
-  //test("capturing regex parsing matches unnecessary outer parens") {
-  //  val expected = Regex.seq("ab").capture
-  //  val r = parseCapturingRegex("(ab)")
-  //  sameRegex(r, expected)
-  //}
-
   test("regex parsing handles non-capturing parens") {
     val expected = lit('a') *> seq("bc") *> lit('d').void
     val r = parse("a(?:bc)d")
+    sameRegex(r, expected)
+  }
+
+  test("regex parsing handles capturing parens") {
+    val expected = lit('a') *> seq("bc") *> lit('d').void
+    val r = parse("a(bc)d")
     sameRegex(r, expected)
   }
 
@@ -492,27 +488,4 @@ class ParserTests2 extends IrrecSuite {
       RegexPrettyPrinter.pprintRE(actual) should ===(RegexPrettyPrinter.pprintRE(expected))
     }
   }
-
-  // TODO ceedubs
-  //def sameCapturingRegex(actual: CapturingRegex[Boolean, Char], expected: CapturingRegex[Boolean, Char]): Assertion = {
-  //  val clue =
-  //    s"""(pprint not optimized):
-  //       |    actual: ${actual.pprint}
-  //       |  expected: ${expected.pprint}
-  //       |(pprint optimized):
-  //       |    actual: ${actual.optimize.pprint}
-  //       |  expected: ${expected.optimize.pprint}
-  //       |(structure optimized):
-  //       |    actual: ${actual.optimize}
-  //       |  expected: ${expected.optimize}
-  //       |""".stripMargin
-  //  withClue(clue) {
-  //    // Regex data structures can have structural differences while still being functionally
-  //    // equivalent. For example `Times(x, Times(y, z))` and `Times(Times(x, y), z)`. So we compare
-  //    // them by their pretty-printed equivalence. It's not perfect, but in practice it works pretty
-  //    // well.
-  //    //actual.optimize.pprint should ===(expected.optimize.pprint)
-  //    actual.optimize.pprint should ===(expected.optimize.pprint)
-  //  }
-  //}
 }

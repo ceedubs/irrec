@@ -1,6 +1,5 @@
 package ceedubs.irrec
 package regex
-package applicative
 
 // TODO should this use a stream instead of a List?
 final case class StateQueue[A](reversedElements: List[A], ids: Set[Int]) {

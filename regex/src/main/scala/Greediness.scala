@@ -1,6 +1,5 @@
 package ceedubs.irrec
 package regex
-package applicative
 
 sealed abstract class Greediness extends Product with Serializable
 

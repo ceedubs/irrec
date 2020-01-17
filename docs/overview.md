@@ -11,9 +11,9 @@ The name is a shameless rip-off of [irreg](https://github.com/non/irreg), which 
 ## creating regular expressions
 
 ```scala mdoc:silent
-import ceedubs.irrec.regex.applicative._, Regex._, char._
-import ceedubs.irrec.parse.{regex2 => r}
-import ceedubs.irrec.regex.applicative.Greediness._
+import ceedubs.irrec.regex._, Regex._, char._
+import ceedubs.irrec.parse.{regex => r}
+import ceedubs.irrec.regex.Greediness._
 import cats.implicits._
 
 sealed abstract class Mood
@@ -52,7 +52,7 @@ animals.parseOnlyS("3 expensive toasters")
 ## generating data that matches a regular expression
 
 ```scala mdoc:silent
-import ceedubs.irrec.regex.applicative.CharRegexGen.regexMatchingStringGen
+import ceedubs.irrec.regex.CharRegexGen.regexMatchingStringGen
 import org.scalacheck.Gen
 import org.scalacheck.rng.Seed
 

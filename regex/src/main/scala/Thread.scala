@@ -1,6 +1,5 @@
 package ceedubs.irrec
 package regex
-package applicative
 
 // TODO?
 final case class ThreadId(asInt: Int) extends AnyVal

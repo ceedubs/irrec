@@ -1,6 +1,5 @@
 package ceedubs.irrec
 package regex
-package applicative
 
 import Regex._
 

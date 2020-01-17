@@ -1,19 +1,34 @@
 package ceedubs.irrec
-package regex.applicative
-// TODO package
+package regex
 
 import Regex.Regex
 import ceedubs.irrec.regex.DietGen.dietMatchingGen
-import ceedubs.irrec.regex.Match
 import ceedubs.irrec.regex.ScalacheckSupport._
-import ceedubs.irrec.regex.RegexMatchGen.{dietMatchToGen}
 
 import cats.{~>, Order}
 import org.scalacheck.Gen, Gen.Choose
-import cats.collections.{Diet, Discrete}
+import cats.collections.{Diet, Discrete, Range}
 import cats.implicits._
 
 object RegexMatchGen {
+  def dietMatchToGen[A](available: Diet[A], dietToGen: Diet[A] => Gen[A])(
+    implicit orderA: Order[A],
+    discreteA: Discrete[A]): Match[A] => Gen[A] = _ match {
+    case Match.Literal(expected) => Gen.const(expected)
+    case Match.Wildcard() => dietToGen(available)
+    case Match.MatchSet.Allow(allowed) => dietToGen(allowed)
+    case Match.MatchSet.Forbid(forbidden) => dietToGen(available -- forbidden)
+  }
+
+  val byteMatchingGen: Match[Byte] => Gen[Byte] =
+    dietMatchToGen(Diet.fromRange(Range(Byte.MinValue, Byte.MaxValue)), dietMatchingGen(_))
+
+  val intMatchingGen: Match[Int] => Gen[Int] =
+    dietMatchToGen(Diet.fromRange(Range(Int.MinValue, Int.MaxValue)), dietMatchingGen(_))
+
+  val longMatchingGen: Match[Long] => Gen[Long] =
+    dietMatchToGen(Diet.fromRange(Range(Long.MinValue, Long.MaxValue)), dietMatchingGen(_))
+
   def regexMatchingStreamGen[In](
     matchGen: Match[In] => Gen[In]): Regex[In, ?] ~> λ[a => Gen[Stream[In]]] =
     new (Regex[In, ?] ~> λ[a => Gen[Stream[In]]]) { outer =>
