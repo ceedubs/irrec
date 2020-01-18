@@ -8,9 +8,6 @@ import cats.collections.{Diet, Discrete, Range}
 import cats.data.{Chain, NonEmptyList}
 import cats.implicits._
 
-// TODO capitalization convention of char vs Regex
-// TODO just change Regex to Regex and add stuff there?
-// TODO what should go in here vs on the class? Both? Separate combinator object?
 // TODO star-like method that allows z/fold params
 object combinator {
   def matching[A: Order](m: Match[A]): RegexM[A, A] =
@@ -43,9 +40,6 @@ object combinator {
     l: Regex[In, M, Out1],
     r: Regex[In, M, Out2]): Regex[In, M, Either[Out1, Out2]] =
     l.map(Either.left[Out1, Out2](_)) | r.map(Either.right[Out1, Out2](_))
-
-  // TODO tupled or something?
-  //def andThen[A](l: Kleene[A], r: Kleene[A]): Kleene[A] = Coattr.roll(KleeneF.Times(l, r))
 
   def inSet[A: Order](allowed: Diet[A]): RegexM[A, A] = matching(MatchSet.allow(allowed))
 
@@ -86,7 +80,6 @@ object combinator {
   def allOfR[In, M, Out](values: Regex[In, M, Out]*): Regex[In, M, Chain[Out]] =
     allOfFR(Chain.fromSeq(values))
 
-  // TODO Regex vs Regex, etc
   def empty[In, M]: Regex[In, M, Unit] = Regex.Eps
 
   def fail[A]: Regex[Any, Nothing, A] = Regex.Fail()

@@ -23,7 +23,6 @@ final case class ParseState[In, A](queue: StateQueue[Thread[In, A]]) extends Any
     }
 
   // TODO maybe don't put the methods that you don't expect people to call directly on here?
-  // TODO also is this even needed?
   def addThread(t: Thread[In, A]): ParseState[In, A] = t match {
     case Thread.Accept(_) => ParseState(queue.insertWithoutId(t))
     case Thread.Cont(id, _) => ParseState(queue.insertUnique(id.asInt, t))
