@@ -8,7 +8,7 @@ import ceedubs.irrec.regex.RegexPrettyPrinter.{
   nonCharClassCharsToEscape,
   specialNonCharClassCharToLit
 }
-import Combinator._
+import combinator._
 
 import fastparse._, NoWhitespace._
 import fastparse.Parsed.{Failure, Success}
@@ -84,7 +84,7 @@ object Parser {
   /**
    * Matches the wildcard character `.`.
    */
-  def wildcard[_: P]: P[RegexC[Char]] = P(".").map(_ => Combinator.wildcard)
+  def wildcard[_: P]: P[RegexC[Char]] = P(".").map(_ => combinator.wildcard)
 
   /**
    * Positive integers within the max range of Scala's `Int`.

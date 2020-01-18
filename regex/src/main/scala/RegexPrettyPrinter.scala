@@ -66,7 +66,7 @@ object RegexPrettyPrinter {
     _ match {
       case Literal(a) => f(false, a)
       case MatchSet.Allow(allowed) =>
-        if (allowed.isEmpty) pprint(Combinator.fail) else s"[${showDiet(allowed)}]"
+        if (allowed.isEmpty) pprint(combinator.fail) else s"[${showDiet(allowed)}]"
       case MatchSet.Forbid(forbidden) =>
         if (forbidden.isEmpty) "." else s"[^${showDiet(forbidden)}]"
       case Match.Wildcard() => "."

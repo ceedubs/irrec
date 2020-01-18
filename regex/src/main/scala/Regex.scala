@@ -8,19 +8,9 @@ import cats.implicits._
 
 // This code was ported (with minor modifications) from https://hackage.haskell.org/package/regex-applicative
 // TODO document type parameters (especially M)
+// TODO document syntax helper classes
 sealed abstract class Regex[-In, +M, Out] extends Serializable {
   import Regex._
-
-  // TODO add ops on to avoid variance shenanigans?
-  // TODO add in optimizations during constructions like this or have a separate method to optimize?
-  def |[In2 <: In, M2 >: M](o: Regex[In2, M2, Out]): Regex[In2, M2, Out] = (this, o) match {
-    case (Or(xs), Or(ys)) => Or(xs ::: ys)
-    case (_, Fail()) => this
-    case (Fail(), _) => o
-    case (Or(xs), _) => Or(o :: xs)
-    case (_, Or(ys)) => Or(this :: ys)
-    case _ => Or(NonEmptyList(this, o :: Nil))
-  }
 
   def star(greediness: Greediness): Regex[In, M, Chain[Out]] =
     Regex.Star(this, greediness, Chain.empty[Out], (as: Chain[Out], a: Out) => as.append(a))
@@ -58,17 +48,7 @@ sealed abstract class Regex[-In, +M, Out] extends Serializable {
     tail.fold(head)(tail => head.map2(tail)(_ concat _))
   }
 
-  def optional[In2 <: In, M2 >: M]: Regex[In2, M2, Option[Out]] =
-    this.map[Option[Out]](Some(_)) | none[Out].pure[Regex[In2, M2, ?]]
-
   def map[B](f: Out => B): Regex[In, M, B] = FMap(this, f)
-
-  def compile[In2 <: In]: ParseState[In2, Out] = Regex.compile(this)
-
-  def matched[In2 <: In]: Regex[In2, M, Chain[In2]] = withMatched.map(_._1)
-
-  def withMatched[In2 <: In]: Regex[In2, M, (Chain[In2], Out)] =
-    Regex.withMatched(this)
 }
 
 object Regex {
@@ -277,7 +257,7 @@ object Regex {
   // TODO naming/documentation
   // TODO ops class
   def matcher[F[_]: Foldable, In, M, Out](r: Regex[In, M, Out]): F[In] => Boolean = {
-    val rc = r.void.compile[In]
+    val rc = r.void.compile
     fin => rc.parseOnly(fin).isDefined
   }
 

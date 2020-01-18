@@ -166,10 +166,10 @@ object RegexGen {
           for {
             m <- cfg.genMatch
             f <- arbitrary[In => Out]
-          } yield Combinator.mapMatch(m, f)
+          } yield combinator.mapMatch(m, f)
         ),
         // Fail
-        (if (cfg.includeZero) 1 else 0) -> Gen.const(Combinator.fail)
+        (if (cfg.includeZero) 1 else 0) -> Gen.const(combinator.fail)
       )
     else
       Gen.frequency(
@@ -239,7 +239,7 @@ object RegexGen {
       },
       // Eps
       (if (cfg.includeOne) 2 else 0) -> Gen.const(
-        TypeWith(RegexWithEv.fromRegexGen(Gen.const(Combinator.empty[In, Match[In]]))))
+        TypeWith(RegexWithEv.fromRegexGen(Gen.const(combinator.empty[In, Match[In]]))))
     )
     def go(depth: Int): Gen[TypeWith[RegexWithEv[In, Match[In], ?]]] =
       if (depth <= 1) leafGen

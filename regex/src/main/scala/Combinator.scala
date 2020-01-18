@@ -12,7 +12,7 @@ import cats.implicits._
 // TODO just change Regex to Regex and add stuff there?
 // TODO what should go in here vs on the class? Both? Separate combinator object?
 // TODO star-like method that allows z/fold params
-object Combinator {
+object combinator {
   def matching[A: Order](m: Match[A]): RegexM[A, A] =
     mapMatch(m, identity)
 
@@ -28,7 +28,15 @@ object Combinator {
 
   def wildcard[A: Order]: RegexM[A, A] = matching(Match.Wildcard())
 
-  def or[In, M, Out](l: Regex[In, M, Out], r: Regex[In, M, Out]): Regex[In, M, Out] = l | r
+  // TODO add in optimizations during constructions like this or have a separate method to optimize?
+  def or[In, M, Out](l: Regex[In, M, Out], r: Regex[In, M, Out]): Regex[In, M, Out] = (l, r) match {
+    case (Regex.Or(xs), Regex.Or(ys)) => Regex.Or(xs ::: ys)
+    case (_, Regex.Fail()) => l
+    case (Regex.Fail(), _) => r
+    case (Regex.Or(xs), _) => Regex.Or(r :: xs)
+    case (_, Regex.Or(ys)) => Regex.Or(l :: ys)
+    case _ => Regex.Or(NonEmptyList(l, r :: Nil))
+  }
 
   // TODO test
   def either[In, M, Out1, Out2](

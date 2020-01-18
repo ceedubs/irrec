@@ -11,7 +11,7 @@ sidebar_label: examples
 You can create a regular expression via a `String` literal:
 
 ```scala mdoc:silent
-import ceedubs.irrec.regex._, Combinator._
+import ceedubs.irrec.regex._, combinator._
 import ceedubs.irrec.parse.{regex => r}
 
 val animalLit: RegexC[String] = r("(b|c|r|gn)at")

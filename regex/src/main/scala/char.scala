@@ -1,7 +1,7 @@
 package ceedubs.irrec
 package regex
 
-import Combinator._
+import combinator._
 
 import cats.implicits._
 

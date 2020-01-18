@@ -11,7 +11,7 @@ The name is a shameless rip-off of [irreg](https://github.com/non/irreg), which 
 ## creating regular expressions
 
 ```scala mdoc:silent
-import ceedubs.irrec.regex._, Combinator._, char._
+import ceedubs.irrec.regex._, combinator._, char._
 import ceedubs.irrec.parse.{regex => r}
 import ceedubs.irrec.regex.Greediness._
 import cats.implicits._
@@ -39,7 +39,6 @@ animalsR.pprint
 ## parsing with a regular expression
 
 ```scala mdoc:silent
-// TODO help with inference
 val animals: ParseState[Char, Animals] = animalsR.compile
 ```
 

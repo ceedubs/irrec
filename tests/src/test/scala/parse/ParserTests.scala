@@ -1,8 +1,8 @@
 package ceedubs.irrec
 package parse
 
-import ceedubs.irrec.regex._, char._, Combinator._
-import ceedubs.irrec.regex.{Combinator => C}
+import ceedubs.irrec.regex._, char._, combinator._
+import ceedubs.irrec.regex.{combinator => C}
 import ceedubs.irrec.regex.CharacterClasses
 import ceedubs.irrec.regex.Match
 import ceedubs.irrec.regex.Match.MatchSet
@@ -470,8 +470,6 @@ class ParserTests extends IrrecSuite {
     assert(parseRegex("a{1,").isLeft)
   }
 
-  // TODO do we want this to just be unit?
-  // TODO clean up pprint calls
   def sameRegex(actual: RegexM[Char, _], expected: RegexM[Char, _]): Assertion = {
     val clue =
       s"""(pprint not optimized):

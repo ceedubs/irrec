@@ -2,13 +2,24 @@ package ceedubs.irrec
 package regex
 
 import cats.Foldable
+import cats.data.Chain
 import cats.implicits._
 import java.util.regex.Pattern
 
-// TODO package
-
 final class RegexOps[In, M, Out](private val r: Regex[In, M, Out]) extends AnyVal {
+  def |(o: Regex[In, M, Out]): Regex[In, M, Out] = combinator.or(r, o)
+
   def matcher[F[_]: Foldable]: F[In] => Boolean = Regex.matcher(r)
+
+  def compile: ParseState[In, Out] = Regex.compile(r)
+
+  def optional: Regex[In, M, Option[Out]] =
+    r.map[Option[Out]](Some(_)) | none[Out].pure[Regex[In, M, ?]]
+
+  def withMatched: Regex[In, M, (Chain[In], Out)] =
+    Regex.withMatched(r)
+
+  def matched: Regex[In, M, Chain[In]] = withMatched.map(_._1)
 }
 
 final class RegexCOps[Out](private val r: RegexC[Out]) extends AnyVal {

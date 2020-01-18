@@ -1,7 +1,7 @@
 package ceedubs.irrec
 package bench
 
-import regex._, Combinator._
+import regex._, combinator._
 import Greediness.Greedy
 
 import cats.implicits._

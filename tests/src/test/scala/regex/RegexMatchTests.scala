@@ -1,8 +1,8 @@
 package ceedubs.irrec
 package regex
 
-import Combinator._
-import ceedubs.irrec.regex.{Combinator => C}
+import combinator._
+import ceedubs.irrec.regex.{combinator => C}
 import char._
 import RegexGen._
 import ceedubs.irrec.parse.{regex => parse}
@@ -261,8 +261,7 @@ class RegexMatchTests extends IrrecSuite {
 
   test("word character match") {
     val gen = Gen.oneOf(Gen.alphaNumChar, Gen.const('_'))
-    // TODO needing to specify Char here is annoying. Look into how to make this not so painful
-    val rc = wordChar.compile[Char]
+    val rc = wordChar.compile
     forAll(gen) { c =>
       rc.parseOnlyS(c.toString) should ===(Some(c))
     }
@@ -270,7 +269,7 @@ class RegexMatchTests extends IrrecSuite {
 
   test("whitespace character match") {
     val gen = Gen.oneOf('\t', '\n', '\f', '\r', ' ')
-    val rc = whitespaceChar.compile[Char]
+    val rc = whitespaceChar.compile
     forAll(gen) { c =>
       rc.parseOnlyS(c.toString) should ===(Some(c))
     }
@@ -319,7 +318,7 @@ class RegexMatchTests extends IrrecSuite {
   test("repeat(0, n) matches empty") {
     forAll(arbitrary[RegexM[Int, Unit]], Gen.option(Gen.chooseNum(0, 20)), arbitrary[Greediness]) {
       (r, max, g) =>
-        r.repeat(0, max, g).void.compile.parseOnly(List.empty) should ===(Some(()))
+        r.repeat(0, max, g).void.compile.parseOnly(List.empty[Int]) should ===(Some(()))
     }
   }
 
