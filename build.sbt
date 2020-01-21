@@ -4,14 +4,11 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 val catsVersion = "1.6.1"
 val catsCollectionsVersion = "0.8.0"
 val scalacheckVersion = "1.13.5"
-// TODO remove
-val drosteVersion = "0.7.0"
 val fastParseVersion = "2.1.2"
 val scalaJsDomVersion = "0.9.8"
 
 val catsOrg = "org.typelevel"
 val scalacheckOrg = "org.scalacheck"
-val drosteOrg = "io.higherkindness"
 val scalaJsOrg = "org.scala-js"
 
 val isTravisBuild =
@@ -38,24 +35,12 @@ coverageExcludedPackages in ThisBuild := "ceedubs.irrec.bench"
 val scala212Version = "2.12.10"
 scalaVersion in Global := scala212Version
 
-// TODO delete
-lazy val kleene = crossProject(JSPlatform, JVMPlatform)
-  .crossType(CrossType.Pure)
-  .in(file("kleene"))
-  .settings(
-    moduleName := "irrec-kleene",
-    libraryDependencies += catsOrg %%% "cats-core" % catsVersion)
-  .settings(commonSettings)
-
 lazy val regex = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Pure)
   .in(file("regex"))
-  .dependsOn(kleene)
   .settings(
     moduleName := "irrec-regex",
-    libraryDependencies ++= Seq(
-      drosteOrg %%% "droste-core" % drosteVersion,
-      catsOrg %%% "cats-collections-core" % catsCollectionsVersion))
+    libraryDependencies ++= Seq(catsOrg %%% "cats-collections-core" % catsCollectionsVersion))
   .settings(commonSettings)
 
 lazy val tests = crossProject(JSPlatform, JVMPlatform)
@@ -70,7 +55,7 @@ lazy val tests = crossProject(JSPlatform, JVMPlatform)
 
 lazy val regexGen = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Pure)
-  .dependsOn(kleene, regex)
+  .dependsOn(regex)
   .in(file("regex-gen"))
   .settings(
     moduleName := "irrec-regex-gen",
@@ -84,7 +69,7 @@ lazy val parser = crossProject(JSPlatform, JVMPlatform)
     moduleName := "irrec-parser",
     libraryDependencies += "com.lihaoyi" %%% "fastparse" % fastParseVersion)
   .settings(commonSettings)
-  .dependsOn(kleene, regex)
+  .dependsOn(regex)
 
 lazy val jsDocs = project
   .in(file("irrec-js-docs"))
@@ -129,7 +114,7 @@ lazy val jvm = project
   .settings(
     moduleName := "irrec-root-jvm"
   )
-  .aggregate(kleene.jvm, regex.jvm, regexGen.jvm, parser.jvm, tests.jvm, benchmarks)
+  .aggregate(regex.jvm, regexGen.jvm, parser.jvm, tests.jvm, benchmarks)
   .settings(commonSettings)
   .settings(noPublishSettings)
 
@@ -137,7 +122,7 @@ lazy val js = project
   .settings(
     moduleName := "irrec-root-js"
   )
-  .aggregate(kleene.js, regex.js, regexGen.js, parser.js, tests.js)
+  .aggregate(regex.js, regexGen.js, parser.js, tests.js)
   .settings(commonSettings)
   .settings(noPublishSettings)
 
