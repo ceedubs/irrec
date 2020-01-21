@@ -480,7 +480,6 @@ class ParserTests extends IrrecSuite {
          |  expected: ${expected}
          |""".stripMargin
     withClue(clue) {
-      // TODO
       // Regex data structures can have structural differences while still being functionally
       // equivalent. For example `Times(x, Times(y, z))` and `Times(Times(x, y), z)`. So we compare
       // them by their pretty-printed equivalence. It's not perfect, but in practice it works pretty
