@@ -26,7 +26,6 @@ sealed abstract class Regex[-In, +M, Out] extends Serializable {
   def count(n: Int): Regex[In, M, Chain[Out]] =
     Chain.fromSeq(1 to n).traverse(_ => this)
 
-  // TODO is this handling greediness right? Test this.
   def repeat(
     minInclusive: Int,
     maxInclusive: Option[Int],

@@ -4,6 +4,7 @@ package regex
 import combinator._
 import ceedubs.irrec.regex.{combinator => C}
 import char._
+import Greediness._
 import RegexGen._
 import ceedubs.irrec.parse.{regex => parse}
 import RegexAndCandidate.{genCandidateStream, genIntRegexAndMatch}
@@ -182,6 +183,34 @@ class RegexMatchTests extends IrrecSuite {
   test("optional match not present") {
     (lit('a') product lit('b').optional product lit('c')).compile.parseOnlyS("ac") should ===(
       Some((('a', None), 'c')))
+  }
+
+  test("greedy star") {
+    forAll { (g: Greediness) =>
+      val r = wildcard[Char].star(Greedy).product(lit('a').oneOrMore(g))
+      r.compile.parseOnlyS("aaaaa") should ===(Some((Chain('a', 'a', 'a', 'a'), NonEmptyChain('a'))))
+    }
+  }
+
+  test("non-greedy star") {
+    forAll { (g: Greediness) =>
+      val r = wildcard[Char].star(NonGreedy).product(lit('a').oneOrMore(g))
+      r.compile.parseOnlyS("aaaaa") should ===(Some((Chain.empty, NonEmptyChain('a', 'a', 'a', 'a', 'a'))))
+    }
+  }
+
+  test("greedy repeat") {
+    forAll { (g: Greediness) =>
+      val r = wildcard[Char].repeat(1, Some(6), Greedy).product(lit('a').oneOrMore(g))
+      r.compile.parseOnlyS("aaaaa") should ===(Some((Chain('a', 'a', 'a', 'a'), NonEmptyChain('a'))))
+    }
+  }
+
+  test("non-greedy repeat") {
+    forAll { (g: Greediness) =>
+      val r = wildcard[Char].repeat(1, Some(6), NonGreedy).product(lit('a').oneOrMore(g))
+      r.compile.parseOnlyS("aaaaa") should ===(Some((Chain('a'), NonEmptyChain('a', 'a', 'a', 'a'))))
+    }
   }
 
   test("character class literal match middle") {
