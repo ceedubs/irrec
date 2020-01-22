@@ -129,6 +129,10 @@ object RegexAndCandidate {
     Arbitrary(
       genRegexAndCandidate(RegexGenOld.standardByteConfig, RegexMatchGenOld.byteMatchingGen))
 
+  implicit def arbRegexAndCandidateChar[Out: Arbitrary: Cogen]
+    : Arbitrary[RegexAndCandidate[Char, Out]] =
+    Arbitrary(CharRegexGen.genRegexAndCandidate[Out])
+
   implicit def arbRegexAndCandidateInt[Out: Arbitrary: Cogen]
     : Arbitrary[RegexAndCandidate[Int, Out]] =
     Arbitrary(genRegexAndCandidate(RegexGenOld.standardIntConfig, RegexMatchGenOld.intMatchingGen))

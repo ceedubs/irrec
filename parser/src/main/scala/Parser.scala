@@ -190,7 +190,7 @@ object Parser {
     base.flatMap { r =>
       // TODO greediness
       // TODO voids
-      P("*").map(_ => r.star(Greediness.Greedy).void) |
+      P("*").map(_ => r.chain(Greediness.Greedy).void) |
         P("+").map(_ => r.oneOrMore(Greediness.Greedy).void) |
         P("?").map(_ => r.optional.void) |
         repeatCount.map(count => r.repeat(count.min, count.max, Greediness.Greedy).void) |

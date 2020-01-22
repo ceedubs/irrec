@@ -58,7 +58,4 @@ object CharRegexGen {
 
   def regexMatchingStringGen[Out]: RegexC[Out] => Gen[String] =
     regexMatchingStringGenFromDiet(supportedCharacters)
-
-  implicit def arbCharRegex[Out: Arbitrary: Cogen]: Arbitrary[RegexC[Out]] =
-    Arbitrary(genStandardCharRegex[Out])
 }

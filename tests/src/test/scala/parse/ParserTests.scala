@@ -59,19 +59,19 @@ class ParserTests extends IrrecSuite {
   }
 
   test("regex parsing matches literal*") {
-    val expected = lit('a').star(Greediness.Greedy).void
+    val expected = lit('a').chain(Greediness.Greedy).void
     val r = parse("a*")
     sameRegex(r, expected)
   }
 
   test("regex parsing matches literal* then another matcher") {
-    val expected = lit('a').star(Greediness.Greedy) *> lit('b').void
+    val expected = lit('a').chain(Greediness.Greedy) *> lit('b').void
     val r = parse("a*b")
     sameRegex(r, expected)
   }
 
   test("regex parsing handles precedence with *") {
-    val expected = lit('a').void | (lit('c') *> lit('d').star(Greediness.Greedy).void)
+    val expected = lit('a').void | (lit('c') *> lit('d').chain(Greediness.Greedy).void)
     val r = parse("a|cd*")
     sameRegex(r, expected)
   }
@@ -177,7 +177,7 @@ class ParserTests extends IrrecSuite {
 
   test("regex parsing handles complex nested expressions") {
     val expected = (lit('a').void | (lit('b') *> wildcard[Char]
-      .star(Greediness.Greedy)
+      .chain(Greediness.Greedy)
       .void)) *> lit('d').void
     val r = parse("(?:a|b.*)d")
     sameRegex(r, expected)
@@ -402,7 +402,7 @@ class ParserTests extends IrrecSuite {
   }
 
   test("regex parsing handles + matches in nested bits") {
-    val expected = lit('a') *> (lit('b') *> lit('c').star(Greediness.Greedy))
+    val expected = lit('a') *> (lit('b') *> lit('c').chain(Greediness.Greedy))
       .oneOrMore(Greediness.Greedy) *> lit('d').void
     val r = parse("a(?:bc*)+d")
     sameRegex(r, expected)

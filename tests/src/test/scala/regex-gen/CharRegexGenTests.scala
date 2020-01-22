@@ -1,6 +1,7 @@
 package ceedubs.irrec
 package regex
 
+import RegexGen._
 import CharRegexGen._
 import org.scalacheck.Arbitrary.arbitrary
 import ceedubs.irrec.parse.{regex => parse}

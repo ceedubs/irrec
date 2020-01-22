@@ -8,7 +8,6 @@ import cats.collections.{Diet, Discrete, Range}
 import cats.data.{Chain, NonEmptyList}
 import cats.implicits._
 
-// TODO star-like method that allows z/fold params
 object combinator {
   def matching[A: Order](m: Match[A]): RegexM[A, A] =
     mapMatch(m, identity)
@@ -39,6 +38,13 @@ object combinator {
     l: Regex[In, M, Out1],
     r: Regex[In, M, Out2]): Regex[In, M, Either[Out1, Out2]] =
     l.map(Either.left[Out1, Out2](_)) | r.map(Either.right[Out1, Out2](_))
+
+  def star[In, M, Out1, Out2](r: Regex[In, M, Out1], g: Greediness, z: Out2)(
+    fold: (Out2, Out1) => Out2): Regex[In, M, Out2] =
+    Regex.Star(r, g, z, fold)
+
+  def chain[In, M, Out](r: Regex[In, M, Out], g: Greediness): Regex[In, M, Chain[Out]] =
+    star(r, g, Chain.empty[Out])(_ append _)
 
   def inSet[A: Order](allowed: Diet[A]): RegexM[A, A] = matching(MatchSet.allow(allowed))
 

@@ -12,6 +12,8 @@ final class RegexOps[In, M, Out](private val r: Regex[In, M, Out]) extends AnyVa
   def either[Out2](o: Regex[In, M, Out2]): Regex[In, M, Either[Out, Out2]] =
     combinator.either(r, o)
 
+  def star[Out2](g: Greediness, z: Out2)(fold: (Out2, Out) => Out2) = combinator.star(r, g, z)(fold)
+
   def matcher[F[_]: Foldable]: F[In] => Boolean = Regex.matcher(r)
 
   def compile: ParseState[In, Out] = Regex.compile(r)

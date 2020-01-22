@@ -25,18 +25,19 @@ import cats.implicits._
  * and [[ceedubs.irrec.regex.RegexCOps]].
  */
 sealed abstract class Regex[-In, +M, Out] extends Serializable {
+  // TODO move all of these to combinator and just delegate to that?
   import Regex._
 
-  def star(greediness: Greediness): Regex[In, M, Chain[Out]] =
-    Regex.Star(this, greediness, Chain.empty[Out], (as: Chain[Out], a: Out) => as.append(a))
+  def chain(greediness: Greediness): Regex[In, M, Chain[Out]] =
+    combinator.chain(this, greediness)
 
-  def many: Regex[In, M, Chain[Out]] = star(Greediness.Greedy)
+  def many: Regex[In, M, Chain[Out]] = chain(Greediness.Greedy)
 
-  def few: Regex[In, M, Chain[Out]] = star(Greediness.NonGreedy)
+  def few: Regex[In, M, Chain[Out]] = chain(Greediness.NonGreedy)
 
   // TODO document
   def oneOrMore(greediness: Greediness): Regex[In, M, NonEmptyChain[Out]] =
-    this.map2(this.star(greediness))(NonEmptyChain.fromChainPrepend(_, _))
+    this.map2(this.chain(greediness))(NonEmptyChain.fromChainPrepend(_, _))
 
   def count(n: Int): Regex[In, M, Chain[Out]] =
     Chain.fromSeq(1 to n).traverse(_ => this)
@@ -45,7 +46,7 @@ sealed abstract class Regex[-In, +M, Out] extends Serializable {
     minInclusive: Int,
     maxInclusive: Option[Int],
     greediness: Greediness): Regex[In, M, Chain[Out]] = {
-    val tail = maxInclusive.fold(star(greediness).some) { max =>
+    val tail = maxInclusive.fold(chain(greediness).some) { max =>
       if (max <= minInclusive) None
       else {
         (0 to (max - minInclusive)).toList.toNel.map { counts =>

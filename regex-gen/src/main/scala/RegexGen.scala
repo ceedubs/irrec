@@ -289,6 +289,12 @@ object RegexGen {
   implicit def arbLongRegex[Out: Arbitrary: Cogen]: Arbitrary[RegexM[Long, Out]] =
     Arbitrary(genLongRegex)
 
+  def genCharRegex[Out: Arbitrary: Cogen]: Gen[RegexM[Char, Out]] =
+    CharRegexGen.genStandardCharRegex
+
+  implicit def arbCharRegex[Out: Arbitrary: Cogen]: Arbitrary[RegexM[Char, Out]] =
+    Arbitrary(genCharRegex)
+
   private[irrec] object Support {
     // TODO should this have Order as well?
     final case class GenAndCogen[A](gen: Gen[A], cogen: Cogen[A])

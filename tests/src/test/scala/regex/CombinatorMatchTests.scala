@@ -208,17 +208,32 @@ class CombinatorMatchTests extends IrrecSuite {
       Some((('a', None), 'c')))
   }
 
-  test("greedy star") {
+  test("chain consistent with star") {
+    val gen = for {
+      r0 <- arbitrary[RegexC[Int]]
+      g <- arbitrary[Greediness]
+      rStar = r0.star(g, Chain.empty[Int])(_ append _)
+      candidate <- Gen.oneOf(CharRegexGen.regexMatchingStringGen(rStar), arbitrary[String])
+    } yield (r0, g, rStar, candidate)
+    forAll(gen) {
+      case (r0, g, rStar, candidate) =>
+        val rChain = r0.chain(g)
+
+        rChain.compile.parseOnlyS(candidate) should ===(rStar.compile.parseOnlyS(candidate))
+    }
+  }
+
+  test("greedy chain") {
     forAll { (g: Greediness) =>
-      val r = wildcard[Char].star(Greedy).product(lit('a').oneOrMore(g))
+      val r = wildcard[Char].chain(Greedy).product(lit('a').oneOrMore(g))
       r.compile.parseOnlyS("aaaaa") should ===(
         Some((Chain('a', 'a', 'a', 'a'), NonEmptyChain('a'))))
     }
   }
 
-  test("non-greedy star") {
+  test("non-greedy chain") {
     forAll { (g: Greediness) =>
-      val r = wildcard[Char].star(NonGreedy).product(lit('a').oneOrMore(g))
+      val r = wildcard[Char].chain(NonGreedy).product(lit('a').oneOrMore(g))
       r.compile.parseOnlyS("aaaaa") should ===(
         Some((Chain.empty, NonEmptyChain('a', 'a', 'a', 'a', 'a'))))
     }
@@ -357,9 +372,9 @@ class CombinatorMatchTests extends IrrecSuite {
     }
   }
 
-  test("if r matches x, r.star matches n * x") {
+  test("if r matches x, r.chain matches n * x") {
     forAll(genIntRegexAndMatch[Long], Gen.chooseNum(0, 10), arbitrary[Greediness]) { (rc, n, g) =>
-      rc.r.star(g).matcher[Stream].apply(Stream.fill(n)(rc.candidate).flatten) should ===(true)
+      rc.r.chain(g).matcher[Stream].apply(Stream.fill(n)(rc.candidate).flatten) should ===(true)
     }
   }
 
@@ -373,7 +388,7 @@ class CombinatorMatchTests extends IrrecSuite {
     }
   }
 
-  test("r.repeat(m, n, g) consistent with r.count(n) then r.star") {
+  test("r.repeat(m, n, g) consistent with r.count(n) then r.chain") {
     val gen = for {
       min <- Gen.chooseNum(0, 10)
       plus <- Gen.chooseNum(0, 5)
@@ -386,7 +401,7 @@ class CombinatorMatchTests extends IrrecSuite {
 
     forAll(gen) {
       case (min, r, rRepeat, g, c) =>
-        val rCount = r.count(min).map2(r.star(g))(_ ++ _)
+        val rCount = r.count(min).map2(r.chain(g))(_ ++ _)
         rCount.matcher[Stream].apply(c) should ===(rRepeat.matcher[Stream].apply(c))
     }
   }
