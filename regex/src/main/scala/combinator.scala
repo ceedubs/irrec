@@ -5,10 +5,12 @@ import ceedubs.irrec.regex.Match.MatchSet
 
 import cats.{Order, Reducible, Traverse}
 import cats.collections.{Diet, Discrete, Range}
-import cats.data.{Chain, NonEmptyList}
+import cats.data.{Chain, NonEmptyChain, NonEmptyList}
 import cats.implicits._
 
 object combinator {
+  import Regex._
+
   def matching[A: Order](m: Match[A]): RegexM[A, A] =
     mapMatch(m, identity)
 
@@ -34,6 +36,9 @@ object combinator {
     case _ => Regex.Or(NonEmptyList(l, r :: Nil))
   }
 
+  def optional[In, M, Out](r: Regex[In, M, Out]): Regex[In, M, Option[Out]] =
+    r.map[Option[Out]](Some(_)) | none[Out].pure[Regex[In, M, ?]]
+
   def either[In, M, Out1, Out2](
     l: Regex[In, M, Out1],
     r: Regex[In, M, Out2]): Regex[In, M, Either[Out1, Out2]] =
@@ -45,6 +50,44 @@ object combinator {
 
   def chain[In, M, Out](r: Regex[In, M, Out], g: Greediness): Regex[In, M, Chain[Out]] =
     star(r, g, Chain.empty[Out])(_ append _)
+
+  def many[In, M, Out](r: Regex[In, M, Out]): Regex[In, M, Chain[Out]] =
+    chain(r, Greediness.Greedy)
+
+  def few[In, M, Out](r: Regex[In, M, Out]): Regex[In, M, Chain[Out]] =
+    chain(r, Greediness.NonGreedy)
+
+  def count[In, M, Out](n: Int, r: Regex[In, M, Out]): Regex[In, M, Chain[Out]] =
+    Chain.fromSeq(1 to n).traverse(_ => r)
+
+  def repeat[In, M, Out](
+    r: Regex[In, M, Out],
+    minInclusive: Int,
+    maxInclusive: Option[Int],
+    greediness: Greediness): Regex[In, M, Chain[Out]] = {
+    val tail = maxInclusive.fold(chain(r, greediness).some) { max =>
+      if (max <= minInclusive) None
+      else {
+        (0 to (max - minInclusive)).toList.toNel.map { counts =>
+          val orderedCounts = greediness match {
+            case Greediness.Greedy => counts.reverse
+            case Greediness.NonGreedy => counts
+          }
+          Regex.Or(orderedCounts.map(i => count(i, r)))
+        }
+      }
+    }
+    val head = count(minInclusive, r)
+    tail.fold(head)(tail => head.map2(tail)(_ concat _))
+  }
+
+  def oneOrMore[In, M, Out](
+    r: Regex[In, M, Out],
+    greediness: Greediness): Regex[In, M, NonEmptyChain[Out]] =
+    r.map2(r.chain(greediness))(NonEmptyChain.fromChainPrepend(_, _))
+
+  def map[In, M, Out, Out2](r: Regex[In, M, Out])(f: Out => Out2): Regex[In, M, Out2] =
+    Regex.FMap(r, f)
 
   def inSet[A: Order](allowed: Diet[A]): RegexM[A, A] = matching(MatchSet.allow(allowed))
 
@@ -87,4 +130,25 @@ object combinator {
   def empty[In, M]: Regex[In, M, Unit] = Regex.Eps
 
   def fail[A]: Regex[Any, Nothing, A] = Regex.Fail()
+
+  def withMatched[In, M, Out](r: Regex[In, M, Out]): Regex[In, M, (Chain[In], Out)] = r match {
+    case AndThen(l, r) =>
+      withMatched(l).map2(withMatched(r)) {
+        case ((sl, f), (sr, i)) =>
+          (sl.concat(sr), f(i))
+      }
+    case Or(alternatives) => Or(alternatives.map(withMatched))
+    case e: Elem[In, M, Out] => Elem(e.metadata, in => e.apply(in).map(o => (Chain.one(in), o)))
+    case rs @ Star(r, g, z, f) =>
+      Star[In, M, (Chain[In], rs.Init), (Chain[In], Out)](withMatched(r), g, (Chain.empty[In], z), {
+        case ((s0, z), (s1, i)) =>
+          (s0 concat s1, f(z, i))
+      }): Regex[In, M, (Chain[In], Out)]
+    case FMap(r, f) => withMatched(r).map { case (matched, out0) => (matched, f(out0)) }
+    case Eps => r.map(o => (Chain.empty, o))
+    case Fail() => Fail()
+    case v @ Void(r) => withMatched[In, M, v.Init](r).map { case (matched, _) => (matched, ()) }
+  }
+
+  def matched[In, M, Out](r: Regex[In, M, Out]): Regex[In, M, Chain[In]] = withMatched(r).map(_._1)
 }

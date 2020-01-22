@@ -3,7 +3,6 @@ package regex
 
 import cats.Foldable
 import cats.data.Chain
-import cats.implicits._
 import java.util.regex.Pattern
 
 final class RegexOps[In, M, Out](private val r: Regex[In, M, Out]) extends AnyVal {
@@ -18,23 +17,20 @@ final class RegexOps[In, M, Out](private val r: Regex[In, M, Out]) extends AnyVa
 
   def compile: ParseState[In, Out] = Regex.compile(r)
 
-  def optional: Regex[In, M, Option[Out]] =
-    r.map[Option[Out]](Some(_)) | none[Out].pure[Regex[In, M, ?]]
+  def optional: Regex[In, M, Option[Out]] = combinator.optional(r)
 
   def withMatched: Regex[In, M, (Chain[In], Out)] =
-    Regex.withMatched(r)
+    combinator.withMatched(r)
 
-  def matched: Regex[In, M, Chain[In]] = withMatched.map(_._1)
+  def matched: Regex[In, M, Chain[In]] = combinator.matched(r)
 }
 
 final class RegexCOps[Out](private val r: RegexC[Out]) extends AnyVal {
   def pprint: String = RegexPrettyPrinter.pprint(r)
 
-  def withMatchedS: RegexC[(String, Out)] = r.withMatched.map {
-    case (s, o) => (s.mkString_(""), o)
-  }
+  def withMatchedS: RegexC[(String, Out)] = char.withMatchedS(r)
 
-  def matchedS: RegexC[String] = r.matched.map(_.mkString_(""))
+  def matchedS: RegexC[String] = char.matchedS(r)
 
   def stringMatcher: String => Boolean = {
     val m = Regex.matcher(r)(IndexedSeqFoldable.instance)

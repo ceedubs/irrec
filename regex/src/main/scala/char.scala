@@ -9,8 +9,18 @@ object char {
   /**
    * Matches a single digit character ('0', '3', '9', etc). Could be represented in a regular
    * expression as `\d` or `[0-9]`.
+   *
+   * @see [[digit]]
    */
-  val digit: RegexC[Int] = inSet(CharacterClasses.digit).map(_.asDigit)
+  val digitChar: RegexC[Char] = inSet(CharacterClasses.digit)
+
+  /**
+   * Matches a single digit character ('0', '3', '9', etc). Could be represented in a regular
+   * expression as `\d` or `[0-9]`.
+   *
+   * @see [[digitChar]]
+   */
+  val digit: RegexC[Int] = digitChar.map(_.asDigit)
 
   /**
    * Opposite of [[digit]]. Could be represented in a regular expression as
@@ -173,4 +183,10 @@ object char {
    * `[^[:punct:]]`.
    */
   val nonPunctuationChar: RegexC[Char] = notInSet(CharacterClasses.punctuationChar)
+
+  def withMatchedS[Out](r: RegexC[Out]): RegexC[(String, Out)] = r.withMatched.map {
+    case (s, o) => (s.mkString_(""), o)
+  }
+
+  def matchedS[Out](r: RegexC[Out]): RegexC[String] = r.matched.map(_.mkString_(""))
 }

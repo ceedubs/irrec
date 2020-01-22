@@ -25,44 +25,25 @@ import cats.implicits._
  * and [[ceedubs.irrec.regex.RegexCOps]].
  */
 sealed abstract class Regex[-In, +M, Out] extends Serializable {
-  // TODO move all of these to combinator and just delegate to that?
-  import Regex._
-
   def chain(greediness: Greediness): Regex[In, M, Chain[Out]] =
     combinator.chain(this, greediness)
 
-  def many: Regex[In, M, Chain[Out]] = chain(Greediness.Greedy)
+  def many: Regex[In, M, Chain[Out]] = combinator.many(this)
 
-  def few: Regex[In, M, Chain[Out]] = chain(Greediness.NonGreedy)
+  def few: Regex[In, M, Chain[Out]] = combinator.few(this)
 
-  // TODO document
   def oneOrMore(greediness: Greediness): Regex[In, M, NonEmptyChain[Out]] =
-    this.map2(this.chain(greediness))(NonEmptyChain.fromChainPrepend(_, _))
+    combinator.oneOrMore(this, greediness)
 
-  def count(n: Int): Regex[In, M, Chain[Out]] =
-    Chain.fromSeq(1 to n).traverse(_ => this)
+  def count(n: Int): Regex[In, M, Chain[Out]] = combinator.count(n, this)
 
   def repeat(
     minInclusive: Int,
     maxInclusive: Option[Int],
-    greediness: Greediness): Regex[In, M, Chain[Out]] = {
-    val tail = maxInclusive.fold(chain(greediness).some) { max =>
-      if (max <= minInclusive) None
-      else {
-        (0 to (max - minInclusive)).toList.toNel.map { counts =>
-          val orderedCounts = greediness match {
-            case Greediness.Greedy => counts.reverse
-            case Greediness.NonGreedy => counts
-          }
-          Or(orderedCounts.map(i => count(i)))
-        }
-      }
-    }
-    val head = count(minInclusive)
-    tail.fold(head)(tail => head.map2(tail)(_ concat _))
-  }
+    greediness: Greediness): Regex[In, M, Chain[Out]] =
+    combinator.repeat(this, minInclusive, maxInclusive, greediness)
 
-  def map[B](f: Out => B): Regex[In, M, B] = FMap(this, f)
+  def map[Out2](f: Out => Out2): Regex[In, M, Out2] = combinator.map(this)(f)
 }
 
 object Regex {
@@ -144,28 +125,6 @@ object Regex {
     case Eps => eps(Is.refl[Unit])
     case Fail() => fail()
     case Void(r) => void(Is.refl[Unit])(r)
-  }
-
-  // TODO move?
-  def withMatched[In, M, Out](r: Regex[In, M, Out]): Regex[In, M, (Chain[In], Out)] = r match {
-    case AndThen(l, r) =>
-      withMatched(l).map2(withMatched(r)) {
-        case ((sl, f), (sr, i)) =>
-          (sl.concat(sr), f(i))
-      }
-    case Or(alternatives) => Or(alternatives.map(withMatched))
-    case e: Elem[In, M, Out] => Elem(e.metadata, in => e.apply(in).map(o => (Chain.one(in), o)))
-    // TODO clean up
-    // TODO test
-    case rs @ Star(r, g, z, f) =>
-      Star[In, M, (Chain[In], rs.Init), (Chain[In], Out)](withMatched(r), g, (Chain.empty[In], z), {
-        case ((s0, z), (s1, i)) =>
-          (s0 concat s1, f(z, i))
-      }): Regex[In, M, (Chain[In], Out)]
-    case FMap(r, f) => withMatched(r).map { case (matched, out0) => (matched, f(out0)) }
-    case Eps => r.map(o => (Chain.empty, o))
-    case Fail() => Fail()
-    case v @ Void(r) => withMatched[In, M, v.Init](r).map { case (matched, _) => (matched, ()) }
   }
 
   // TODO this will probably get created a lot. Reuse a singleton instance?
