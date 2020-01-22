@@ -53,7 +53,6 @@ sealed abstract class Regex[-In, +M, Out] extends Serializable {
             case Greediness.Greedy => counts.reverse
             case Greediness.NonGreedy => counts
           }
-          // TODO this is a mess
           Or(orderedCounts.map(i => count(i)))
         }
       }

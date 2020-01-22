@@ -1,7 +1,6 @@
 package ceedubs.irrec
 package regex
 
-// TODO?
 final case class ThreadId(asInt: Int) extends AnyVal
 
 sealed abstract class Thread[In, A] extends Product with Serializable {

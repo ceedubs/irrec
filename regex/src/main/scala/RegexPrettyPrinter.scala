@@ -6,7 +6,6 @@ import cats.data.NonEmptyList
 import cats.collections.Diet
 import cats.implicits._
 
-// TODO name
 object RegexPrettyPrinter {
   private val andThenPrecedence: Int = 2
   private val orPrecedence: Int = 3
