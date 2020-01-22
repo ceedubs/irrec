@@ -6,6 +6,7 @@ import combinator._
 import cats.implicits._
 
 object char {
+
   /**
    * Matches a single digit character ('0', '3', '9', etc). Could be represented in a regular
    * expression as `\d` or `[0-9]`.

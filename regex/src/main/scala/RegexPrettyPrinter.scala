@@ -93,14 +93,13 @@ object RegexPrettyPrinter {
         elem = (m, _) => (matchPrecedence, showMatch(m)),
         andThen = λ[λ[i => (Regex[In, Match[In], i => Out], Regex[In, Match[In], i])] ~> λ[a => (
           Int,
-          String)]](
-          t =>
-            (
+          String)]](t =>
+          (
+            andThenPrecedence,
+            parensMaybe(andThenPrecedence, go(t._1), false) + parensMaybe(
               andThenPrecedence,
-              parensMaybe(andThenPrecedence, go(t._1), false) + parensMaybe(
-                andThenPrecedence,
-                go(t._2),
-                false))),
+              go(t._2),
+              false))),
         star = λ[λ[i => (Regex[In, Match[In], i], Greediness, Out, (Out, i) => Out)] ~> λ[a => (
           Int,
           String)]](t => (starPrecedence, parensMaybe(starPrecedence, go(t._1), true) + "*")),
