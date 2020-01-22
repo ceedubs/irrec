@@ -61,7 +61,6 @@ object combinator {
   def noneOf[A](a1: A, as: A*)(implicit discreteA: Discrete[A], orderA: Order[A]): RegexM[A, A] =
     notInSet(NonEmptyList.of(a1, as: _*).foldMap(Diet.one(_)))
 
-  // TODO???
   // TODO a lot of these aren't specific to Match are they?
   def allOfFR[F[_], In, M, Out](values: F[Regex[In, M, Out]])(
     implicit traverseF: Traverse[F]): Regex[In, M, F[Out]] =

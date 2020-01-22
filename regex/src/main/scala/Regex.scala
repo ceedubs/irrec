@@ -6,9 +6,24 @@ import cats.data.{Chain, NonEmptyChain, NonEmptyList, State}
 import cats.evidence.Is
 import cats.implicits._
 
-// This code was ported (with minor modifications) from https://hackage.haskell.org/package/regex-applicative
-// TODO document type parameters (especially M)
-// TODO document syntax helper classes
+/**
+ * A generalized representation of a regular expression.
+ *
+ * This code was ported (with minor modifications) from
+ * https://hackage.haskell.org/package/regex-applicative
+ *
+ * @tparam In the type of each element in the input. For a traditional regular expression, this
+ * would be `Char`.
+ *
+ * @tparam M metadata associated with each [[ceedubs.irrec.regex.Regex.Elem]] instance. This could
+ * be `String` to attach a name to elems. More commonly, it is something like
+ * [[ceedubs.irrec.regex.Match]] with a `Char` type parameter.
+ *
+ * @tparam Out the output produced by a regular expression if the input matches.
+ *
+ * Additional useful methods are added via syntax enrichment with [[ceedubs.irrec.regex.RegexOps]]
+ * and [[ceedubs.irrec.regex.RegexCOps]].
+ */
 sealed abstract class Regex[-In, +M, Out] extends Serializable {
   import Regex._
 
