@@ -35,7 +35,6 @@ object combinator {
     case _ => Regex.Or(NonEmptyList(l, r :: Nil))
   }
 
-  // TODO test
   def either[In, M, Out1, Out2](
     l: Regex[In, M, Out1],
     r: Regex[In, M, Out2]): Regex[In, M, Either[Out1, Out2]] =

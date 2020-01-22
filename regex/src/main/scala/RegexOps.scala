@@ -9,6 +9,9 @@ import java.util.regex.Pattern
 final class RegexOps[In, M, Out](private val r: Regex[In, M, Out]) extends AnyVal {
   def |(o: Regex[In, M, Out]): Regex[In, M, Out] = combinator.or(r, o)
 
+  def either[Out2](o: Regex[In, M, Out2]): Regex[In, M, Either[Out, Out2]] =
+    combinator.either(r, o)
+
   def matcher[F[_]: Foldable]: F[In] => Boolean = Regex.matcher(r)
 
   def compile: ParseState[In, Out] = Regex.compile(r)

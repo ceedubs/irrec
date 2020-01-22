@@ -15,7 +15,7 @@ import org.scalacheck.Gen
 import org.scalacheck.Arbitrary.arbitrary
 import cats.laws.discipline.arbitrary._
 
-class RegexMatchTests extends IrrecSuite {
+class CombinatorMatchTests extends IrrecSuite {
   test("literal match") { literal('b').compile.parseOnlyS("b") should ===(Some('b')) }
 
   test("literal non-match") { literal('b').compile.parseOnlyS("a") should ===(None) }
@@ -42,6 +42,28 @@ class RegexMatchTests extends IrrecSuite {
 
   test("or no match with trailing") {
     or(literal('b'), literal('c')).compile.parseOnlyS("ad") should ===(None)
+  }
+
+  test("either left match") {
+    either(literal('b'), seq("bc")).compile.parseOnlyS("b") should ===(Some(Left('b')))
+  }
+
+  test("either left match with trailing") {
+    either(literal('b'), seq("bc")).compile.parseOnlyS("bjk") should ===(None)
+  }
+
+  test("either right match") {
+    either(literal('b'), seq("bc")).compile.parseOnlyS("bc") should ===(Some(Right(Chain('b', 'c'))))
+  }
+
+  test("either right match with trailing") {
+    either(literal('b'), seq("bc")).compile.parseOnlyS("bce") should ===(None)
+  }
+
+  test("either no match") { either(literal('b'), seq("bc")).compile.parseOnlyS("a") should ===(None) }
+
+  test("either no match with trailing") {
+    literal('b').either(seq("bc")).compile.parseOnlyS("ade") should ===(None)
   }
 
   test("product match") {

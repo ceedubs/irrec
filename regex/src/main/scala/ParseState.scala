@@ -5,12 +5,11 @@ import cats.Foldable
 import cats.evidence.Is
 import cats.implicits._
 
-// TODO figure out where to put methods/data that are user-facing vs internal
 // TODO consider using something like Stream in some places to get lazy behavior
 final case class ParseState[In, A](queue: StateQueue[Thread[In, A]]) extends AnyVal {
   import ParseState._
 
-  def threads: List[Thread[In, A]] = queue.reversedElements.reverse
+  private def threads: List[Thread[In, A]] = queue.reversedElements.reverse
 
   def step(x: In): ParseState[In, A] =
     // TODO would it make more sense to use another type of data structure?
@@ -22,8 +21,7 @@ final case class ParseState[In, A](queue: StateQueue[Thread[In, A]]) extends Any
       }
     }
 
-  // TODO maybe don't put the methods that you don't expect people to call directly on here?
-  def addThread(t: Thread[In, A]): ParseState[In, A] = t match {
+  private def addThread(t: Thread[In, A]): ParseState[In, A] = t match {
     case Thread.Accept(_) => ParseState(queue.insertWithoutId(t))
     case Thread.Cont(id, _) => ParseState(queue.insertUnique(id.asInt, t))
   }
@@ -31,7 +29,7 @@ final case class ParseState[In, A](queue: StateQueue[Thread[In, A]]) extends Any
   def results: List[A] = threads.flatMap(_.result)
 
   // TODO document
-  // TODO use foldLeftM to short-circuit? I don't know if this will work
+  // TODO use foldLeftM to short-circuit?
   def parseOnly[F[_]](input: F[In])(implicit foldableF: Foldable[F]): Option[A] =
     input.foldLeft(this)(_.step(_)).results.headOption
 
