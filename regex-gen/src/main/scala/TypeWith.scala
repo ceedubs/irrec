@@ -16,9 +16,4 @@ object TypeWith {
     type T = A
     def evidence = ev
   }
-
-  def aux[Ev[_], A](implicit ev: Ev[A]): Aux[Ev, A] = new TypeWith[Ev] {
-    type T = A
-    def evidence = ev
-  }
 }
