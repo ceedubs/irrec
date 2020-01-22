@@ -53,14 +53,17 @@ class CombinatorMatchTests extends IrrecSuite {
   }
 
   test("either right match") {
-    either(literal('b'), seq("bc")).compile.parseOnlyS("bc") should ===(Some(Right(Chain('b', 'c'))))
+    either(literal('b'), seq("bc")).compile.parseOnlyS("bc") should ===(
+      Some(Right(Chain('b', 'c'))))
   }
 
   test("either right match with trailing") {
     either(literal('b'), seq("bc")).compile.parseOnlyS("bce") should ===(None)
   }
 
-  test("either no match") { either(literal('b'), seq("bc")).compile.parseOnlyS("a") should ===(None) }
+  test("either no match") {
+    either(literal('b'), seq("bc")).compile.parseOnlyS("a") should ===(None)
+  }
 
   test("either no match with trailing") {
     literal('b').either(seq("bc")).compile.parseOnlyS("ade") should ===(None)
