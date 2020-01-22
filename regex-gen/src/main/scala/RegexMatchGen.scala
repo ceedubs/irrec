@@ -31,7 +31,6 @@ object RegexMatchGen {
   def regexMatchingStreamGen[In](
     matchGen: Match[In] => Gen[In]): RegexM[In, ?] ~> λ[a => Gen[Stream[In]]] =
     new (RegexM[In, ?] ~> λ[a => Gen[Stream[In]]]) { outer =>
-      // TODO think about whether kind-projector literals are actually making this any cleaner
       def apply[Out](fa: RegexM[In, Out]): Gen[Stream[In]] =
         Regex.fold[In, Match[In], Out, Gen[Stream[In]]](
           eps = _ => Gen.const(Stream.empty),

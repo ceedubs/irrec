@@ -184,8 +184,7 @@ object RegexGen {
               implicit val cogenI = rIGen.evidence.cogenOut
               genRegexWithDepth[In, rIGen.T => Out](cfg, depth - rIDepth)
             }
-            // TODO add a helper method to avoid bad type inference here?
-          } yield (Regex.AndThen(rf, rI): RegexM[In, Out])
+          } yield combinator.andThen(rf, rI)
         ),
         // FMap
         2 -> (for {
@@ -215,8 +214,7 @@ object RegexGen {
               implicit val iCogen = rIGen.evidence.cogenOut
               arbitrary[(Out, rIGen.T) => Out]
             }
-            // TODO annoying to need to specify type
-          } yield (Regex.Star[In, Match[In], rIGen.T, Out](rI, g, z, fold): RegexM[In, Out])
+          } yield combinator.star(rI, g, z)(fold)
         )
       )
 

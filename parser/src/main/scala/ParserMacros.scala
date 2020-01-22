@@ -1,7 +1,6 @@
 package ceedubs.irrec
 package parse
 
-// TODO
 import ceedubs.irrec.regex.RegexC
 
 import scala.reflect.macros.blackbox.Context

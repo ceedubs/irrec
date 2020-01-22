@@ -151,4 +151,8 @@ object combinator {
   }
 
   def matched[In, M, Out](r: Regex[In, M, Out]): Regex[In, M, Chain[In]] = withMatched(r).map(_._1)
+
+  def andThen[In, M, Out1, Out2](
+    rOut: Regex[In, M, Out1 => Out2],
+    rIn: Regex[In, M, Out1]): Regex[In, M, Out2] = AndThen(rOut, rIn)
 }

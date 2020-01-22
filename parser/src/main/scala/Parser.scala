@@ -174,7 +174,6 @@ object Parser {
         ("[" ~ charClassTerm ~ "]")
     )
 
-  // TODO
   def base[_: P]: P[RegexC[Unit]] = P(
     standardMatchChar.map(lit(_).void) |
       ("\\" ~/ (("u" ~ unicodeCodePoint | specialChar).map(lit(_).void) | shorthandClass.map(

@@ -47,7 +47,6 @@ sealed abstract class Regex[-In, +M, Out] extends Serializable {
 }
 
 object Regex {
-  // TODO A vs Out
   case object Eps extends Regex[Any, Nothing, Unit]
   final case class Fail[A]() extends Regex[Any, Nothing, A]
   // TODO should this actually have both? Instead could just rely on doing a `map` and changing `M`.
@@ -104,9 +103,6 @@ object Regex {
     case v @ Void(r) => traverseM[F, In, M, M2, v.Init](r)(f).map(Void(_))
   }
 
-  // TODO change name of Match and use more helpful name than m here
-  // TODO think about ordering?
-  // TODO can we carry around evidence that Out = Unit for Void?
   def fold[In, M, Out, R](
     eps: Is[Unit, Out] => R,
     fail: () => R,
@@ -145,7 +141,6 @@ object Regex {
     traverseM(re)(m => freshId.map(id => (id, m))).runA(ThreadId(0)).value
   }
 
-  // TODO name
   // TODO could change this to return a natural transformation
   // TODO make private or something?
   // TODO Stream is deprecated in 2.13, right?
@@ -157,10 +152,8 @@ object Regex {
     Regex.fold[In, (ThreadId, M), A, ContOut](
       eps = ev => _.empty(ev.coerce(())),
       fail = () => _ => Stream.empty,
-      // TODO clean up?
       elem = (m, p) =>
         cont =>
-          // TODO formatting
           Thread
             .Cont[In, R](m._1, in => p(in).fold(Stream.empty[Thread[In, R]])(cont.nonEmpty(_))) #:: Stream.empty,
       andThen = new (λ[i => (Regex[In, (ThreadId, M), i => A], Regex[In, (ThreadId, M), i])] ~> λ[
@@ -217,7 +210,6 @@ object Regex {
     )(re)
   }
 
-  // TODO
   def compile[In, M, Out](r: Regex[In, M, Out]): ParseState[In, Out] = {
     val threads =
       Regex
@@ -228,15 +220,12 @@ object Regex {
 
   // TODO optimize
   // TODO naming/documentation
-  // TODO ops class
   def matcher[F[_]: Foldable, In, M, Out](r: Regex[In, M, Out]): F[In] => Boolean = {
     val rc = r.void.compile
     fin => rc.parseOnly(fin).isDefined
   }
 
-  // TODO names
   implicit def toRegexCOps[Out](r: Regex[Char, Match[Char], Out]): RegexCOps[Out] = new RegexCOps(r)
 
-  // TODO name
   implicit def toRegexOps[In, M, Out](r: Regex[In, M, Out]): RegexOps[In, M, Out] = new RegexOps(r)
 }
