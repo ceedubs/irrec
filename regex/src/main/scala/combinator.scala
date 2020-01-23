@@ -31,7 +31,7 @@ object combinator {
     case (Regex.Or(xs), Regex.Or(ys)) => Regex.Or(xs ::: ys)
     case (_, Regex.Fail()) => l
     case (Regex.Fail(), _) => r
-    case (Regex.Or(xs), _) => Regex.Or(r :: xs)
+    case (Regex.Or(xs), _) => Regex.Or(xs :+ r)
     case (_, Regex.Or(ys)) => Regex.Or(l :: ys)
     case _ => Regex.Or(NonEmptyList(l, r :: Nil))
   }
