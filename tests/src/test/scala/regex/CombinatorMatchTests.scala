@@ -6,9 +6,8 @@ import ceedubs.irrec.regex.{combinator => C}
 import Greediness._
 import RegexGen._
 import ceedubs.irrec.parse.{regex => parse}
-import RegexAndCandidate.{genCandidateStream, genIntRegexAndMatch}
-import RegexMatchGen.regexMatchingStreamGen
-import ceedubs.irrec.regex.RegexMatchGen.{byteMatchingGen, intMatchingGen}
+import RegexAndCandidate.genIntRegexAndMatch
+import RegexMatchGen.genRegexMatch
 
 import cats.data.{Chain, NonEmptyChain, NonEmptyList}
 import org.scalacheck.Gen
@@ -395,7 +394,7 @@ class CombinatorMatchTests extends IrrecSuite {
       r <- arbitrary[RegexM[Int, Long]]
       g <- arbitrary[Greediness]
       rRepeat = r.repeat(min, Some(min + plus), g)
-      c <- regexMatchingStreamGen(intMatchingGen).apply(rRepeat)
+      c <- genRegexMatch(rRepeat)
       g <- arbitrary[Greediness]
     } yield (min, r, rRepeat, g, c)
 
@@ -410,7 +409,7 @@ class CombinatorMatchTests extends IrrecSuite {
     val gen = for {
       values <- arbitrary[NonEmptyList[Byte]]
       r1 = oneOfF(values)
-      c <- genCandidateStream(byteMatchingGen)(r1)
+      c <- genRegexMatch(r1)
     } yield (values, r1, c)
     forAll(gen) {
       case (values, r1, c) =>
@@ -423,7 +422,7 @@ class CombinatorMatchTests extends IrrecSuite {
     val gen = for {
       values <- arbitrary[NonEmptyList[Byte]]
       r1 = oneOfF(values)
-      c <- genCandidateStream(byteMatchingGen)(r1)
+      c <- genRegexMatch(r1)
     } yield (values, r1, c)
     forAll(gen) {
       case (values, r1, c) =>
@@ -437,7 +436,7 @@ class CombinatorMatchTests extends IrrecSuite {
       values <- arbitrary[NonEmptyList[Byte]]
       lits = values.map(lit(_))
       r1 = oneOfFR(lits)
-      c <- genCandidateStream(byteMatchingGen)(r1)
+      c <- genRegexMatch(r1)
     } yield (lits, r1, c)
     forAll(gen) {
       case (lits, r1, c) =>
@@ -450,7 +449,7 @@ class CombinatorMatchTests extends IrrecSuite {
     val gen = for {
       values <- arbitrary[List[Byte]]
       r1 = seq(values)
-      c <- genCandidateStream(byteMatchingGen)(r1)
+      c <- genRegexMatch(r1)
     } yield (values, r1, c)
     forAll(gen) {
       case (values, r1, c) =>
@@ -463,7 +462,7 @@ class CombinatorMatchTests extends IrrecSuite {
     val gen = for {
       values <- arbitrary[List[Byte]]
       r1 = allOfF(values)
-      c <- genCandidateStream(byteMatchingGen)(r1)
+      c <- genRegexMatch(r1)
     } yield (values, r1, c)
     forAll(gen) {
       case (values, r1, c) =>
@@ -477,7 +476,7 @@ class CombinatorMatchTests extends IrrecSuite {
       values <- arbitrary[List[Byte]]
       lits = values.map(lit(_))
       r1 = allOfR(lits: _*)
-      c <- genCandidateStream(byteMatchingGen)(r1)
+      c <- genRegexMatch(r1)
     } yield (lits, r1, c)
     forAll(gen) {
       case (lits, r1, c) =>

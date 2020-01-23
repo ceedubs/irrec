@@ -51,4 +51,8 @@ object RegexMatchGen {
   def dietRegexMatchingStreamGen[In: Choose: Discrete: Order, Out](
     available: Diet[In]): RegexM[In, Out] => Gen[Stream[In]] =
     regexMatchingStreamGen[In](dietMatchToGen(available, dietMatchingGen(_))).apply
+
+  def genRegexMatch[In, M, Out](r: Regex[In, M, Out])(
+    implicit rc: RegexCandidates[In, M]): Gen[Stream[In]] =
+    rc.genMatchingStream(r)
 }
