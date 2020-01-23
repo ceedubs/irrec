@@ -131,8 +131,8 @@
                         <a href="Cont.html" title="">Cont</a>
                       </li><li class="current-entities indented3">
                         <span class="separator"></span>
-                        <a class="object" href="" title=""></a>
-                        <a href="" title="">DietGen</a>
+                        <a class="object" href="DietGen$.html" title=""></a>
+                        <a href="DietGen$.html" title="">DietGen</a>
                       </li><li class="current-entities indented3">
                         <a class="object" href="Greediness$.html" title=""></a>
                         <a class="class" href="Greediness.html" title=""></a>
@@ -147,8 +147,8 @@
                         <a href="ParseState.html" title="">ParseState</a>
                       </li><li class="current-entities indented3">
                         <a class="object" href="Regex$.html" title=""></a>
-                        <a class="class" href="Regex.html" title="A generalized representation of a regular expression."></a>
-                        <a href="Regex.html" title="A generalized representation of a regular expression.">Regex</a>
+                        <a class="class" href="" title="A generalized representation of a regular expression."></a>
+                        <a href="" title="A generalized representation of a regular expression.">Regex</a>
                       </li><li class="current-entities indented3">
                         <a class="object" href="RegexAndCandidate$.html" title=""></a>
                         <a class="class" href="RegexAndCandidate.html" title=""></a>
@@ -210,35 +210,59 @@
             </div>
           </div>
           <div id="content">
-            <body class="object value">
+            <body class="class type">
       <div id="definition">
-        <div class="big-circle object">o</div>
+        <a href="Regex$.html" title="See companion object"><div class="big-circle class-companion-object">c</div></a>
         <p id="owner"><a href="../../index.html" class="extype" name="ceedubs">ceedubs</a>.<a href="../index.html" class="extype" name="ceedubs.irrec">irrec</a>.<a href="index.html" class="extype" name="ceedubs.irrec.regex">regex</a></p>
-        <h1>DietGen<span class="permalink">
-      <a href="../../../ceedubs/irrec/regex/DietGen$.html" title="Permalink">
+        <h1><a href="Regex$.html" title="See companion object">Regex</a><span class="permalink">
+      <a href="../../../ceedubs/irrec/regex/Regex.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span></h1>
-        <h3><span class="morelinks"></span></h3>
+        <h3><span class="morelinks"><div>
+            Companion <a href="Regex$.html" title="See companion object">object Regex</a>
+          </div></span></h3>
       </div>
 
       <h4 id="signature" class="signature">
       <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">object</span>
+        <span class="modifier">sealed abstract </span>
+        <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">DietGen</span>
+        <span class="name">Regex</span><span class="tparams">[<span name="In">-In</span>, <span name="M">+M</span>, <span name="Out">Out</span>]</span><span class="result"> extends <a href="https://www.scala-lang.org/api/2.12.10/scala/Serializable.html#scala.Serializable" class="extype" name="scala.Serializable">Serializable</a></span>
       </span>
       </h4>
 
       
-          <div id="comment" class="fullcommenttop"><div class="toggleContainer block">
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>A generalized representation of a regular expression.</p><p>This code was ported (with minor modifications) from
+https://hackage.haskell.org/package/regex-applicative
+</p></div><dl class="paramcmts block"><dt class="tparam">In</dt><dd class="cmt"><p>the type of each element in the input. For a traditional regular expression, this
+would be <code>Char</code>.</p></dd><dt class="tparam">M</dt><dd class="cmt"><p>metadata associated with each <a href="Regex$$Elem.html" class="extype" name="ceedubs.irrec.regex.Regex.Elem">ceedubs.irrec.regex.Regex.Elem</a> instance. This could
+be <code>String</code> to attach a name to elems. More commonly, it is something like
+<a href="Match.html" class="extype" name="ceedubs.irrec.regex.Match">ceedubs.irrec.regex.Match</a> with a <code>Char</code> type parameter.</p></dd><dt class="tparam">Out</dt><dd class="cmt"><p>the output produced by a regular expression if the input matches.
+Additional useful methods are added via syntax enrichment with <a href="RegexOps.html" class="extype" name="ceedubs.irrec.regex.RegexOps">ceedubs.irrec.regex.RegexOps</a>
+and <a href="RegexCOps.html" class="extype" name="ceedubs.irrec.regex.RegexCOps">ceedubs.irrec.regex.RegexCOps</a>.</p></dd></dl><div class="toggleContainer block">
           <span class="toggle">
             Linear Supertypes
           </span>
-          <div class="superTypes hiddenContent"><a href="https://www.scala-lang.org/api/2.12.10/scala/AnyRef.html#scala.AnyRef" class="extype" name="scala.AnyRef">AnyRef</a>, <a href="https://www.scala-lang.org/api/2.12.10/scala/Any.html#scala.Any" class="extype" name="scala.Any">Any</a></div>
-        </div></div>
+          <div class="superTypes hiddenContent"><a href="https://www.scala-lang.org/api/2.12.10/scala/Serializable.html#scala.Serializable" class="extype" name="scala.Serializable">Serializable</a>, <span class="extype" name="java.io.Serializable">Serializable</span>, <a href="https://www.scala-lang.org/api/2.12.10/scala/AnyRef.html#scala.AnyRef" class="extype" name="scala.AnyRef">AnyRef</a>, <a href="https://www.scala-lang.org/api/2.12.10/scala/Any.html#scala.Any" class="extype" name="scala.Any">Any</a></div>
+        </div><div class="toggleContainer block">
+            <span class="toggle">
+              Known Subclasses
+            </span>
+            <div class="subClasses hiddenContent"><a href="Regex$$AndThen.html" class="extype" name="ceedubs.irrec.regex.Regex.AndThen">AndThen</a>, <a href="Regex$$Elem.html" class="extype" name="ceedubs.irrec.regex.Regex.Elem">Elem</a>, <a href="Regex$$Eps$.html" class="extype" name="ceedubs.irrec.regex.Regex.Eps">Eps</a>, <a href="Regex$$FMap.html" class="extype" name="ceedubs.irrec.regex.Regex.FMap">FMap</a>, <a href="Regex$$Fail.html" class="extype" name="ceedubs.irrec.regex.Regex.Fail">Fail</a>, <a href="Regex$$Or.html" class="extype" name="ceedubs.irrec.regex.Regex.Or">Or</a>, <a href="Regex$$Star.html" class="extype" name="ceedubs.irrec.regex.Regex.Star">Star</a>, <a href="Regex$$Void.html" class="extype" name="ceedubs.irrec.regex.Regex.Void">Void</a></div>
+          </div><div class="toggleContainer block diagram-container" id="inheritance-diagram-container">
+                <span class="toggle diagram-link">
+                  Type Hierarchy
+                </span>
+                <div class="diagram" id="inheritance-diagram"><svg class="class-diagram" id="graph1" viewBox="0.00 0.00 954.50 155.00" height="155pt" width="955pt" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><g transform="scale(1 1) rotate(0) translate(4 151)" class="graph" id="page0,1_graph0"><polygon points="-4,4 -4,-151 950.5,-151 950.5,4 -4,4" stroke="transparent" fill="#ffffff"></polygon><g class="cluster" id="clust1"></g><g class="cluster" id="clust2"></g><!-- node0 --><g class="node this class" id="graph1_0"><g id="a_this class|graph1_0"><a xlink:title="ceedubs.irrec.regex.Regex (this class)" xlink:href="#inheritance-diagram"><path d="M535.1667,-86C535.1667,-86 432.8333,-86 432.8333,-86 428.6667,-86 424.5,-81.8333 424.5,-77.6667 424.5,-77.6667 424.5,-69.3333 424.5,-69.3333 424.5,-65.1667 428.6667,-61 432.8333,-61 432.8333,-61 535.1667,-61 535.1667,-61 539.3333,-61 543.5,-65.1667 543.5,-69.3333 543.5,-69.3333 543.5,-77.6667 543.5,-77.6667 543.5,-81.8333 539.3333,-86 535.1667,-86" stroke="#418565" fill="#418565"></path><image xlink:href="../../../lib/class_diagram.png" y="-80.5" x="435" preserveAspectRatio="xMinYMin meet" height="15px" width="15px"></image><text fill="#ffffff" font-size="8.00" font-family="Source Code Pro" y="-71.1" x="456" text-anchor="start">Regex[In, M, Out]</text></a></g></g><!-- node1 --><g class="node class" id="graph1_1"><g id="a_class|graph1_1"><a xlink:title="ceedubs.irrec.regex.Regex.AndThen" xlink:href="Regex$$AndThen.html#inheritance-diagram"><path d="M129.6667,-25C129.6667,-25 8.3333,-25 8.3333,-25 4.1667,-25 0,-20.8333 0,-16.6667 0,-16.6667 0,-8.3333 0,-8.3333 0,-4.1667 4.1667,0 8.3333,0 8.3333,0 129.6667,0 129.6667,0 133.8333,0 138,-4.1667 138,-8.3333 138,-8.3333 138,-16.6667 138,-16.6667 138,-20.8333 133.8333,-25 129.6667,-25" stroke="#418565" fill="#418565"></path><image xlink:href="../../../lib/class_diagram.png" y="-19.5" x="10" preserveAspectRatio="xMinYMin meet" height="15px" width="15px"></image><text fill="#ffffff" font-size="8.00" font-family="Source Code Pro" y="-10.1" x="31" text-anchor="start">AndThen[In, M, I, Out]</text></a></g></g><!-- node0&#45;&gt;node1 --><g class="edge inheritance" id="graph1_0_1"><g id="a_inheritance|graph1_0_1"><a xlink:title="AndThen[In, M, I, Out] is a subtype of Regex[In, M, Out]"><path d="M417.0258,-64.1824C348.9881,-54.6413 240.5964,-39.2338 147,-25 144.1527,-24.567 141.2477,-24.1209 138.3135,-23.6668" stroke="#d4d4d4" fill="none"></path><polygon points="417.0275,-66.6565 424.2998,-65.2016 417.7075,-61.8039 417.0275,-66.6565" stroke="#d4d4d4" fill="none"></polygon></a></g></g><!-- node2 --><g class="node class" id="graph1_2"><g id="a_class|graph1_2"><a xlink:title="ceedubs.irrec.regex.Regex.Elem" xlink:href="Regex$$Elem.html#inheritance-diagram"><path d="M261.1667,-25C261.1667,-25 164.8333,-25 164.8333,-25 160.6667,-25 156.5,-20.8333 156.5,-16.6667 156.5,-16.6667 156.5,-8.3333 156.5,-8.3333 156.5,-4.1667 160.6667,0 164.8333,0 164.8333,0 261.1667,0 261.1667,0 265.3333,0 269.5,-4.1667 269.5,-8.3333 269.5,-8.3333 269.5,-16.6667 269.5,-16.6667 269.5,-20.8333 265.3333,-25 261.1667,-25" stroke="#418565" fill="#418565"></path><image xlink:href="../../../lib/class_diagram.png" y="-19.5" x="167" preserveAspectRatio="xMinYMin meet" height="15px" width="15px"></image><text fill="#ffffff" font-size="8.00" font-family="Source Code Pro" y="-10.1" x="188" text-anchor="start">Elem[In, M, Out]</text></a></g></g><!-- node0&#45;&gt;node2 --><g class="edge inheritance" id="graph1_0_2"><g id="a_inheritance|graph1_0_2"><a xlink:title="Elem[In, M, Out] is a subtype of Regex[In, M, Out]"><path d="M421.2103,-59.3665C375.1235,-48.9928 313.0922,-35.03 268.7503,-25.049" stroke="#d4d4d4" fill="none"></path><polygon points="420.81,-61.7877 428.1772,-60.9347 421.8861,-57.0073 420.81,-61.7877" stroke="#d4d4d4" fill="none"></polygon></a></g></g><!-- node3 --><g class="node object" id="graph1_3"><g id="a_object|graph1_3"><a xlink:title="ceedubs.irrec.regex.Regex.Eps" xlink:href="Regex$$Eps$.html#inheritance-diagram"><path d="M339.6667,-25C339.6667,-25 296.3333,-25 296.3333,-25 292.1667,-25 288,-20.8333 288,-16.6667 288,-16.6667 288,-8.3333 288,-8.3333 288,-4.1667 292.1667,0 296.3333,0 296.3333,0 339.6667,0 339.6667,0 343.8333,0 348,-4.1667 348,-8.3333 348,-8.3333 348,-16.6667 348,-16.6667 348,-20.8333 343.8333,-25 339.6667,-25" stroke="#103a51" fill="#103a51"></path><image xlink:href="../../../lib/object_diagram.png" y="-19.5" x="298" preserveAspectRatio="xMinYMin meet" height="15px" width="15px"></image><text fill="#ffffff" font-size="8.00" font-family="Source Code Pro" y="-10.1" x="319" text-anchor="start">Eps</text></a></g></g><!-- node0&#45;&gt;node3 --><g class="edge inheritance" id="graph1_0_3"><g id="a_inheritance|graph1_0_3"><a xlink:title="Eps is a subtype of Regex[In, M, Out]"><path d="M442.7404,-58.3383C413.3985,-47.5561 374.648,-33.3164 348.1711,-23.587" stroke="#d4d4d4" fill="none"></path><polygon points="442.1892,-60.7459 449.6047,-60.8608 443.8793,-56.1466 442.1892,-60.7459" stroke="#d4d4d4" fill="none"></polygon></a></g></g><!-- node4 --><g class="node class" id="graph1_4"><g id="a_class|graph1_4"><a xlink:title="ceedubs.irrec.regex.Regex.FMap" xlink:href="Regex$$FMap.html#inheritance-diagram"><path d="M479.6667,-25C479.6667,-25 374.3333,-25 374.3333,-25 370.1667,-25 366,-20.8333 366,-16.6667 366,-16.6667 366,-8.3333 366,-8.3333 366,-4.1667 370.1667,0 374.3333,0 374.3333,0 479.6667,0 479.6667,0 483.8333,0 488,-4.1667 488,-8.3333 488,-8.3333 488,-16.6667 488,-16.6667 488,-20.8333 483.8333,-25 479.6667,-25" stroke="#418565" fill="#418565"></path><image xlink:href="../../../lib/class_diagram.png" y="-19.5" x="376" preserveAspectRatio="xMinYMin meet" height="15px" width="15px"></image><text fill="#ffffff" font-size="8.00" font-family="Source Code Pro" y="-10.1" x="397" text-anchor="start">FMap[In, M, I, Out]</text></a></g></g><!-- node0&#45;&gt;node4 --><g class="edge inheritance" id="graph1_0_4"><g id="a_inheritance|graph1_0_4"><a xlink:title="FMap[In, M, I, Out] is a subtype of Regex[In, M, Out]"><path d="M467.3382,-55.669C458.1831,-45.8714 447.0459,-33.9526 438.7953,-25.123" stroke="#d4d4d4" fill="none"></path><polygon points="465.6202,-57.4189 472.1896,-60.8608 469.2004,-54.0734 465.6202,-57.4189" stroke="#d4d4d4" fill="none"></polygon></a></g></g><!-- node5 --><g class="node class" id="graph1_5"><g id="a_class|graph1_5"><a xlink:title="ceedubs.irrec.regex.Regex.Fail" xlink:href="Regex$$Fail.html#inheritance-diagram"><path d="M567.6667,-25C567.6667,-25 514.3333,-25 514.3333,-25 510.1667,-25 506,-20.8333 506,-16.6667 506,-16.6667 506,-8.3333 506,-8.3333 506,-4.1667 510.1667,0 514.3333,0 514.3333,0 567.6667,0 567.6667,0 571.8333,0 576,-4.1667 576,-8.3333 576,-8.3333 576,-16.6667 576,-16.6667 576,-20.8333 571.8333,-25 567.6667,-25" stroke="#418565" fill="#418565"></path><image xlink:href="../../../lib/class_diagram.png" y="-19.5" x="516" preserveAspectRatio="xMinYMin meet" height="15px" width="15px"></image><text fill="#ffffff" font-size="8.00" font-family="Source Code Pro" y="-10.1" x="537" text-anchor="start">Fail[A]</text></a></g></g><!-- node0&#45;&gt;node5 --><g class="edge inheritance" id="graph1_0_5"><g id="a_inheritance|graph1_0_5"><a xlink:title="Fail[A] is a subtype of Regex[In, M, Out]"><path d="M500.6618,-55.669C509.8169,-45.8714 520.9541,-33.9526 529.2047,-25.123" stroke="#d4d4d4" fill="none"></path><polygon points="498.7996,-54.0734 495.8104,-60.8608 502.3798,-57.4189 498.7996,-54.0734" stroke="#d4d4d4" fill="none"></polygon></a></g></g><!-- node6 --><g class="node class" id="graph1_6"><g id="a_class|graph1_6"><a xlink:title="ceedubs.irrec.regex.Regex.Or" xlink:href="Regex$$Or.html#inheritance-diagram"><path d="M687.6667,-25C687.6667,-25 602.3333,-25 602.3333,-25 598.1667,-25 594,-20.8333 594,-16.6667 594,-16.6667 594,-8.3333 594,-8.3333 594,-4.1667 598.1667,0 602.3333,0 602.3333,0 687.6667,0 687.6667,0 691.8333,0 696,-4.1667 696,-8.3333 696,-8.3333 696,-16.6667 696,-16.6667 696,-20.8333 691.8333,-25 687.6667,-25" stroke="#418565" fill="#418565"></path><image xlink:href="../../../lib/class_diagram.png" y="-19.5" x="604" preserveAspectRatio="xMinYMin meet" height="15px" width="15px"></image><text fill="#ffffff" font-size="8.00" font-family="Source Code Pro" y="-10.1" x="625" text-anchor="start">Or[In, M, Out]</text></a></g></g><!-- node0&#45;&gt;node6 --><g class="edge inheritance" id="graph1_0_6"><g id="a_inheritance|graph1_0_6"><a xlink:title="Or[In, M, Out] is a subtype of Regex[In, M, Out]"><path d="M524.0569,-58.3232C551.1436,-48.0605 586.4833,-34.6709 611.9592,-25.0185" stroke="#d4d4d4" fill="none"></path><polygon points="523.0372,-56.0895 517.3593,-60.8608 524.7733,-60.6716 523.0372,-56.0895" stroke="#d4d4d4" fill="none"></polygon></a></g></g><!-- node7 --><g class="node class" id="graph1_7"><g id="a_class|graph1_7"><a xlink:title="ceedubs.irrec.regex.Regex.Star" xlink:href="Regex$$Star.html#inheritance-diagram"><path d="M823.1667,-25C823.1667,-25 722.8333,-25 722.8333,-25 718.6667,-25 714.5,-20.8333 714.5,-16.6667 714.5,-16.6667 714.5,-8.3333 714.5,-8.3333 714.5,-4.1667 718.6667,0 722.8333,0 722.8333,0 823.1667,0 823.1667,0 827.3333,0 831.5,-4.1667 831.5,-8.3333 831.5,-8.3333 831.5,-16.6667 831.5,-16.6667 831.5,-20.8333 827.3333,-25 823.1667,-25" stroke="#418565" fill="#418565"></path><image xlink:href="../../../lib/class_diagram.png" y="-19.5" x="725" preserveAspectRatio="xMinYMin meet" height="15px" width="15px"></image><text fill="#ffffff" font-size="8.00" font-family="Source Code Pro" y="-10.1" x="746" text-anchor="start">Star[In, M, I, Out]</text></a></g></g><!-- node0&#45;&gt;node7 --><g class="edge inheritance" id="graph1_0_7"><g id="a_inheritance|graph1_0_7"><a xlink:title="Star[In, M, I, Out] is a subtype of Regex[In, M, Out]"><path d="M550.6818,-59.4253C600.0295,-49.0093 666.6328,-34.9512 714.0415,-24.9445" stroke="#d4d4d4" fill="none"></path><polygon points="549.8737,-57.0918 543.5306,-60.9347 550.8857,-61.8862 549.8737,-57.0918" stroke="#d4d4d4" fill="none"></polygon></a></g></g><!-- node8 --><g class="node class" id="graph1_8"><g id="a_class|graph1_8"><a xlink:title="ceedubs.irrec.regex.Regex.Void" xlink:href="Regex$$Void.html#inheritance-diagram"><path d="M938.1667,-25C938.1667,-25 857.8333,-25 857.8333,-25 853.6667,-25 849.5,-20.8333 849.5,-16.6667 849.5,-16.6667 849.5,-8.3333 849.5,-8.3333 849.5,-4.1667 853.6667,0 857.8333,0 857.8333,0 938.1667,0 938.1667,0 942.3333,0 946.5,-4.1667 946.5,-8.3333 946.5,-8.3333 946.5,-16.6667 946.5,-16.6667 946.5,-20.8333 942.3333,-25 938.1667,-25" stroke="#418565" fill="#418565"></path><image xlink:href="../../../lib/class_diagram.png" y="-19.5" x="860" preserveAspectRatio="xMinYMin meet" height="15px" width="15px"></image><text fill="#ffffff" font-size="8.00" font-family="Source Code Pro" y="-10.1" x="881" text-anchor="start">Void[In, M, I]</text></a></g></g><!-- node0&#45;&gt;node8 --><g class="edge inheritance" id="graph1_0_8"><g id="a_inheritance|graph1_0_8"><a xlink:title="Void[In, M, I] is a subtype of Regex[In, M, Out]"><path d="M550.8518,-66.0544C622.7702,-57.6633 740.3718,-42.8391 841,-25 843.6934,-24.5225 846.4527,-24.0067 849.234,-23.466" stroke="#d4d4d4" fill="none"></path><polygon points="550.2768,-63.6547 543.6063,-66.8961 550.8422,-68.5219 550.2768,-63.6547" stroke="#d4d4d4" fill="none"></polygon></a></g></g><!-- node9 --><g class="node trait" id="graph1_9"><g id="a_trait|graph1_9"><a xlink:title="scala.Serializable"><path d="M522.1667,-147C522.1667,-147 445.8333,-147 445.8333,-147 441.6667,-147 437.5,-142.8333 437.5,-138.6667 437.5,-138.6667 437.5,-130.3333 437.5,-130.3333 437.5,-126.1667 441.6667,-122 445.8333,-122 445.8333,-122 522.1667,-122 522.1667,-122 526.3333,-122 530.5,-126.1667 530.5,-130.3333 530.5,-130.3333 530.5,-138.6667 530.5,-138.6667 530.5,-142.8333 526.3333,-147 522.1667,-147" stroke="#2e6d82" fill="#2e6d82"></path><image xlink:href="../../../lib/trait_diagram.png" y="-141.5" x="448" preserveAspectRatio="xMinYMin meet" height="15px" width="15px"></image><text fill="#ffffff" font-size="8.00" font-family="Source Code Pro" y="-132.1" x="469" text-anchor="start">Serializable</text></a></g></g><!-- node9&#45;&gt;node0 --><g class="edge inheritance" id="graph1_9_0"><g id="a_inheritance|graph1_9_0"><a xlink:title="Regex[In, M, Out] is a subtype of Serializable"><path d="M484,-114.7386C484,-105.3393 484,-94.3803 484,-86.123" stroke="#d4d4d4" fill="none"></path><polygon points="481.5501,-114.8607 484,-121.8608 486.4501,-114.8608 481.5501,-114.8607" stroke="#d4d4d4" fill="none"></polygon></a></g></g></g></svg></div>
+                <div id="diagram-controls" class="hiddenContent">
+                  <button id="diagram-zoom-out" class="diagram-btn"><i class="material-icons"></i></button>
+                  <button id="diagram-zoom-in" class="diagram-btn"><i class="material-icons"></i></button>
+                  <button title="Toggle full-screen" id="diagram-fs" class="diagram-btn to-full"><i class="material-icons"></i></button>
+                </div>
+              </div></div>
         
 
       <div id="mbrsel">
@@ -263,7 +287,7 @@
                   <span class="filtertype">Inherited<br />
                   </span>
                   <ol id="linearization">
-                    <li class="in" name="ceedubs.irrec.regex.DietGen"><span>DietGen</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                    <li class="in" name="ceedubs.irrec.regex.Regex"><span>Regex</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                   </ol>
                 </div><div class="ancestors">
               <span class="filtertype"></span>
@@ -293,7 +317,7 @@
                 <li name="scala.AnyRef#!=" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="!=(x$1:Any):Boolean"></a><a id="!=(Any):Boolean"></a>
       <span class="permalink">
-      <a href="../../../ceedubs/irrec/regex/DietGen$.html#!=(x$1:Any):Boolean" title="Permalink">
+      <a href="../../../ceedubs/irrec/regex/Regex.html#!=(x$1:Any):Boolean" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -309,7 +333,7 @@
     </li><li name="scala.AnyRef###" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="##():Int"></a>
       <span class="permalink">
-      <a href="../../../ceedubs/irrec/regex/DietGen$.html###():Int" title="Permalink">
+      <a href="../../../ceedubs/irrec/regex/Regex.html###():Int" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -325,7 +349,7 @@
     </li><li name="scala.AnyRef#==" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="==(x$1:Any):Boolean"></a><a id="==(Any):Boolean"></a>
       <span class="permalink">
-      <a href="../../../ceedubs/irrec/regex/DietGen$.html#==(x$1:Any):Boolean" title="Permalink">
+      <a href="../../../ceedubs/irrec/regex/Regex.html#==(x$1:Any):Boolean" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -341,7 +365,7 @@
     </li><li name="scala.Any#asInstanceOf" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <span class="permalink">
-      <a href="../../../ceedubs/irrec/regex/DietGen$.html#asInstanceOf[T0]:T0" title="Permalink">
+      <a href="../../../ceedubs/irrec/regex/Regex.html#asInstanceOf[T0]:T0" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -354,10 +378,26 @@
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="ceedubs.irrec.regex.Regex#chain" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="chain(greediness:ceedubs.irrec.regex.Greediness):ceedubs.irrec.regex.Regex[In,M,cats.data.Chain[Out]]"></a><a id="chain(Greediness):Regex[In,M,Chain[Out]]"></a>
+      <span class="permalink">
+      <a href="../../../ceedubs/irrec/regex/Regex.html#chain(greediness:ceedubs.irrec.regex.Greediness):ceedubs.irrec.regex.Regex[In,M,cats.data.Chain[Out]]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">chain</span><span class="params">(<span name="greediness">greediness: <a href="Greediness.html" class="extype" name="ceedubs.irrec.regex.Greediness">Greediness</a></span>)</span><span class="result">: <a href="" class="extype" name="ceedubs.irrec.regex.Regex">Regex</a>[<span class="extype" name="ceedubs.irrec.regex.Regex.In">In</span>, <span class="extype" name="ceedubs.irrec.regex.Regex.M">M</span>, <a href="http://typelevel.org/cats/api/cats/data/Chain.html#cats.data.Chain" class="extype" name="cats.data.Chain">Chain</a>[<span class="extype" name="ceedubs.irrec.regex.Regex.Out">Out</span>]]</span>
+      </span>
+      
+      
     </li><li name="scala.AnyRef#clone" visbl="prt" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="clone():Object"></a><a id="clone():AnyRef"></a>
       <span class="permalink">
-      <a href="../../../ceedubs/irrec/regex/DietGen$.html#clone():Object" title="Permalink">
+      <a href="../../../ceedubs/irrec/regex/Regex.html#clone():Object" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -378,10 +418,10 @@
                 <span class="name">@native</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li name="ceedubs.irrec.regex.DietGen#dietMatchingGen" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="dietMatchingGen[A](diet:cats.collections.Diet[A])(implicitevidence$4:org.scalacheck.Gen.Choose[A]):org.scalacheck.Gen[A]"></a><a id="dietMatchingGen[A](Diet[A])(Choose[A]):Gen[A]"></a>
+    </li><li name="ceedubs.irrec.regex.Regex#count" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="count(n:Int):ceedubs.irrec.regex.Regex[In,M,cats.data.Chain[Out]]"></a><a id="count(Int):Regex[In,M,Chain[Out]]"></a>
       <span class="permalink">
-      <a href="../../../ceedubs/irrec/regex/DietGen$.html#dietMatchingGen[A](diet:cats.collections.Diet[A])(implicitevidence$4:org.scalacheck.Gen.Choose[A]):org.scalacheck.Gen[A]" title="Permalink">
+      <a href="../../../ceedubs/irrec/regex/Regex.html#count(n:Int):ceedubs.irrec.regex.Regex[In,M,cats.data.Chain[Out]]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -390,14 +430,14 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">dietMatchingGen</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="diet">diet: <span class="extype" name="cats.collections.Diet">Diet</span>[<span class="extype" name="ceedubs.irrec.regex.DietGen.dietMatchingGen.A">A</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span class="extype" name="org.scalacheck.Gen.Choose">Choose</span>[<span class="extype" name="ceedubs.irrec.regex.DietGen.dietMatchingGen.A">A</span>]</span>)</span><span class="result">: <span class="extype" name="org.scalacheck.Gen">Gen</span>[<span class="extype" name="ceedubs.irrec.regex.DietGen.dietMatchingGen.A">A</span>]</span>
+        <span class="name">count</span><span class="params">(<span name="n">n: <a href="https://www.scala-lang.org/api/2.12.10/scala/Int.html#scala.Int" class="extype" name="scala.Int">Int</a></span>)</span><span class="result">: <a href="" class="extype" name="ceedubs.irrec.regex.Regex">Regex</a>[<span class="extype" name="ceedubs.irrec.regex.Regex.In">In</span>, <span class="extype" name="ceedubs.irrec.regex.Regex.M">M</span>, <a href="http://typelevel.org/cats/api/cats/data/Chain.html#cats.data.Chain" class="extype" name="cats.data.Chain">Chain</a>[<span class="extype" name="ceedubs.irrec.regex.Regex.Out">Out</span>]]</span>
       </span>
       
       
     </li><li name="scala.AnyRef#eq" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="eq(x$1:AnyRef):Boolean"></a><a id="eq(AnyRef):Boolean"></a>
       <span class="permalink">
-      <a href="../../../ceedubs/irrec/regex/DietGen$.html#eq(x$1:AnyRef):Boolean" title="Permalink">
+      <a href="../../../ceedubs/irrec/regex/Regex.html#eq(x$1:AnyRef):Boolean" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -413,7 +453,7 @@
     </li><li name="scala.AnyRef#equals" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="equals(x$1:Any):Boolean"></a><a id="equals(Any):Boolean"></a>
       <span class="permalink">
-      <a href="../../../ceedubs/irrec/regex/DietGen$.html#equals(x$1:Any):Boolean" title="Permalink">
+      <a href="../../../ceedubs/irrec/regex/Regex.html#equals(x$1:Any):Boolean" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -426,10 +466,26 @@
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="ceedubs.irrec.regex.Regex#few" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="few:ceedubs.irrec.regex.Regex[In,M,cats.data.Chain[Out]]"></a><a id="few:Regex[In,M,Chain[Out]]"></a>
+      <span class="permalink">
+      <a href="../../../ceedubs/irrec/regex/Regex.html#few:ceedubs.irrec.regex.Regex[In,M,cats.data.Chain[Out]]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">few</span><span class="result">: <a href="" class="extype" name="ceedubs.irrec.regex.Regex">Regex</a>[<span class="extype" name="ceedubs.irrec.regex.Regex.In">In</span>, <span class="extype" name="ceedubs.irrec.regex.Regex.M">M</span>, <a href="http://typelevel.org/cats/api/cats/data/Chain.html#cats.data.Chain" class="extype" name="cats.data.Chain">Chain</a>[<span class="extype" name="ceedubs.irrec.regex.Regex.Out">Out</span>]]</span>
+      </span>
+      
+      
     </li><li name="scala.AnyRef#finalize" visbl="prt" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="finalize():Unit"></a>
       <span class="permalink">
-      <a href="../../../ceedubs/irrec/regex/DietGen$.html#finalize():Unit" title="Permalink">
+      <a href="../../../ceedubs/irrec/regex/Regex.html#finalize():Unit" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -448,74 +504,10 @@
     </span>)</span>
               
         </dd></dl></div>
-    </li><li name="ceedubs.irrec.regex.DietGen#genDiscreteDiet" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="genDiscreteDiet[A](genA:org.scalacheck.Gen[A])(implicitevidence$5:cats.collections.Discrete[A],implicitevidence$6:cats.kernel.Order[A]):org.scalacheck.Gen[cats.collections.Diet[A]]"></a><a id="genDiscreteDiet[A](Gen[A])(Discrete[A],Order[A]):Gen[Diet[A]]"></a>
-      <span class="permalink">
-      <a href="../../../ceedubs/irrec/regex/DietGen$.html#genDiscreteDiet[A](genA:org.scalacheck.Gen[A])(implicitevidence$5:cats.collections.Discrete[A],implicitevidence$6:cats.kernel.Order[A]):org.scalacheck.Gen[cats.collections.Diet[A]]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">genDiscreteDiet</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="genA">genA: <span class="extype" name="org.scalacheck.Gen">Gen</span>[<span class="extype" name="ceedubs.irrec.regex.DietGen.genDiscreteDiet.A">A</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span class="extype" name="cats.collections.Discrete">Discrete</span>[<span class="extype" name="ceedubs.irrec.regex.DietGen.genDiscreteDiet.A">A</span>]</span>, <span name="arg1">arg1: <a href="http://typelevel.org/cats/api/cats/kernel/Order.html#cats.kernel.Order" class="extype" name="cats.kernel.Order">Order</a>[<span class="extype" name="ceedubs.irrec.regex.DietGen.genDiscreteDiet.A">A</span>]</span>)</span><span class="result">: <span class="extype" name="org.scalacheck.Gen">Gen</span>[<span class="extype" name="cats.collections.Diet">Diet</span>[<span class="extype" name="ceedubs.irrec.regex.DietGen.genDiscreteDiet.A">A</span>]]</span>
-      </span>
-      
-      
-    </li><li name="ceedubs.irrec.regex.DietGen#genNonEmptySubDiet" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="genNonEmptySubDiet[A](diet:cats.collections.Diet[A],weight:cats.collections.Range[A]=&gt;Int)(implicitevidence$1:org.scalacheck.Gen.Choose[A],implicitevidence$2:cats.collections.Discrete[A],implicitevidence$3:cats.kernel.Order[A]):org.scalacheck.Gen[cats.collections.Diet[A]]"></a><a id="genNonEmptySubDiet[A](Diet[A],(Range[A])⇒Int)(Choose[A],Discrete[A],Order[A]):Gen[Diet[A]]"></a>
-      <span class="permalink">
-      <a href="../../../ceedubs/irrec/regex/DietGen$.html#genNonEmptySubDiet[A](diet:cats.collections.Diet[A],weight:cats.collections.Range[A]=&gt;Int)(implicitevidence$1:org.scalacheck.Gen.Choose[A],implicitevidence$2:cats.collections.Discrete[A],implicitevidence$3:cats.kernel.Order[A]):org.scalacheck.Gen[cats.collections.Diet[A]]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">genNonEmptySubDiet</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="diet">diet: <span class="extype" name="cats.collections.Diet">Diet</span>[<span class="extype" name="ceedubs.irrec.regex.DietGen.genNonEmptySubDiet.A">A</span>]</span>, <span name="weight">weight: (<span class="extype" name="cats.collections.Range">Range</span>[<span class="extype" name="ceedubs.irrec.regex.DietGen.genNonEmptySubDiet.A">A</span>]) ⇒ <a href="https://www.scala-lang.org/api/2.12.10/scala/Int.html#scala.Int" class="extype" name="scala.Int">Int</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span class="extype" name="org.scalacheck.Gen.Choose">Choose</span>[<span class="extype" name="ceedubs.irrec.regex.DietGen.genNonEmptySubDiet.A">A</span>]</span>, <span name="arg1">arg1: <span class="extype" name="cats.collections.Discrete">Discrete</span>[<span class="extype" name="ceedubs.irrec.regex.DietGen.genNonEmptySubDiet.A">A</span>]</span>, <span name="arg2">arg2: <a href="http://typelevel.org/cats/api/cats/kernel/Order.html#cats.kernel.Order" class="extype" name="cats.kernel.Order">Order</a>[<span class="extype" name="ceedubs.irrec.regex.DietGen.genNonEmptySubDiet.A">A</span>]</span>)</span><span class="result">: <span class="extype" name="org.scalacheck.Gen">Gen</span>[<span class="extype" name="cats.collections.Diet">Diet</span>[<span class="extype" name="ceedubs.irrec.regex.DietGen.genNonEmptySubDiet.A">A</span>]]</span>
-      </span>
-      
-      
-    </li><li name="ceedubs.irrec.regex.DietGen#genRange" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="genRange[A](genA:org.scalacheck.Gen[A])(implicitorderingA:cats.kernel.Order[A]):org.scalacheck.Gen[cats.collections.Range[A]]"></a><a id="genRange[A](Gen[A])(Order[A]):Gen[Range[A]]"></a>
-      <span class="permalink">
-      <a href="../../../ceedubs/irrec/regex/DietGen$.html#genRange[A](genA:org.scalacheck.Gen[A])(implicitorderingA:cats.kernel.Order[A]):org.scalacheck.Gen[cats.collections.Range[A]]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">genRange</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="genA">genA: <span class="extype" name="org.scalacheck.Gen">Gen</span>[<span class="extype" name="ceedubs.irrec.regex.DietGen.genRange.A">A</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="orderingA">orderingA: <a href="http://typelevel.org/cats/api/cats/kernel/Order.html#cats.kernel.Order" class="extype" name="cats.kernel.Order">Order</a>[<span class="extype" name="ceedubs.irrec.regex.DietGen.genRange.A">A</span>]</span>)</span><span class="result">: <span class="extype" name="org.scalacheck.Gen">Gen</span>[<span class="extype" name="cats.collections.Range">Range</span>[<span class="extype" name="ceedubs.irrec.regex.DietGen.genRange.A">A</span>]]</span>
-      </span>
-      
-      
-    </li><li name="ceedubs.irrec.regex.DietGen#genWeightedDietRange" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="genWeightedDietRange[A](diet:cats.collections.Diet[A],weight:cats.collections.Range[A]=&gt;Int):org.scalacheck.Gen[cats.collections.Range[A]]"></a><a id="genWeightedDietRange[A](Diet[A],(Range[A])⇒Int):Gen[Range[A]]"></a>
-      <span class="permalink">
-      <a href="../../../ceedubs/irrec/regex/DietGen$.html#genWeightedDietRange[A](diet:cats.collections.Diet[A],weight:cats.collections.Range[A]=&gt;Int):org.scalacheck.Gen[cats.collections.Range[A]]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">genWeightedDietRange</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="diet">diet: <span class="extype" name="cats.collections.Diet">Diet</span>[<span class="extype" name="ceedubs.irrec.regex.DietGen.genWeightedDietRange.A">A</span>]</span>, <span name="weight">weight: (<span class="extype" name="cats.collections.Range">Range</span>[<span class="extype" name="ceedubs.irrec.regex.DietGen.genWeightedDietRange.A">A</span>]) ⇒ <a href="https://www.scala-lang.org/api/2.12.10/scala/Int.html#scala.Int" class="extype" name="scala.Int">Int</a></span>)</span><span class="result">: <span class="extype" name="org.scalacheck.Gen">Gen</span>[<span class="extype" name="cats.collections.Range">Range</span>[<span class="extype" name="ceedubs.irrec.regex.DietGen.genWeightedDietRange.A">A</span>]]</span>
-      </span>
-      
-      
     </li><li name="scala.AnyRef#getClass" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getClass():Class[_]"></a>
       <span class="permalink">
-      <a href="../../../ceedubs/irrec/regex/DietGen$.html#getClass():Class[_]" title="Permalink">
+      <a href="../../../ceedubs/irrec/regex/Regex.html#getClass():Class[_]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -534,7 +526,7 @@
     </li><li name="scala.AnyRef#hashCode" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="hashCode():Int"></a>
       <span class="permalink">
-      <a href="../../../ceedubs/irrec/regex/DietGen$.html#hashCode():Int" title="Permalink">
+      <a href="../../../ceedubs/irrec/regex/Regex.html#hashCode():Int" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -553,7 +545,7 @@
     </li><li name="scala.Any#isInstanceOf" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <span class="permalink">
-      <a href="../../../ceedubs/irrec/regex/DietGen$.html#isInstanceOf[T0]:Boolean" title="Permalink">
+      <a href="../../../ceedubs/irrec/regex/Regex.html#isInstanceOf[T0]:Boolean" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -566,10 +558,42 @@
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="ceedubs.irrec.regex.Regex#many" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="many:ceedubs.irrec.regex.Regex[In,M,cats.data.Chain[Out]]"></a><a id="many:Regex[In,M,Chain[Out]]"></a>
+      <span class="permalink">
+      <a href="../../../ceedubs/irrec/regex/Regex.html#many:ceedubs.irrec.regex.Regex[In,M,cats.data.Chain[Out]]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">many</span><span class="result">: <a href="" class="extype" name="ceedubs.irrec.regex.Regex">Regex</a>[<span class="extype" name="ceedubs.irrec.regex.Regex.In">In</span>, <span class="extype" name="ceedubs.irrec.regex.Regex.M">M</span>, <a href="http://typelevel.org/cats/api/cats/data/Chain.html#cats.data.Chain" class="extype" name="cats.data.Chain">Chain</a>[<span class="extype" name="ceedubs.irrec.regex.Regex.Out">Out</span>]]</span>
+      </span>
+      
+      
+    </li><li name="ceedubs.irrec.regex.Regex#map" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="map[Out2](f:Out=&gt;Out2):ceedubs.irrec.regex.Regex[In,M,Out2]"></a><a id="map[Out2]((Out)⇒Out2):Regex[In,M,Out2]"></a>
+      <span class="permalink">
+      <a href="../../../ceedubs/irrec/regex/Regex.html#map[Out2](f:Out=&gt;Out2):ceedubs.irrec.regex.Regex[In,M,Out2]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">map</span><span class="tparams">[<span name="Out2">Out2</span>]</span><span class="params">(<span name="f">f: (<span class="extype" name="ceedubs.irrec.regex.Regex.Out">Out</span>) ⇒ <span class="extype" name="ceedubs.irrec.regex.Regex.map.Out2">Out2</span></span>)</span><span class="result">: <a href="" class="extype" name="ceedubs.irrec.regex.Regex">Regex</a>[<span class="extype" name="ceedubs.irrec.regex.Regex.In">In</span>, <span class="extype" name="ceedubs.irrec.regex.Regex.M">M</span>, <span class="extype" name="ceedubs.irrec.regex.Regex.map.Out2">Out2</span>]</span>
+      </span>
+      
+      
     </li><li name="scala.AnyRef#ne" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a><a id="ne(AnyRef):Boolean"></a>
       <span class="permalink">
-      <a href="../../../ceedubs/irrec/regex/DietGen$.html#ne(x$1:AnyRef):Boolean" title="Permalink">
+      <a href="../../../ceedubs/irrec/regex/Regex.html#ne(x$1:AnyRef):Boolean" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -585,7 +609,7 @@
     </li><li name="scala.AnyRef#notify" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="notify():Unit"></a>
       <span class="permalink">
-      <a href="../../../ceedubs/irrec/regex/DietGen$.html#notify():Unit" title="Permalink">
+      <a href="../../../ceedubs/irrec/regex/Regex.html#notify():Unit" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -604,7 +628,7 @@
     </li><li name="scala.AnyRef#notifyAll" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="notifyAll():Unit"></a>
       <span class="permalink">
-      <a href="../../../ceedubs/irrec/regex/DietGen$.html#notifyAll():Unit" title="Permalink">
+      <a href="../../../ceedubs/irrec/regex/Regex.html#notifyAll():Unit" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -620,10 +644,42 @@
                 <span class="name">@native</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li name="ceedubs.irrec.regex.Regex#oneOrMore" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="oneOrMore(greediness:ceedubs.irrec.regex.Greediness):ceedubs.irrec.regex.Regex[In,M,cats.data.NonEmptyChain[Out]]"></a><a id="oneOrMore(Greediness):Regex[In,M,NonEmptyChain[Out]]"></a>
+      <span class="permalink">
+      <a href="../../../ceedubs/irrec/regex/Regex.html#oneOrMore(greediness:ceedubs.irrec.regex.Greediness):ceedubs.irrec.regex.Regex[In,M,cats.data.NonEmptyChain[Out]]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">oneOrMore</span><span class="params">(<span name="greediness">greediness: <a href="Greediness.html" class="extype" name="ceedubs.irrec.regex.Greediness">Greediness</a></span>)</span><span class="result">: <a href="" class="extype" name="ceedubs.irrec.regex.Regex">Regex</a>[<span class="extype" name="ceedubs.irrec.regex.Regex.In">In</span>, <span class="extype" name="ceedubs.irrec.regex.Regex.M">M</span>, <span class="extype" name="cats.data.NonEmptyChain">NonEmptyChain</span>[<span class="extype" name="ceedubs.irrec.regex.Regex.Out">Out</span>]]</span>
+      </span>
+      
+      
+    </li><li name="ceedubs.irrec.regex.Regex#repeat" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="repeat(minInclusive:Int,maxInclusive:Option[Int],greediness:ceedubs.irrec.regex.Greediness):ceedubs.irrec.regex.Regex[In,M,cats.data.Chain[Out]]"></a><a id="repeat(Int,Option[Int],Greediness):Regex[In,M,Chain[Out]]"></a>
+      <span class="permalink">
+      <a href="../../../ceedubs/irrec/regex/Regex.html#repeat(minInclusive:Int,maxInclusive:Option[Int],greediness:ceedubs.irrec.regex.Greediness):ceedubs.irrec.regex.Regex[In,M,cats.data.Chain[Out]]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">repeat</span><span class="params">(<span name="minInclusive">minInclusive: <a href="https://www.scala-lang.org/api/2.12.10/scala/Int.html#scala.Int" class="extype" name="scala.Int">Int</a></span>, <span name="maxInclusive">maxInclusive: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<a href="https://www.scala-lang.org/api/2.12.10/scala/Int.html#scala.Int" class="extype" name="scala.Int">Int</a>]</span>, <span name="greediness">greediness: <a href="Greediness.html" class="extype" name="ceedubs.irrec.regex.Greediness">Greediness</a></span>)</span><span class="result">: <a href="" class="extype" name="ceedubs.irrec.regex.Regex">Regex</a>[<span class="extype" name="ceedubs.irrec.regex.Regex.In">In</span>, <span class="extype" name="ceedubs.irrec.regex.Regex.M">M</span>, <a href="http://typelevel.org/cats/api/cats/data/Chain.html#cats.data.Chain" class="extype" name="cats.data.Chain">Chain</a>[<span class="extype" name="ceedubs.irrec.regex.Regex.Out">Out</span>]]</span>
+      </span>
+      
+      
     </li><li name="scala.AnyRef#synchronized" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a><a id="synchronized[T0](⇒T0):T0"></a>
       <span class="permalink">
-      <a href="../../../ceedubs/irrec/regex/DietGen$.html#synchronized[T0](x$1:=&gt;T0):T0" title="Permalink">
+      <a href="../../../ceedubs/irrec/regex/Regex.html#synchronized[T0](x$1:=&gt;T0):T0" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -639,7 +695,7 @@
     </li><li name="scala.AnyRef#toString" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="toString():String"></a>
       <span class="permalink">
-      <a href="../../../ceedubs/irrec/regex/DietGen$.html#toString():String" title="Permalink">
+      <a href="../../../ceedubs/irrec/regex/Regex.html#toString():String" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -655,7 +711,7 @@
     </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <span class="permalink">
-      <a href="../../../ceedubs/irrec/regex/DietGen$.html#wait():Unit" title="Permalink">
+      <a href="../../../ceedubs/irrec/regex/Regex.html#wait():Unit" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -677,7 +733,7 @@
     </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait(x$1:Long,x$2:Int):Unit"></a><a id="wait(Long,Int):Unit"></a>
       <span class="permalink">
-      <a href="../../../ceedubs/irrec/regex/DietGen$.html#wait(x$1:Long,x$2:Int):Unit" title="Permalink">
+      <a href="../../../ceedubs/irrec/regex/Regex.html#wait(x$1:Long,x$2:Int):Unit" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -699,7 +755,7 @@
     </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait(x$1:Long):Unit"></a><a id="wait(Long):Unit"></a>
       <span class="permalink">
-      <a href="../../../ceedubs/irrec/regex/DietGen$.html#wait(x$1:Long):Unit" title="Permalink">
+      <a href="../../../ceedubs/irrec/regex/Regex.html#wait(x$1:Long):Unit" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -720,22 +776,6 @@
                 <span class="name">@native</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li name="ceedubs.irrec.regex.DietGen#weightedDietMatchingGen" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="weightedDietMatchingGen[A](diet:cats.collections.Diet[A],weight:cats.collections.Range[A]=&gt;Int)(implicitchooseA:org.scalacheck.Gen.Choose[A]):org.scalacheck.Gen[A]"></a><a id="weightedDietMatchingGen[A](Diet[A],(Range[A])⇒Int)(Choose[A]):Gen[A]"></a>
-      <span class="permalink">
-      <a href="../../../ceedubs/irrec/regex/DietGen$.html#weightedDietMatchingGen[A](diet:cats.collections.Diet[A],weight:cats.collections.Range[A]=&gt;Int)(implicitchooseA:org.scalacheck.Gen.Choose[A]):org.scalacheck.Gen[A]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">weightedDietMatchingGen</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="diet">diet: <span class="extype" name="cats.collections.Diet">Diet</span>[<span class="extype" name="ceedubs.irrec.regex.DietGen.weightedDietMatchingGen.A">A</span>]</span>, <span name="weight">weight: (<span class="extype" name="cats.collections.Range">Range</span>[<span class="extype" name="ceedubs.irrec.regex.DietGen.weightedDietMatchingGen.A">A</span>]) ⇒ <a href="https://www.scala-lang.org/api/2.12.10/scala/Int.html#scala.Int" class="extype" name="scala.Int">Int</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="chooseA">chooseA: <span class="extype" name="org.scalacheck.Gen.Choose">Choose</span>[<span class="extype" name="ceedubs.irrec.regex.DietGen.weightedDietMatchingGen.A">A</span>]</span>)</span><span class="result">: <span class="extype" name="org.scalacheck.Gen">Gen</span>[<span class="extype" name="ceedubs.irrec.regex.DietGen.weightedDietMatchingGen.A">A</span>]</span>
-      </span>
-      
-      
     </li>
               </ol>
             </div>
@@ -746,7 +786,11 @@
         </div>
 
         <div id="inheritedMembers">
-        <div class="parent" name="scala.AnyRef">
+        <div class="parent" name="scala.Serializable">
+              <h3>Inherited from <a href="https://www.scala-lang.org/api/2.12.10/scala/Serializable.html#scala.Serializable" class="extype" name="scala.Serializable">Serializable</a></h3>
+            </div><div class="parent" name="java.io.Serializable">
+              <h3>Inherited from <span class="extype" name="java.io.Serializable">Serializable</span></h3>
+            </div><div class="parent" name="scala.AnyRef">
               <h3>Inherited from <a href="https://www.scala-lang.org/api/2.12.10/scala/AnyRef.html#scala.AnyRef" class="extype" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <a href="https://www.scala-lang.org/api/2.12.10/scala/Any.html#scala.Any" class="extype" name="scala.Any">Any</a></h3>

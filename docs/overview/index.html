@@ -55,35 +55,51 @@
               }
             });
         </script></nav></div><div class="container mainContainer docsContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 id="__docusaurus" class="postHeaderTitle">overview</h1></header><article><div><span><p>Irrec allows you to build, match, and generate regular expressions with a functional API.</p>
-<p>The name is a shameless rip-off of <a href="https://github.com/non/irreg">irreg</a>, which this library was inspired by. It's different than irreg in that it uses <code>rec</code>ursion schemes, hence the name.</p>
+<p>The name is a shameless rip-off of <a href="https://github.com/non/irreg">irreg</a>, which this library was inspired by. The <code>rec</code> in <code>irrec</code> originall came from <code>rec</code>ursion schemes. The current version does not use recursion schemes and is based off of the Haskell <a href="https://hackage.haskell.org/package/regex-applicative">regex-applicative</a> library.</p>
 <h2><a class="anchor" aria-hidden="true" id="creating-regular-expressions"></a><a href="#creating-regular-expressions" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>creating regular expressions</h2>
-<pre><code class="hljs css language-scala"><span class="hljs-keyword">import</span> ceedubs.irrec.regex._, <span class="hljs-type">Regex</span>._
-<span class="hljs-keyword">import</span> ceedubs.irrec.parse.regex
+<pre><code class="hljs css language-scala"><span class="hljs-keyword">import</span> ceedubs.irrec.regex._, combinator._, char._
+<span class="hljs-keyword">import</span> ceedubs.irrec.parse.{regex =&gt; r}
+<span class="hljs-keyword">import</span> ceedubs.irrec.regex.<span class="hljs-type">Greediness</span>._
+<span class="hljs-keyword">import</span> cats.implicits._
 
-<span class="hljs-keyword">val</span> animal: <span class="hljs-type">Regex</span>[<span class="hljs-type">Char</span>] = regex(<span class="hljs-string">"(b|c|r|gn)at"</span>)
-<span class="hljs-keyword">val</span> phrase: <span class="hljs-type">Regex</span>[<span class="hljs-type">Char</span>] = regex(<span class="hljs-string">"[2-9] (happy|tired|feisty) "</span>) * animal * lit('s')
+<span class="hljs-keyword">sealed</span> <span class="hljs-keyword">abstract</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Mood</span></span>
+<span class="hljs-keyword">case</span> <span class="hljs-class"><span class="hljs-keyword">object</span> <span class="hljs-title">Happy</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Mood</span></span>
+<span class="hljs-keyword">case</span> <span class="hljs-class"><span class="hljs-keyword">object</span> <span class="hljs-title">Tired</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Mood</span></span>
+<span class="hljs-keyword">case</span> <span class="hljs-class"><span class="hljs-keyword">object</span> <span class="hljs-title">Feisty</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Mood</span></span>
+
+<span class="hljs-keyword">case</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Animals</span>(<span class="hljs-params">count: <span class="hljs-type">Int</span>, mood: <span class="hljs-type">Mood</span>, kind: <span class="hljs-type">String</span></span>)</span>
+
+<span class="hljs-keyword">val</span> animal: <span class="hljs-type">RegexC</span>[<span class="hljs-type">String</span>] = r(<span class="hljs-string">"(b|c|r|gn)at"</span>)
+<span class="hljs-keyword">val</span> mood: <span class="hljs-type">RegexC</span>[<span class="hljs-type">Mood</span>] = r(<span class="hljs-string">"happy"</span>).as[<span class="hljs-type">Mood</span>](<span class="hljs-type">Happy</span>) | r(<span class="hljs-string">"tired"</span>).as(<span class="hljs-type">Tired</span>) | r(<span class="hljs-string">"feisty"</span>).as(<span class="hljs-type">Feisty</span>)
+<span class="hljs-keyword">val</span> animalsR: <span class="hljs-type">RegexC</span>[<span class="hljs-type">Animals</span>] =
+  (digit &lt;* horizontalWhitespaceChar.repeat(<span class="hljs-number">1</span>, <span class="hljs-type">Some</span>(<span class="hljs-number">2</span>), <span class="hljs-type">Greedy</span>),
+  mood &lt;* horizontalWhitespaceChar.repeat(<span class="hljs-number">1</span>, <span class="hljs-type">Some</span>(<span class="hljs-number">2</span>), <span class="hljs-type">NonGreedy</span>),
+  animal &lt;* lit('s').optional
+  ).mapN((count, mood, kind) =&gt; <span class="hljs-type">Animals</span>(count, mood, kind))
 </code></pre>
-<pre><code class="hljs css language-scala">phrase.pprint
-<span class="hljs-comment">// res0: String = "[2-9]\\u0020(happy|tired|feisty)\\u0020(b|c|r|gn)ats"</span>
+<pre><code class="hljs css language-scala">animalsR.pprint
+<span class="hljs-comment">// res0: String = "[0-9][\\t\\u0020](?:[\\t\\u0020]|)(?:happy|tired|feisty)[\\t\\u0020](?:|[\\t\\u0020])(?:b|c|r|gn)at(?:s|)"</span>
 </code></pre>
-<h2><a class="anchor" aria-hidden="true" id="matching-against-a-regular-expression"></a><a href="#matching-against-a-regular-expression" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>matching against a regular expression</h2>
-<pre><code class="hljs css language-scala"><span class="hljs-keyword">val</span> matchesPhrase: <span class="hljs-type">String</span> =&gt; <span class="hljs-type">Boolean</span> = phrase.stringMatcher
+<h2><a class="anchor" aria-hidden="true" id="parsing-with-a-regular-expression"></a><a href="#parsing-with-a-regular-expression" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>parsing with a regular expression</h2>
+<pre><code class="hljs css language-scala"><span class="hljs-keyword">val</span> animals: <span class="hljs-type">ParseState</span>[<span class="hljs-type">Char</span>, <span class="hljs-type">Animals</span>] = animalsR.compile
 </code></pre>
-<pre><code class="hljs css language-scala">matchesPhrase(<span class="hljs-string">"7 feisty cats"</span>)
-<span class="hljs-comment">// res1: Boolean = true</span>
-matchesPhrase(<span class="hljs-string">"3 expensive toasters"</span>)
-<span class="hljs-comment">// res2: Boolean = false</span>
+<pre><code class="hljs css language-scala">animals.parseOnlyS(<span class="hljs-string">"1 tired bat"</span>)
+<span class="hljs-comment">// res1: Option[Animals] = Some(Animals(1, Tired, "bat"))</span>
+animals.parseOnlyS(<span class="hljs-string">"7 feisty cats"</span>)
+<span class="hljs-comment">// res2: Option[Animals] = Some(Animals(7, Feisty, "cat"))</span>
+animals.parseOnlyS(<span class="hljs-string">"3 expensive toasters"</span>)
+<span class="hljs-comment">// res3: Option[Animals] = None</span>
 </code></pre>
 <h2><a class="anchor" aria-hidden="true" id="generating-data-that-matches-a-regular-expression"></a><a href="#generating-data-that-matches-a-regular-expression" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>generating data that matches a regular expression</h2>
 <pre><code class="hljs css language-scala"><span class="hljs-keyword">import</span> ceedubs.irrec.regex.<span class="hljs-type">CharRegexGen</span>.regexMatchingStringGen
 <span class="hljs-keyword">import</span> org.scalacheck.<span class="hljs-type">Gen</span>
 <span class="hljs-keyword">import</span> org.scalacheck.rng.<span class="hljs-type">Seed</span>
 
-<span class="hljs-keyword">val</span> phraseGen: <span class="hljs-type">Gen</span>[<span class="hljs-type">String</span>] = regexMatchingStringGen(phrase)
+<span class="hljs-keyword">val</span> phraseGen: <span class="hljs-type">Gen</span>[<span class="hljs-type">String</span>] = regexMatchingStringGen(animalsR)
 </code></pre>
-<pre><code class="hljs css language-scala"><span class="hljs-type">Gen</span>.listOfN(<span class="hljs-number">3</span>, phraseGen).apply(<span class="hljs-type">Gen</span>.<span class="hljs-type">Parameters</span>.<span class="hljs-keyword">default</span>, <span class="hljs-type">Seed</span>(<span class="hljs-number">79817</span>L))
-<span class="hljs-comment">// res3: Option[List[String]] = Some(</span>
-<span class="hljs-comment">//   List("8 feisty rats", "9 happy bats", "4 tired gnats")</span>
+<pre><code class="hljs css language-scala"><span class="hljs-type">Gen</span>.listOfN(<span class="hljs-number">3</span>, phraseGen).apply(<span class="hljs-type">Gen</span>.<span class="hljs-type">Parameters</span>.<span class="hljs-keyword">default</span>, <span class="hljs-type">Seed</span>(<span class="hljs-number">79813</span>L))
+<span class="hljs-comment">// res4: Option[List[String]] = Some(</span>
+<span class="hljs-comment">//   List("0 tired \tcats", "8 tired gnats", "1  happy\t bat")</span>
 <span class="hljs-comment">// )</span>
 </code></pre>
-</span></div></article></div><div class="docs-prevnext"><a class="docs-next button" href="/irrec/docs/getting-irrec"><span>getting irrec</span><span class="arrow-next"> →</span></a></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#creating-regular-expressions">creating regular expressions</a></li><li><a href="#matching-against-a-regular-expression">matching against a regular expression</a></li><li><a href="#generating-data-that-matches-a-regular-expression">generating data that matches a regular expression</a></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/irrec/" class="nav-home"><img src="/irrec/img/irrec-logo.png" alt="irrec" width="66" height="58"/></a><div><a href="/irrec/docs/en/overview.html">Getting Started</a><a href="/irrec/docs/en/usage.html">Guide</a><a href="/irrec/docs/en/regex-explorer.html">Regular Expression Explorer</a></div><div><a href="https://github.com/ceedubs/irrec">GitHub</a><a href="/irrec/docs/en/warnings.html">more information</a></div></section><section class="copyright">Copyright © 2020 Cody Allen</section></footer></div></body></html>
+</span></div></article></div><div class="docs-prevnext"><a class="docs-next button" href="/irrec/docs/getting-irrec"><span>getting irrec</span><span class="arrow-next"> →</span></a></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#creating-regular-expressions">creating regular expressions</a></li><li><a href="#parsing-with-a-regular-expression">parsing with a regular expression</a></li><li><a href="#generating-data-that-matches-a-regular-expression">generating data that matches a regular expression</a></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/irrec/" class="nav-home"><img src="/irrec/img/irrec-logo.png" alt="irrec" width="66" height="58"/></a><div><a href="/irrec/docs/en/overview.html">Getting Started</a><a href="/irrec/docs/en/usage.html">Guide</a><a href="/irrec/docs/en/regex-explorer.html">Regular Expression Explorer</a></div><div><a href="https://github.com/ceedubs/irrec">GitHub</a><a href="/irrec/docs/en/warnings.html">more information</a></div></section><section class="copyright">Copyright © 2020 Cody Allen</section></footer></div></body></html>

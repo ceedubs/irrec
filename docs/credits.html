@@ -56,9 +56,10 @@
             });
         </script></nav></div><div class="container mainContainer docsContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 id="__docusaurus" class="postHeaderTitle">inspiration and credits</h1></header><article><div><span><p>A number of libraries and resources were useful as inspiration and reference implementations for the code in this library. A special thanks goes out to these:</p>
 <ul>
+<li><a href="https://hackage.haskell.org/package/regex-applicative">regex-applicative</a>. The current version of irrec is largely a port of regex-applicative from Haskell to Scala.</li>
 <li><a href="https://github.com/non/irreg">irreg</a> by <a href="https://github.com/non">Erik Osheim</a>. Irrec is inspired by irreg and Erik's talk <a href="https://vimeo.com/96644096">Regexes, Kleene Algebras, and Real Ultimate Power!</a></li>
 <li><a href="http://luzhuomi.blogspot.com/2012/06/extending-glushkov-nfa-with-sub.html">Extending Glushkov NFA with sub matching over Strings</a>, a blog post by Kenny Zhuo Ming Lu. The implementation of the Glushkov construction algorithm in irrec is based on the Haskell implementation in this blog post.</li>
-<li><a href="https://github.com/andyscott">Andy Scott</a> has been helpful both in creating <a href="https://github.com/andyscott/droste">droste</a> (the recursion scheme library that irrec uses), and in answering my questions about recursion schemes.</li>
+<li><a href="https://github.com/andyscott">Andy Scott</a> has been helpful both in creating <a href="https://github.com/andyscott/droste">droste</a> (the recursion scheme library that irrec previously used), and in answering my questions about recursion schemes.</li>
 <li><a href="http://matt.might.net/articles/parsing-regex-with-recursive-descent/">Parsing regular expressions with recursive descent</a>. The grammar for regular expressions that this article presents helped me to greatly simplify the regex parsing code in irrec.</li>
 <li><a href="https://scalameta.org/mdoc/">mdoc</a>'s features and documentation were incredibly useful in creating a website with compiler-checked code examples.</li>
 </ul>
