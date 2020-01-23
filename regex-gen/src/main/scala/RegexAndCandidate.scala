@@ -1,9 +1,6 @@
 package ceedubs.irrec
 package regex
 
-import ceedubs.irrec.regex.{RegexGen => RegexGenOld}
-import ceedubs.irrec.regex.{RegexMatchGen => RegexMatchGenOld}
-
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 import cats.Order
 import cats.implicits._
@@ -16,7 +13,7 @@ object RegexAndCandidate {
    * Generate a regular expression and a stream that matches the regular expression.
    */
   def genRegexAndMatch[In: Cogen: Order, Out: Arbitrary: Cogen](
-    cfg: RegexGenOld.Config[In],
+    cfg: RegexGen.Config[In],
     matchToGen: Match[In] => Gen[In]): Gen[RegexAndCandidate[In, Out]] =
     for {
       r <- RegexGen.genRegex[In, Out](cfg)
@@ -24,7 +21,7 @@ object RegexAndCandidate {
     } yield RegexAndCandidate(r, c)
 
   def genIntRegexAndMatch[Out: Arbitrary: Cogen]: Gen[RegexAndCandidate[Int, Out]] =
-    genRegexAndMatch(RegexGenOld.standardIntConfig, RegexMatchGen.intMatchingGen)
+    genRegexAndMatch(RegexGen.standardIntConfig, RegexMatchGen.intMatchingGen)
 
   // TODO universal instead of existential type for Regex[In, _]?
   /**
@@ -44,7 +41,7 @@ object RegexAndCandidate {
    * regex roughly 50% of the time.
    */
   def genRegexAndCandidate[In: Cogen: Order, Out: Arbitrary: Cogen](
-    cfg: RegexGenOld.Config[In],
+    cfg: RegexGen.Config[In],
     matchToGen: Match[In] => Gen[In]): Gen[RegexAndCandidate[In, Out]] = {
     val probablyNotMatching = for {
       r <- RegexGen.genRegex[In, Out](cfg)
@@ -54,21 +51,13 @@ object RegexAndCandidate {
     Gen.oneOf(probablyNotMatching, genRegexAndMatch[In, Out](cfg, matchToGen))
   }
 
-  implicit def arbRegexAndCandidateByte[Out: Arbitrary: Cogen]
-    : Arbitrary[RegexAndCandidate[Byte, Out]] =
+  implicit def arbRegexAndCandidate[In, Out](
+    implicit arbRegex: Arbitrary[RegexM[In, Out]],
+    candidateGen: RegexCandidates[In, Match[In]]): Arbitrary[RegexAndCandidate[In, Out]] =
     Arbitrary(
-      genRegexAndCandidate(RegexGenOld.standardByteConfig, RegexMatchGenOld.byteMatchingGen))
-
-  implicit def arbRegexAndCandidateChar[Out: Arbitrary: Cogen]
-    : Arbitrary[RegexAndCandidate[Char, Out]] =
-    Arbitrary(CharRegexGen.genRegexAndCandidate[Out])
-
-  implicit def arbRegexAndCandidateInt[Out: Arbitrary: Cogen]
-    : Arbitrary[RegexAndCandidate[Int, Out]] =
-    Arbitrary(genRegexAndCandidate(RegexGenOld.standardIntConfig, RegexMatchGenOld.intMatchingGen))
-
-  implicit def arbRegexAndCandidateLong[Out: Arbitrary: Cogen]
-    : Arbitrary[RegexAndCandidate[Long, Out]] =
-    Arbitrary(
-      genRegexAndCandidate(RegexGenOld.standardLongConfig, RegexMatchGenOld.longMatchingGen))
+      for {
+        r <- arbRegex.arbitrary
+        candidate <- candidateGen.genCandidateStream(r)
+      } yield RegexAndCandidate(r, candidate)
+    )
 }
