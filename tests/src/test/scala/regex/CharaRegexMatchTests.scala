@@ -97,4 +97,24 @@ class CharRegexMatchTests extends IrrecSuite {
       rc.parseOnlyS(c.toString) should ===(Some(c))
     }
   }
+
+  test("withMatchedS match") {
+    val r = lit('a') <* lit('b')
+    r.withMatchedS.compile.parseOnlyS("ab") should ===(Some(("ab", 'a')))
+  }
+
+  test("withMatchedS non-match") {
+    val r = lit('a') <* lit('b')
+    r.withMatchedS.compile.parseOnlyS("b") should ===(None)
+  }
+
+  test("matchedS match") {
+    val r = lit('a') <* lit('b')
+    r.matchedS.compile.parseOnlyS("ab") should ===(Some(("ab")))
+  }
+
+  test("matchedS non-match") {
+    val r = lit('a') <* lit('b')
+    r.matchedS.compile.parseOnlyS("b") should ===(None)
+  }
 }
