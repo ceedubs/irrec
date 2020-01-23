@@ -4,7 +4,7 @@ package regex
 import ceedubs.irrec.regex.DietGen.dietMatchingGen
 import ceedubs.irrec.regex.RegexMatchGen.dietMatchToGen
 
-import org.scalacheck.{Arbitrary, Cogen, Gen}
+import org.scalacheck.{Arbitrary, Cogen, Gen}, Arbitrary.arbitrary
 import cats.implicits._
 import cats.collections.{Diet, Range}
 
@@ -30,6 +30,8 @@ object CharRegexGen {
     4 -> genAlphaNumRegex[Out],
     1 -> genSupportedCharRegex[Out]
   )
+
+  val genSupportedChars: Gen[Char] = dietMatchingGen(supportedCharacters)
 
   def genSupportedRegexAndMatch[Out: Arbitrary: Cogen]: Gen[RegexAndCandidate[Char, Out]] =
     RegexAndCandidate.genRegexAndMatch(
@@ -58,4 +60,7 @@ object CharRegexGen {
 
   def regexMatchingStringGen[Out]: RegexC[Out] => Gen[String] =
     regexMatchingStringGenFromDiet(supportedCharacters)
+
+  def genRegexCandidateString[Out]: RegexC[Out] => Gen[String] =
+    r => Gen.oneOf(regexMatchingStringGenFromDiet(supportedCharacters)(r), arbitrary[String])
 }

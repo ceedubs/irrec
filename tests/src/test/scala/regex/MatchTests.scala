@@ -2,7 +2,10 @@ package ceedubs.irrec
 package regex
 
 import Match._
+import CharRegexGen._
+import RegexGen._
 
+import cats.Id
 import cats.implicits._
 import cats.collections.Diet
 import org.scalacheck.Gen
@@ -57,6 +60,27 @@ class MatchTests extends IrrecSuite {
 
       (m1 intersect m2).matches(x) should ===(false)
       (m1 intersect m2).matches(y) should ===(false)
+    }
+  }
+
+  test("traverseM identity") {
+    forAll { (rc: RegexAndCandidate[Char, Long]) =>
+      val rTraversed = Regex.traverseM[Id, Char, Match[Char], Match[Char], Long](rc.r)(identity)
+      rTraversed.compile.parseOnly(rc.candidate) should ===(rc.r.compile.parseOnly(rc.candidate))
+    }
+  }
+
+  test("<+> consistent with |") {
+    val gen = for {
+      r1 <- arbitrary[RegexC[Long]]
+      r2 <- arbitrary[RegexC[Long]]
+      rOr = r1 | r2
+      c <- genRegexCandidateString(rOr)
+    } yield (r1, r2, rOr, c)
+
+    forAll(gen) {
+      case (r1, r2, rOr, candidate) =>
+        (r1 <+> r2).compile.parseOnlyS(candidate) should ===(rOr.compile.parseOnlyS(candidate))
     }
   }
 }
