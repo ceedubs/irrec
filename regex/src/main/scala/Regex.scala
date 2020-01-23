@@ -131,9 +131,15 @@ object Regex {
       def empty[A]: Regex[In, M, A] = Fail()
       def pure[A](x: A): Regex[In, M, A] = FMap[In, M, Unit, A](Eps, _ => x)
       override def map[A, B](fa: Regex[In, M, A])(f: A => B): Regex[In, M, B] = fa.map(f)
-      // TODO override void, >*, <*, and as for performance
-      //override def void[A](fa: Regex[In,M,A]): Regex[In,M,Unit] = Void(fa)
-      // TODO override productL and productR to use Void
+      override def void[A](fa: Regex[In, M, A]): Regex[In, M, Unit] = fa match {
+        case v @ Regex.Void(_) => v
+        case r => Regex.Void(r)
+      }
+      // when a result is ignored, using `void` to delegate to an NFA is more efficient
+      override def productL[A, B](fa: Regex[In, M, A])(fb: Regex[In, M, B]): Regex[In, M, A] =
+        super.productL(fa)(void(fb))
+      override def productR[A, B](fa: Regex[In, M, A])(fb: Regex[In, M, B]): Regex[In, M, B] =
+        super.productR(void(fa))(fb)
     }
 
   def assignThreadIds[In, M, A](re: Regex[In, M, A]): Regex[In, (ThreadId, M), A] = {
