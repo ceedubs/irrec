@@ -18,7 +18,7 @@ object RegexGen {
   /**
    * Configuration for generating regular expressions.
    */
-  final class Config[A](
+  final case class Config[A](
     val genA: Gen[A],
     val genMatch: Gen[Match[A]],
     val includeZero: Boolean,

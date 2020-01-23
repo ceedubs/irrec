@@ -48,7 +48,7 @@ object CharRegexGen {
       RegexGen.Config.fromDiscreteDiet(CharacterClasses.alphaNumeric),
       dietMatchToGen[Char](CharacterClasses.alphaNumeric, dietMatchingGen(_)))
 
-  def genRegexAndCandidate[Out: Arbitrary: Cogen]: Gen[RegexAndCandidate[Char, Out]] =
+  def genCharRegexAndCandidate[Out: Arbitrary: Cogen]: Gen[RegexAndCandidate[Char, Out]] =
     RegexAndCandidate.genRegexAndCandidate(
       RegexGen.Config.fromDiscreteDiet(supportedCharacters),
       dietMatchToGen(supportedCharacters, dietMatchingGen(_)))

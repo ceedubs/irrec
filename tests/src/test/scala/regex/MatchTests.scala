@@ -4,6 +4,7 @@ package regex
 import Match._
 import CharRegexGen._
 import RegexGen._
+import RegexAndCandidate.genRegexAndCandidate
 
 import cats.Id
 import cats.implicits._
@@ -64,8 +65,10 @@ class MatchTests extends IrrecSuite {
   }
 
   test("traverseM identity") {
-    forAll { (rc: RegexAndCandidate[Char, Long]) =>
-      val rTraversed = Regex.traverseM[Id, Char, Match[Char], Match[Char], Long](rc.r)(identity)
+    val cfg = RegexGen.standardIntConfig.copy(includeZero = true, includeOne = true)
+    val gen = genRegexAndCandidate[Int, Long](cfg, RegexMatchGen.intMatchingGen)
+    forAll(gen) { rc =>
+      val rTraversed = Regex.traverseM[Id, Int, Match[Int], Match[Int], Long](rc.r)(identity)
       rTraversed.compile.parseOnly(rc.candidate) should ===(rc.r.compile.parseOnly(rc.candidate))
     }
   }
