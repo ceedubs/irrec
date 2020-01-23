@@ -159,22 +159,6 @@ object RegexGen {
     go(_)
   }
 
-  /**
-   * Create a NonEmptyList[Int] of size `entryCount` that sums to entryCount + extra. Every item in the list will be at least 1.
-   *
-   * This can be useful when you want to build a composite structure of some size and want to randomly distribute the size across `entryCount` pieces.
-   */
-  private def distributeSumNel(entryCount: Int, extra: Int): Gen[NonEmptyList[Int]] =
-    if (entryCount < 1)
-      Gen.fail
-    else {
-      Gen.listOfN(extra, Gen.choose(0, entryCount - 1)).map { indices =>
-        val sizes = Array.fill(entryCount)(1)
-        indices.foreach(i => sizes(i) += 1)
-        NonEmptyList.fromListUnsafe(sizes.toList)
-      }
-    }
-
   def genByteRegex[Out: Arbitrary: Cogen]: Gen[RegexM[Byte, Out]] = genRegex(standardByteConfig)
 
   implicit def arbByteRegex[Out: Arbitrary: Cogen]: Arbitrary[RegexM[Byte, Out]] =
@@ -228,6 +212,22 @@ object RegexGen {
       TypeWith(GenAndCogen.of[Double]),
       TypeWith(GenAndCogen.of[String])
     )
+
+    /**
+     * Create a NonEmptyList[Int] of size `entryCount` that sums to entryCount + extra. Every item in the list will be at least 1.
+     *
+     * This can be useful when you want to build a composite structure of some size and want to randomly distribute the size across `entryCount` pieces.
+     */
+    def distributeSumNel(entryCount: Int, extra: Int): Gen[NonEmptyList[Int]] =
+      if (entryCount < 1)
+        Gen.fail
+      else {
+        Gen.listOfN(extra, Gen.choose(0, entryCount - 1)).map { indices =>
+          val sizes = Array.fill(entryCount)(1)
+          indices.foreach(i => sizes(i) += 1)
+          NonEmptyList.fromListUnsafe(sizes.toList)
+        }
+      }
 
     // Scalacheck includes an implicit converstion A => Gen[A], and it can cause hard-to-spot bugs
     implicit private[irrec] def ambGenConversion1[A](a: A): Gen[A] =
