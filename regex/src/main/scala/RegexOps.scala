@@ -1,39 +1,41 @@
 package ceedubs.irrec
 package regex
 
-import cats.{Foldable, Order}
+import cats.Foldable
+import cats.data.Chain
 import java.util.regex.Pattern
-import cats.collections.Discrete
 
-final class KleeneOps[A](private val r: Kleene[A]) extends AnyVal {
-  def |(o: Kleene[A]): Kleene[A] = Regex.or(r, o)
+final class RegexOps[In, M, Out](private val r: Regex[In, M, Out]) extends AnyVal {
+  def |(o: Regex[In, M, Out]): Regex[In, M, Out] = combinator.or(r, o)
 
-  def *(o: Kleene[A]): Kleene[A] = Regex.andThen(r, o)
+  def either[Out2](o: Regex[In, M, Out2]): Regex[In, M, Either[Out, Out2]] =
+    combinator.either(r, o)
 
-  def oneOrMore: Kleene[A] = Regex.oneOrMore(r)
+  def star[Out2](g: Greediness, z: Out2)(fold: (Out2, Out) => Out2) = combinator.star(r, g, z)(fold)
 
-  def star: Kleene[A] = Regex.star(r)
+  def matcher[F[_]: Foldable]: F[In] => Boolean = Regex.matcher(r)
 
-  def count(n: Int): Kleene[A] = Regex.count(n, r)
+  def compile: ParseState[In, Out] = Regex.compile(r)
 
-  def optional: Kleene[A] = Regex.optional(r)
+  def optional: Regex[In, M, Option[Out]] = combinator.optional(r)
 
-  def repeat(minInclusive: Int, maxInclusive: Option[Int]): Kleene[A] =
-    Regex.repeat(minInclusive, maxInclusive, r)
+  def withMatched: Regex[In, M, (Chain[In], Out)] =
+    combinator.withMatched(r)
+
+  def matched: Regex[In, M, Chain[In]] = combinator.matched(r)
 }
 
-final class RegexOps[A](private val r: Regex[A]) extends AnyVal {
-  def matcher[F[_]](implicit orderingA: Ordering[A], foldableF: Foldable[F]): F[A] => Boolean =
-    Regex.matcher(r)
+final class RegexCOps[Out](private val r: RegexC[Out]) extends AnyVal {
+  def pprint: String = RegexPrettyPrinter.pprint(r)
 
-  def optimize(implicit discreteA: Discrete[A], orderA: Order[A]): Regex[A] =
-    RegexOptimization.optimizeRegex[A].apply(r)
-}
+  def withMatchedS: RegexC[(String, Out)] = char.withMatchedS(r)
 
-final class CharRegexOps(private val r: Regex[Char]) extends AnyVal {
-  def stringMatcher: String => Boolean = Regex.stringMatcher(r)
+  def matchedS: RegexC[String] = char.matchedS(r)
+
+  def stringMatcher: String => Boolean = {
+    val m = Regex.matcher(r)(IndexedSeqFoldable.instance)
+    m(_)
+  }
 
   def toPattern: Pattern = Pattern.compile(pprint, Pattern.DOTALL)
-
-  def pprint: String = RegexPrettyPrinter.pprintCharRegex(r)
 }

@@ -22,3 +22,7 @@ private[irrec] trait IndexedSeqFoldable[F[x] <: IndexedSeq[x]] extends Foldable[
     }
   }
 }
+
+private[irrec] object IndexedSeqFoldable {
+  val instance: Foldable[IndexedSeq] = new IndexedSeqFoldable[IndexedSeq] {}
+}

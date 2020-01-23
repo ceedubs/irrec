@@ -2,7 +2,7 @@ package ceedubs.irrec
 package bench
 
 import cats.implicits._
-import regex._, Regex._
+import regex._, combinator._
 import java.util.regex.Pattern
 import org.openjdk.jmh.annotations.{Benchmark, Scope, State}
 
@@ -12,10 +12,8 @@ class AndThenAndOrRegexBenchmarks {
   val nonMatchingString: String = "abcdefg"
   val longNonMatchingString: String = "abcdefg" * 10
   val java: Pattern = Pattern.compile("ab(c|d)efg")
-  val irrec: Regex[Char] = seq("ab") * oneOf('c', 'd') * seq("efg")
+  val irrec: RegexC[Unit] = seq("ab").void <* oneOf('c', 'd') <* seq("efg")
   val irrecMatcher: String => Boolean = irrec.stringMatcher
-  val irrecOptimizedMatcher: String => Boolean =
-    irrec.optimize.stringMatcher
 
   @Benchmark
   def javaMatch: Boolean =
@@ -26,10 +24,6 @@ class AndThenAndOrRegexBenchmarks {
     irrecMatcher(matchingString)
 
   @Benchmark
-  def irrecOptimizedMatch: Boolean =
-    irrecOptimizedMatcher(matchingString)
-
-  @Benchmark
   def javaNonMatch: Boolean =
     java.matcher(nonMatchingString).matches
 
@@ -38,18 +32,10 @@ class AndThenAndOrRegexBenchmarks {
     irrecMatcher(nonMatchingString)
 
   @Benchmark
-  def irrecOptimizedNonMatch: Boolean =
-    irrecOptimizedMatcher(nonMatchingString)
-
-  @Benchmark
   def javaLongNonMatch: Boolean =
     java.matcher(longNonMatchingString).matches
 
   @Benchmark
   def irrecLongNonMatch: Boolean =
     irrecMatcher(longNonMatchingString)
-
-  @Benchmark
-  def irrecOptimizedLongNonMatch: Boolean =
-    irrecOptimizedMatcher(longNonMatchingString)
 }

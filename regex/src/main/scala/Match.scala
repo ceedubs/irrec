@@ -58,16 +58,4 @@ object Match {
   def lit[A](a: A): Match[A] = Literal(a)
 
   def wildcard[A]: Match[A] = Wildcard()
-
-  // keeping this private for now because we might want to add more match types
-  // in the future and lose the ability to do this.
-  private[irrec] def unionMatches[A: Discrete: Order](x: Match[A], y: Match[A]): Match[A] =
-    (x, y) match {
-      case (w @ Wildcard(), _) => w
-      case (_, w @ Wildcard()) => w
-      case (l @ Literal(x), Literal(y)) => if (x === y) l else MatchSet.allow(Diet.one(x) + y)
-      case (Literal(x), m: MatchSet[A]) => m.union(MatchSet.allow(Diet.one(x)))
-      case (m: MatchSet[A], Literal(x)) => m.union(MatchSet.allow(Diet.one(x)))
-      case (m1: MatchSet[A], m2: MatchSet[A]) => m1 union m2
-    }
 }

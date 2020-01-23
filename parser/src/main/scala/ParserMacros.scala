@@ -1,13 +1,13 @@
 package ceedubs.irrec
 package parse
 
-import ceedubs.irrec.regex.Regex
+import ceedubs.irrec.regex.RegexC
 
 import scala.reflect.macros.blackbox.Context
 import fastparse._
 
 object ParserMacros {
-  def parseLiteralImpl(c: Context)(regex: c.Expr[String]): c.Expr[Regex[Char]] = {
+  def parseLiteralImpl(c: Context)(regex: c.Expr[String]): c.Expr[RegexC[String]] = {
     import c.universe._
     regex.tree match {
       case Literal(Constant(s: String)) =>

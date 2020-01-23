@@ -1,8 +1,10 @@
 package ceedubs.irrec
 package bench
 
-import regex._, Regex._
+import regex._, combinator._
+import Greediness.Greedy
 
+import cats.data.Chain
 import cats.implicits._
 import java.util.regex.Pattern
 import org.openjdk.jmh.annotations.{Benchmark, Scope, State}
@@ -13,10 +15,8 @@ class RepeatCountRegexBenchmarks {
   val nonMatchingString: String = ("a" * 9) + ("b" * 9)
   val longNonMatchingString: String = matchingString + ("c" * 20)
   val java: Pattern = Pattern.compile("(a|b){20,25}")
-  val irrec: Regex[Char] = oneOf('a', 'b').repeat(20, Some(25))
+  val irrec: RegexC[Chain[Char]] = oneOf('a', 'b').repeat(20, Some(25), Greedy)
   val irrecMatcher: String => Boolean = irrec.stringMatcher
-  val irrecOptimizedMatcher: String => Boolean =
-    irrec.optimize.stringMatcher
 
   @Benchmark
   def javaMatch: Boolean =
@@ -27,10 +27,6 @@ class RepeatCountRegexBenchmarks {
     irrecMatcher(matchingString)
 
   @Benchmark
-  def irrecOptimizedMatch: Boolean =
-    irrecOptimizedMatcher(matchingString)
-
-  @Benchmark
   def javaNonMatch: Boolean =
     java.matcher(nonMatchingString).matches
 
@@ -39,18 +35,10 @@ class RepeatCountRegexBenchmarks {
     irrecMatcher(nonMatchingString)
 
   @Benchmark
-  def irrecOptimizedNonMatch: Boolean =
-    irrecOptimizedMatcher(nonMatchingString)
-
-  @Benchmark
   def javaLongNonMatch: Boolean =
     java.matcher(longNonMatchingString).matches
 
   @Benchmark
   def irrecLongNonMatch: Boolean =
     irrecMatcher(longNonMatchingString)
-
-  @Benchmark
-  def irrecOptimizedLongNonMatch: Boolean =
-    irrecOptimizedMatcher(longNonMatchingString)
 }
