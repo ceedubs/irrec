@@ -1,270 +1,237 @@
 package ceedubs.irrec
 package regex
 
-import cats.{Foldable, Order, Reducible}
-import cats.collections.{Diet, Discrete, Range}
+import cats.{~>, Alternative, Applicative, Foldable}
+import cats.data.{Chain, NonEmptyChain, NonEmptyList, State}
+import cats.evidence.Is
 import cats.implicits._
-import higherkindness.droste.data.Coattr
-import cats.data.NonEmptyList
-import ceedubs.irrec.regex.Match.MatchSet
 
-// TODO ceedubs work around that scala bug where a companion object and type alias have the same name
+/**
+ * A generalized representation of a regular expression.
+ *
+ * This code was ported (with minor modifications) from
+ * https://hackage.haskell.org/package/regex-applicative
+ *
+ * @tparam In the type of each element in the input. For a traditional regular expression, this
+ * would be `Char`.
+ *
+ * @tparam M metadata associated with each [[ceedubs.irrec.regex.Regex.Elem]] instance. This could
+ * be `String` to attach a name to elems. More commonly, it is something like
+ * [[ceedubs.irrec.regex.Match]] with a `Char` type parameter.
+ *
+ * @tparam Out the output produced by a regular expression if the input matches.
+ *
+ * Additional useful methods are added via syntax enrichment with [[ceedubs.irrec.regex.RegexOps]]
+ * and [[ceedubs.irrec.regex.RegexCOps]].
+ */
+sealed abstract class Regex[-In, +M, Out] extends Serializable {
+  def chain(greediness: Greediness): Regex[In, M, Chain[Out]] =
+    combinator.chain(this, greediness)
+
+  def many: Regex[In, M, Chain[Out]] = combinator.many(this)
+
+  def few: Regex[In, M, Chain[Out]] = combinator.few(this)
+
+  def oneOrMore(greediness: Greediness): Regex[In, M, NonEmptyChain[Out]] =
+    combinator.oneOrMore(this, greediness)
+
+  def count(n: Int): Regex[In, M, Chain[Out]] = combinator.count(n, this)
+
+  def repeat(
+    minInclusive: Int,
+    maxInclusive: Option[Int],
+    greediness: Greediness): Regex[In, M, Chain[Out]] =
+    combinator.repeat(this, minInclusive, maxInclusive, greediness)
+
+  def map[Out2](f: Out => Out2): Regex[In, M, Out2] = combinator.map(this)(f)
+}
+
 object Regex {
-  def matching[A](m: Match[A]): Regex[A] = Coattr.pure(m)
-
-  /** alias for [[literal]] */
-  def lit[A](value: A): Regex[A] = literal(value)
-
-  def literal[A](value: A): Regex[A] = matching(Match.Literal(value))
-
-  def range[A](l: A, r: A): Regex[A] = inSet(Diet.fromRange(Range(l, r)))
-
-  def wildcard[A]: Regex[A] = matching(Match.Wildcard())
-
-  def or[A](l: Kleene[A], r: Kleene[A]): Kleene[A] = Coattr.roll(KleeneF.Plus(l, r))
-
-  def andThen[A](l: Kleene[A], r: Kleene[A]): Kleene[A] = Coattr.roll(KleeneF.Times(l, r))
-
-  def inSet[A](allowed: Diet[A]): Regex[A] = matching(MatchSet.allow(allowed))
-
-  def notInSet[A](forbidden: Diet[A]): Regex[A] = matching(MatchSet.forbid(forbidden))
-
-  def oneOf[A](a1: A, as: A*): Regex[A] = as.foldLeft(lit(a1))((acc, a) => or(acc, lit(a)))
-
-  def oneOfR[A](r1: Kleene[A], rs: Kleene[A]*): Kleene[A] = rs.foldLeft(r1)((acc, r) => or(acc, r))
-
-  def oneOfF[F[_], A](values: F[A])(implicit reducibleF: Reducible[F]): Regex[A] =
-    reducibleF.reduceLeftTo(values)(lit(_))((acc, a) => or(acc, literal(a)))
-
-  def oneOfFR[F[_], A](values: F[Kleene[A]])(implicit reducibleF: Reducible[F]): Kleene[A] =
-    reducibleF.reduceLeft(values)((acc, r) => or(acc, r))
-
-  def noneOf[A](a1: A, as: A*)(implicit discreteA: Discrete[A], orderA: Order[A]): Regex[A] =
-    notInSet(NonEmptyList.of(a1, as: _*).foldMap(Diet.one(_)))
-
-  /**
-   * AKA `+` in regular expressions, but I avoided confusion with `Plus` corresponding to "or".
-   */
-  def oneOrMore[A](value: Kleene[A]): Kleene[A] = andThen(value, star(value))
-
-  def star[A](value: Kleene[A]): Kleene[A] = Coattr.roll(KleeneF.Star(value))
-
-  def allOfFR[F[_], A](values: F[Kleene[A]])(implicit foldableF: Foldable[F]): Kleene[A] =
-    foldableF.foldLeft(values, empty[A])((acc, a) => andThen(acc, a))
-
-  def allOfF[F[_], A](values: F[A])(implicit foldableF: Foldable[F]): Regex[A] =
-    foldableF.foldLeft(values, empty[Match[A]])((acc, a) => andThen(acc, literal(a)))
-
-  def allOfR[A](values: Kleene[A]*): Kleene[A] =
-    allOfFR(values.toList)
-
-  def allOf[A](values: A*): Regex[A] =
-    allOfF(values.toList)
-
-  def seq[A](values: Seq[A]): Regex[A] =
-    values.foldLeft(empty[Match[A]])((acc, a) => andThen(acc, literal(a)))
-
-  def repeat[A](minInclusive: Int, maxInclusive: Option[Int], r: Kleene[A]): Kleene[A] =
-    count(minInclusive, r) * maxInclusive.fold(star(r))(max =>
-      (1 to (max - minInclusive)).foldLeft(empty[A])((acc, i) => or(acc, r.count(i))))
-
-  def optional[A](r: Kleene[A]): Kleene[A] =
-    r | empty
-
-  /**
-   * A match on the empty string (this should always succeed and consume no input).
-   */
-  def empty[A]: Kleene[A] = Coattr.roll[KleeneF, A](KleeneF.One)
-
-  /**
-   * A regular expression that will never successfully match.
-   *
-   * This is part of all Kleene algebras but may not be particularly useful in the context of
-   * string/character regexes.
-   */
-  def impossible[A]: Kleene[A] = Coattr.roll[KleeneF, A](KleeneF.Zero)
-
-  def count[A](n: Int, r: Kleene[A]): Kleene[A] =
-    (1 to n).foldLeft(empty[A])((acc, _) => andThen(acc, r))
-
-  /**
-   * Matches a single digit character ('0', '3', '9', etc). Could be represented in a regular
-   * expression as `\d` or `[0-9]`.
-   */
-  val digit: Regex[Char] = inSet(CharacterClasses.digit)
-
-  /**
-   * Opposite of [[digit]]. Could be represented in a regular expression as
-   * `\D`.
-   */
-  val nonDigit: Regex[Char] =
-    notInSet(CharacterClasses.digit)
-
-  /**
-   * Matches a single lowercase character ('a', 'z', etc). Could be represented in a regular
-   * expression as `[a-z]` or `[:lower:]`.
-   */
-  val lowerAlphaChar: Regex[Char] = inSet(CharacterClasses.lowerAlpha)
-
-  /**
-   * Opposite of [[lowerAlphaChar]]. Could be represented in a regular expression as
-   * `[^a-z]` or `[^[:lower:]]`.
-   */
-  val nonLowerAlphaChar: Regex[Char] = notInSet(CharacterClasses.lowerAlpha)
-
-  /**
-   * Matches a single uppercase character ('a', 'z', etc). Could be represented in a regular
-   * expression as `[a-z]` or `[:upper:]`.
-   */
-  val upperAlphaChar: Regex[Char] = inSet(CharacterClasses.upperAlpha)
-
-  /**
-   * Opposite of [[upperAlphaChar]]. Could be represented in a regular expression as
-   * `[^a-z]` or `[^[:upper:]]`.
-   */
-  val nonUpperAlphaChar: Regex[Char] = notInSet(CharacterClasses.upperAlpha)
-
-  /**
-   * Matches a single alphabetic character ('a', 'A', etc). Could be represented in a regular
-   * expression as `[:alpha:]`.
-   */
-  val alphaChar: Regex[Char] = inSet(CharacterClasses.alpha)
-
-  /**
-   * Opposite of [[alphaChar]]. Could be represented in a regular expression as
-   * `[^[:alalpha:]]`.
-   */
-  val nonAlphaChar: Regex[Char] = notInSet(CharacterClasses.alpha)
-
-  /**
-   * Matches a single alphanumeric character ('0', 'a', 'A', etc). Could be represented in a regular
-   * expression as `[:alnum:]`.
-   */
-  val alphaNumericChar: Regex[Char] = inSet(CharacterClasses.alphaNumeric)
-
-  /**
-   * Opposite of [[alphaNumericChar]]. Could be represented in a regular expression as
-   * `[^[:alnum:]]`.
-   */
-  val nonAlphaNumericChar: Regex[Char] = notInSet(CharacterClasses.alphaNumeric)
-
-  /**
-   * Matches a single hexadecimal digit ('0', '1', 'A', 'F', 'a', 'f', etc). Could be represented in
-   * a regular expression as `[:xdigit:]`.
-   */
-  val hexDigitChar: Regex[Char] = inSet(CharacterClasses.hexDigit)
-
-  /**
-   * Opposite of [[hexDigitChar]]. Could be represented in a regular expression as
-   * `[^[:alnum:]]`.
-   */
-  val nonHexDigitChar: Regex[Char] = notInSet(CharacterClasses.hexDigit)
-
-  /**
-   * Matches a single "word" character ('A', 'a', '_', etc). Could be represented in a regular
-   * expression as `\w`.
-   */
-  val wordChar: Regex[Char] = inSet(CharacterClasses.wordChar)
-
-  /**
-   * Opposite of [[wordChar]]. Could be represented in a regular expression as
-   * `\W`.
-   */
-  val nonWordChar: Regex[Char] = notInSet(CharacterClasses.wordChar)
-
-  /**
-   * A single horizontal whitespace character `[\t ]`. Could be represented in a regular expression
-   * as `\h`.
-   */
-  val horizontalWhitespaceChar: Regex[Char] = inSet(CharacterClasses.horizontalWhitespaceChar)
-
-  /**
-   * Opposite of [[horizontalWhitespaceChar]]; this matches on any character that is not a tab
-   * or a space. Could be represented in a regular expression as `\H`.
-   */
-  val nonHorizontalWhitespaceChar: Regex[Char] = notInSet(CharacterClasses.horizontalWhitespaceChar)
-
-  /**
-   * A single whitespace character `[\t\n\f\r ]`. Could be represented in a regular expression as
-   * `\s`.
-   */
-  val whitespaceChar: Regex[Char] = inSet(CharacterClasses.whitespaceChar)
-
-  /**
-   * Opposite of [[whitespaceChar]]. Could be represented in a regular expression as
-   * `\S`.
-   */
-  val nonWhitespaceChar: Regex[Char] = notInSet(CharacterClasses.whitespaceChar)
-
-  /**
-   * A single ASCII character `[ -~]`. Could be represented in a regular expression as
-   * `[:ascii:]`.
-   */
-  val asciiChar: Regex[Char] = inSet(CharacterClasses.ascii)
-
-  /**
-   * Opposite of [[asciiChar]]. Could be represented in a regular expression as
-   * `[^[:ascii:]]`.
-   */
-  val nonAsciiChar: Regex[Char] = notInSet(CharacterClasses.ascii)
-
-  /**
-   * A single control character `[\x00-\x1F\x7F]`. Could be represented in a regular expression as
-   * `[:cntrl:]`.
-   */
-  val controlChar: Regex[Char] = inSet(CharacterClasses.controlChar)
-
-  /**
-   * Opposite of [[controlChar]]. Could be represented in a regular expression as
-   * `[^[:cntrl:]]`.
-   */
-  val nonControlChar: Regex[Char] = notInSet(CharacterClasses.controlChar)
-
-  /**
-   * A single visible (graphical) character `[\x21-\x7E]`. Could be represented in a regular
-   * expression as `[:graph:]`.
-   */
-  val graphChar: Regex[Char] = inSet(CharacterClasses.graphChar)
-
-  /**
-   * Opposite of [[graphChar]]. Could be represented in a regular expression as `[^[:graph:]]`.
-   */
-  val nonGraphChar: Regex[Char] = notInSet(CharacterClasses.graphChar)
-
-  /**
-   * A single printable character (visible character or space). Could be represented in a regular
-   * expression as `[:print:]` or `\x20-\x7E`.
-   */
-  val printableChar: Regex[Char] = inSet(CharacterClasses.printableChar)
-
-  /**
-   * Opposite of [[printableChar]]. Could be represented in a regular expression as `[^[:print:]]`.
-   */
-  val nonPrintableChar: Regex[Char] = notInSet(CharacterClasses.printableChar)
-
-  /**
-   * A single punctuation character (`;`, `!`, etc).. Could be represented in a regular expression
-   * as `[:punct:]`.
-   */
-  val punctuationChar: Regex[Char] = inSet(CharacterClasses.punctuationChar)
-
-  /**
-   * Opposite of [[punctuationChar]]. Could be represented in a regular expression as
-   * `[^[:punct:]]`.
-   */
-  val nonPunctuationChar: Regex[Char] = notInSet(CharacterClasses.punctuationChar)
-
-  def matcher[F[_], A](
-    r: Regex[A])(implicit orderingA: Ordering[A], foldableF: Foldable[F]): F[A] => Boolean = {
-    implicit val orderA: Order[A] = Order.fromOrdering(orderingA)
-    NFA.runNFA[F, Int, Match[A], A](Glushkov.kleeneToNFA(r), _.matches(_))
+  case object Eps extends Regex[Any, Nothing, Unit]
+  final case class Fail[A]() extends Regex[Any, Nothing, A]
+  // TODO should this actually have both? Instead could just rely on doing a `map` and changing `M`.
+  // But that assumes that the conversion will be the same for all M
+  // Also that's probably going to mess with type inference
+  abstract class Elem[-In, +M, Out] extends Regex[In, M, Out] {
+    def metadata: M
+    def apply(in: In): Option[Out]
   }
 
-  implicit private val indexedSeqFoldable: Foldable[IndexedSeq] =
-    new IndexedSeqFoldable[IndexedSeq] {}
-
-  def stringMatcher(r: Regex[Char]): String => Boolean = {
-    val matcher = r.matcher[IndexedSeq]
-    s => matcher(s)
+  object Elem {
+    def apply[In, M, Out](m: M, f: In => Option[Out]): Elem[In, M, Out] = new Elem[In, M, Out] {
+      def metadata: M = m
+      def apply(in: In): Option[Out] = f(in)
+    }
   }
+
+  final case class AndThen[-In, +M, I, Out](l: Regex[In, M, I => Out], r: Regex[In, M, I])
+      extends Regex[In, M, Out] {
+    type Init = I
+  }
+  // TODO use a lazy structure like NonEmptyStream?
+  final case class Or[-In, +M, Out](alternatives: NonEmptyList[Regex[In, M, Out]])
+      extends Regex[In, M, Out]
+
+  final case class FMap[-In, +M, I, Out](r: Regex[In, M, I], f: I => Out)
+      extends Regex[In, M, Out] {
+    type Init = I
+  }
+
+  final case class Star[-In, +M, I, Out](
+    r: Regex[In, M, I],
+    greediness: Greediness,
+    z: Out,
+    fold: (Out, I) => Out)
+      extends Regex[In, M, Out] {
+    type Init = I
+  }
+  // TODO efficiently handle with NFA
+  final case class Void[-In, +M, I](r: Regex[In, M, I]) extends Regex[In, M, Unit] {
+    type Init = I
+  }
+
+  // TODO document
+  def traverseM[F[_], In, M, M2, Out](re: Regex[In, M, Out])(f: M => F[M2])(
+    implicit F: Applicative[F]): F[Regex[In, M2, Out]] = re match {
+    case e: Elem[In, M, Out] => f(e.metadata).map(Elem(_, e.apply))
+    case Eps => F.pure(Eps)
+    case x @ Fail() => F.pure(x)
+    case Star(r, g, z, fold) => traverseM(r)(f).map(Star(_, g, z, fold))
+    case FMap(r, g) => traverseM(r)(f).map(FMap(_, g))
+    case Or(alternatives) => alternatives.traverse(traverseM(_)(f)).map(Or(_))
+    case AndThen(l, r) => traverseM(l)(f).map2(traverseM(r)(f))(AndThen(_, _))
+    case v @ Void(r) => traverseM[F, In, M, M2, v.Init](r)(f).map(Void(_))
+  }
+
+  def fold[In, M, Out, R](
+    eps: Is[Unit, Out] => R,
+    fail: () => R,
+    elem: (M, In => Option[Out]) => R,
+    andThen: λ[i => (Regex[In, M, i => Out], Regex[In, M, i])] ~> λ[a => R],
+    star: λ[i => (Regex[In, M, i], Greediness, Out, (Out, i) => Out)] ~> λ[a => R],
+    mapped: λ[a => (Regex[In, M, a], a => Out)] ~> λ[a => R],
+    or: NonEmptyList[Regex[In, M, Out]] => R,
+    void: Is[Unit, Out] => Regex[In, M, ?] ~> λ[a => R]
+  )(r: Regex[In, M, Out]): R = r match {
+    case AndThen(l, r) => andThen((l, r))
+    case Or(alternatives) => or(alternatives)
+    case e: Elem[In, M, Out] => elem(e.metadata, e.apply)
+    case Star(r, g, z, f) => star((r, g, z, f))
+    case FMap(r, f) => mapped((r, f))
+    case Eps => eps(Is.refl[Unit])
+    case Fail() => fail()
+    case Void(r) => void(Is.refl[Unit])(r)
+  }
+
+  // TODO this will probably get created a lot. Reuse a singleton instance?
+  implicit def alternativeRegex[In, M]: Alternative[Regex[In, M, ?]] =
+    new Alternative[Regex[In, M, ?]] {
+      def ap[A, B](ff: Regex[In, M, A => B])(fa: Regex[In, M, A]): Regex[In, M, B] = AndThen(ff, fa)
+      def combineK[A](x: Regex[In, M, A], y: Regex[In, M, A]): Regex[In, M, A] = x | y
+      def empty[A]: Regex[In, M, A] = Fail()
+      def pure[A](x: A): Regex[In, M, A] = FMap[In, M, Unit, A](Eps, _ => x)
+      override def map[A, B](fa: Regex[In, M, A])(f: A => B): Regex[In, M, B] = fa.map(f)
+      override def void[A](fa: Regex[In, M, A]): Regex[In, M, Unit] = fa match {
+        case v @ Regex.Void(_) => v
+        case r => Regex.Void(r)
+      }
+      // when a result is ignored, using `void` to delegate to an NFA is more efficient
+      override def productL[A, B](fa: Regex[In, M, A])(fb: Regex[In, M, B]): Regex[In, M, A] =
+        super.productL(fa)(void(fb))
+      override def productR[A, B](fa: Regex[In, M, A])(fb: Regex[In, M, B]): Regex[In, M, B] =
+        super.productR(void(fa))(fb)
+    }
+
+  def assignThreadIds[In, M, A](re: Regex[In, M, A]): Regex[In, (ThreadId, M), A] = {
+    val freshId: State[ThreadId, ThreadId] = State(id => (ThreadId(id.asInt + 1), id))
+    traverseM(re)(m => freshId.map(id => (id, m))).runA(ThreadId(0)).value
+  }
+
+  // TODO could change this to return a natural transformation
+  // TODO make private or something?
+  // TODO Stream is deprecated in 2.13, right?
+  // TODO use Cont/ContT?
+  // TODO return a custom type?
+  def compileCont[In, M, A, R](
+    re: Regex[In, (ThreadId, M), A]): Cont[A => Stream[Thread[In, R]]] => Stream[Thread[In, R]] = {
+    type ContOut = Cont[A => Stream[Thread[In, R]]] => Stream[Thread[In, R]]
+    Regex.fold[In, (ThreadId, M), A, ContOut](
+      eps = ev => _.empty(ev.coerce(())),
+      fail = () => _ => Stream.empty,
+      elem = (m, p) =>
+        cont =>
+          Thread
+            .Cont[In, R](m._1, in => p(in).fold(Stream.empty[Thread[In, R]])(cont.nonEmpty(_))) #:: Stream.empty,
+      andThen = new (λ[i => (Regex[In, (ThreadId, M), i => A], Regex[In, (ThreadId, M), i])] ~> λ[
+        a => ContOut]) {
+        def apply[i](
+          t: (Regex[In, (ThreadId, M), i => A], Regex[In, (ThreadId, M), i])): ContOut = {
+          val lc = compileCont[In, M, i => A, R](t._1)
+          val rc = compileCont[In, M, i, R](t._2)
+          _ match {
+            case Cont.Single(f) => lc(Cont.Single(lVal => rc(Cont.Single(f compose lVal))))
+            case Cont.Choice(whenEmpty, whenNonEmpty) =>
+              lc(
+                Cont.Choice(
+                  whenEmpty = lVal =>
+                    rc(Cont.Choice(whenEmpty compose lVal, whenNonEmpty compose lVal)),
+                  whenNonEmpty = lVal => rc(Cont.Single(whenNonEmpty compose lVal))
+                ))
+          }
+        }
+      },
+      star =
+        new (λ[i => (Regex[In, (ThreadId, M), i], Greediness, A, (A, i) => A)] ~> λ[a => ContOut]) {
+          def apply[i](t: (Regex[In, (ThreadId, M), i], Greediness, A, (A, i) => A)): ContOut = {
+            val (r, g, z, f) = t
+            val rc = compileCont[In, M, i, R](r)
+            def threads(z: A, cont: Cont[A => Stream[Thread[In, R]]]): Stream[Thread[In, R]] = {
+              def stop = cont.empty(z)
+              // TODO think more about laziness
+              def go =
+                rc(Cont.Choice(whenEmpty = _ => Stream.empty, whenNonEmpty = { v =>
+                  threads(f(z, v), Cont.Single(cont.nonEmpty))
+                }))
+              g match {
+                case Greediness.Greedy => go #::: stop
+                case Greediness.NonGreedy => stop #::: go
+              }
+            }
+            threads(z, _)
+          }
+        },
+      mapped = new (λ[a => (Regex[In, (ThreadId, M), a], a => A)] ~> λ[a => ContOut]) {
+        def apply[i](t: (Regex[In, (ThreadId, M), i], i => A)): ContOut = {
+          val rc = compileCont[In, M, i, R](t._1)
+          cont => rc(cont.map(_ compose t._2))
+        }
+      },
+      or = alternatives => {
+        val alternativesC = alternatives.map(compileCont[In, M, A, R](_)).toList.toStream
+        cont => alternativesC.flatMap(_.apply(cont))
+      },
+      void = ev =>
+        λ[Regex[In, (ThreadId, M), ?] ~> λ[a => ContOut]](r =>
+          compileCont(r.map(_ => ev.coerce(()))))
+    )(re)
+  }
+
+  def compile[In, M, Out](r: Regex[In, M, Out]): ParseState[In, Out] = {
+    val threads =
+      Regex
+        .compileCont(assignThreadIds(r))
+        .apply(Cont.Single((out: Out) => Stream(Thread.Accept[In, Out](out))))
+    ParseState.fromThreads(threads)
+  }
+
+  // TODO optimize
+  // TODO naming/documentation
+  def matcher[F[_]: Foldable, In, M, Out](r: Regex[In, M, Out]): F[In] => Boolean = {
+    val rc = r.void.compile
+    fin => rc.parseOnly(fin).isDefined
+  }
+
+  implicit def toRegexCOps[Out](r: Regex[Char, Match[Char], Out]): RegexCOps[Out] = new RegexCOps(r)
+
+  implicit def toRegexOps[In, M, Out](r: Regex[In, M, Out]): RegexOps[In, M, Out] = new RegexOps(r)
 }

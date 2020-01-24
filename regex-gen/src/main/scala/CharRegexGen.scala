@@ -1,58 +1,66 @@
 package ceedubs.irrec
 package regex
 
-import DietGen.dietMatchingGen
+import ceedubs.irrec.regex.DietGen.dietMatchingGen
+import ceedubs.irrec.regex.RegexMatchGen.dietMatchToGen
 
+import org.scalacheck.{Arbitrary, Cogen, Gen}, Arbitrary.arbitrary
 import cats.implicits._
-import org.scalacheck.{Arbitrary, Gen}
 import cats.collections.{Diet, Range}
 
-/**
- * This providex support for generation of `Char` regular expressions.
- *
- * Parts of Unicode are a bit weird and probably don't make much sense inside of regular
- * expressions. So for now at least we avoid the most fiddly of bits.
- */
 object CharRegexGen {
   val supportedCharacters: Diet[Char] =
     Diet.fromRange(Range('\u0000', '\uD7FF')).addRange(Range('\uF900', '\uFFFD'))
 
-  def regexMatchingStringGenFromDiet(available: Diet[Char]): Regex[Char] => Gen[String] = {
-    val streamGen = RegexMatchGen.dietRegexMatchingStreamGen(available)
-    r => streamGen(r).map(_.mkString)
-  }
-
-  val regexMatchingStringGen: Regex[Char] => Gen[String] =
-    regexMatchingStringGenFromDiet(supportedCharacters)
-
-  val standardCharRegexGenConfig: RegexGen.Config[Char] =
+  val supportedCharRegexGenConfig: RegexGen.Config[Char] =
     RegexGen.Config
       .fromDiscreteDiet(supportedCharacters)
 
-  val genStandardRegexChar: Gen[Regex[Char]] = RegexGen.genRegex(standardCharRegexGenConfig)
+  def genSupportedCharRegex[Out: Arbitrary: Cogen]: Gen[RegexC[Out]] =
+    RegexGen.genRegex[Char, Out](supportedCharRegexGenConfig)
 
-  val genAlphaNumCharRegex: Gen[Regex[Char]] =
-    RegexGen.genRegex(RegexGen.Config.fromDiscreteDiet(CharacterClasses.alphaNumeric))
+  def genAlphaNumRegex[Out: Arbitrary: Cogen]: Gen[RegexC[Out]] =
+    RegexGen.genRegex[Char, Out](RegexGen.Config.fromDiscreteDiet(CharacterClasses.alphaNumeric))
 
-  val genAlphaNumCharRegexAndMatch: Gen[RegexAndCandidate[Char]] =
+  def genAsciiRegex[Out: Arbitrary: Cogen]: Gen[RegexC[Out]] =
+    RegexGen.genRegex[Char, Out](RegexGen.Config.fromDiscreteDiet(CharacterClasses.ascii))
+
+  def genStandardCharRegex[Out: Arbitrary: Cogen]: Gen[RegexC[Out]] = Gen.frequency(
+    5 -> genAsciiRegex[Out],
+    4 -> genAlphaNumRegex[Out],
+    1 -> genSupportedCharRegex[Out]
+  )
+
+  val genSupportedChars: Gen[Char] = dietMatchingGen(supportedCharacters)
+
+  def genSupportedRegexAndMatch[Out: Arbitrary: Cogen]: Gen[RegexAndCandidate[Char, Out]] =
+    RegexAndCandidate.genRegexAndMatch(
+      RegexGen.Config.fromDiscreteDiet(supportedCharacters),
+      dietMatchToGen[Char](supportedCharacters, dietMatchingGen(_)))
+
+  def genAlphaNumRegexAndMatch[Out: Arbitrary: Cogen]: Gen[RegexAndCandidate[Char, Out]] =
     RegexAndCandidate.genRegexAndMatch(
       RegexGen.Config.fromDiscreteDiet(CharacterClasses.alphaNumeric),
-      RegexMatchGen.dietMatchToGen[Char](CharacterClasses.alphaNumeric, dietMatchingGen(_)))
+      dietMatchToGen[Char](CharacterClasses.alphaNumeric, dietMatchingGen(_)))
 
-  val genAlphaNumCharRegexAndCandidate: Gen[RegexAndCandidate[Char]] =
+  def genAlphaNumRegexAndCandidate[Out: Arbitrary: Cogen]: Gen[RegexAndCandidate[Char, Out]] =
     RegexAndCandidate.genRegexAndCandidate(
       RegexGen.Config.fromDiscreteDiet(CharacterClasses.alphaNumeric),
-      RegexMatchGen.dietMatchToGen[Char](CharacterClasses.alphaNumeric, dietMatchingGen(_)))
+      dietMatchToGen[Char](CharacterClasses.alphaNumeric, dietMatchingGen(_)))
 
-  val genCharRegexAndMatch: Gen[RegexAndCandidate[Char]] =
-    RegexAndCandidate.genRegexAndMatch(
-      standardCharRegexGenConfig,
-      RegexMatchGen.dietMatchToGen[Char](supportedCharacters, dietMatchingGen(_)))
-
-  val genCharRegexAndCandidate: Gen[RegexAndCandidate[Char]] =
+  def genCharRegexAndCandidate[Out: Arbitrary: Cogen]: Gen[RegexAndCandidate[Char, Out]] =
     RegexAndCandidate.genRegexAndCandidate(
       RegexGen.Config.fromDiscreteDiet(supportedCharacters),
-      RegexMatchGen.dietMatchToGen(supportedCharacters, dietMatchingGen(_)))
+      dietMatchToGen(supportedCharacters, dietMatchingGen(_)))
 
-  implicit val arbCharRegex: Arbitrary[Regex[Char]] = Arbitrary(genStandardRegexChar)
+  def regexMatchingStringGenFromDiet[Out](available: Diet[Char]): RegexC[Out] => Gen[String] = {
+    val streamGen = RegexMatchGen.dietRegexMatchingStreamGen[Char, Out](available)
+    r => streamGen(r).map(_.mkString)
+  }
+
+  def regexMatchingStringGen[Out]: RegexC[Out] => Gen[String] =
+    regexMatchingStringGenFromDiet(supportedCharacters)
+
+  def genRegexCandidateString[Out]: RegexC[Out] => Gen[String] =
+    r => Gen.oneOf(regexMatchingStringGenFromDiet(supportedCharacters)(r), arbitrary[String])
 }

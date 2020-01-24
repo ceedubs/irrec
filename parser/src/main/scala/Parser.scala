@@ -1,21 +1,19 @@
 package ceedubs.irrec
 package parse
 
+import ceedubs.irrec.regex._, Match.MatchSet
+import ceedubs.irrec.regex.RegexC
 import ceedubs.irrec.regex.RegexPrettyPrinter.{
   charClassCharsToEscape,
   nonCharClassCharsToEscape,
   specialNonCharClassCharToLit
 }
+import combinator._
 
-import cats.implicits._
 import fastparse._, NoWhitespace._
-import ceedubs.irrec.regex.Match
-import ceedubs.irrec.regex.Regex
-import ceedubs.irrec.regex._
+import fastparse.Parsed.{Failure, Success}
 import cats.collections.{Diet, Range}
-import ceedubs.irrec.regex.Match.MatchSet
-import fastparse.Parsed.Failure
-import fastparse.Parsed.Success
+import cats.implicits._
 
 object Parser {
   sealed abstract class RepeatCount extends Product with Serializable {
@@ -86,7 +84,7 @@ object Parser {
   /**
    * Matches the wildcard character `.`.
    */
-  def wildcard[_: P]: P[Regex[Char]] = P(".").map(_ => Regex.wildcard)
+  def wildcard[_: P]: P[RegexC[Char]] = P(".").map(_ => combinator.wildcard)
 
   /**
    * Positive integers within the max range of Scala's `Int`.
@@ -95,16 +93,6 @@ object Parser {
     P(CharIn("0-9").rep(1).!.flatMap { s =>
       Either.catchNonFatal(s.toInt).fold(_ => Fail, Pass(_))
     }).opaque(s"integer between 0 and ${Int.MaxValue}")
-
-  /**
-   * Matches repeat counts like `{3}` or `{1,4}`.
-   */
-  def repeatCount[_: P]: P[RepeatCount] =
-    P(
-      "{" ~/ (
-        (posInt ~ "," ~/ posInt.?).map { case (l, h) => RepeatCount.Range(l, h) } |
-          posInt.map(RepeatCount.Exact(_))
-      ) ~ "}").opaque("repeat count such as '{3}', '{1,4}', or '{3,}'")
 
   def singleLitCharClassChar[_: P]: P[Char] =
     P(("\\u" ~ unicodeCodePoint) | ("\\" ~ specialChar | charClassStandardMatchChar))
@@ -120,6 +108,16 @@ object Parser {
       case (l, h) => Range(l, h)
     }
   )
+
+  /**
+   * Matches repeat counts like `{3}` or `{1,4}`.
+   */
+  def repeatCount[_: P]: P[RepeatCount] =
+    P(
+      "{" ~/ (
+        (posInt ~ "," ~/ posInt.?).map { case (l, h) => RepeatCount.Range(l, h) } |
+          posInt.map(RepeatCount.Exact(_))
+      ) ~ "}").opaque("repeat count such as '{3}', '{1,4}', or '{3,}'")
 
   def charOrRange[_: P]: P[Match.MatchSet[Char]] =
     matchCharRange.map(r => MatchSet.allow(Diet.fromRange(r))) |
@@ -176,32 +174,37 @@ object Parser {
         ("[" ~ charClassTerm ~ "]")
     )
 
-  def base[_: P]: P[Regex[Char]] = P(
-    standardMatchChar.map(Regex.lit(_)) |
-      ("\\" ~/ (("u" ~ unicodeCodePoint | specialChar).map(Regex.lit(_)) | shorthandClass.map(
-        Regex.matching(_)))) |
-      wildcard |
-      charClass.map(Regex.matching(_)) |
-      ("(" ~/ "?:".? ~ regex ~ ")")
+  def base[_: P]: P[RegexC[Unit]] = P(
+    standardMatchChar.map(lit(_).void) |
+      ("\\" ~/ (("u" ~ unicodeCodePoint | specialChar).map(lit(_).void) | shorthandClass.map(
+        matching(_).void))) |
+      wildcard.map(_.void) |
+      charClass.map(matching(_).void) |
+      // TODO distinguish between capturing and not?
+      ("(?:" ~ regex ~ ")") |
+      ("(" ~ regex ~ ")")
   )
 
-  def factor[_: P]: P[Regex[Char]] = P {
+  def factor[_: P]: P[RegexC[Unit]] = P {
     base.flatMap { r =>
-      P("*").map(_ => r.star) |
-        P("+").map(_ => r.oneOrMore) |
-        P("?").map(_ => r.optional) |
-        repeatCount.map(count => r.repeat(count.min, count.max)) |
+      // TODO greediness
+      // TODO voids
+      P("*").map(_ => r.chain(Greediness.Greedy).void) |
+        P("+").map(_ => r.oneOrMore(Greediness.Greedy).void) |
+        P("?").map(_ => r.optional.void) |
+        repeatCount.map(count => r.repeat(count.min, count.max, Greediness.Greedy).void) |
         Pass(r)
     }
   }
 
-  def term[_: P]: P[Regex[Char]] = P(factor.rep(0).map(factors => Regex.allOfR(factors: _*)))
+  // TODO can probably do better than toList call. Do we care?
+  def term[_: P]: P[RegexC[Unit]] = P(factor.rep(0).map(_.toList.sequence_))
 
   /**
    * A parser for a regular expression. You probably want to use [[regexExpr]] instead, as this
    * parser will succeed even if there are trailing characters after a valid regular expression.
    */
-  def regex[_: P]: P[Regex[Char]] = P(
+  def regex[_: P]: P[RegexC[Unit]] = P(
     term.flatMap { r1 =>
       ("|" ~/ regex).map(r2 => r1 | r2) |
         Pass(r1)
@@ -211,9 +214,9 @@ object Parser {
   /**
    * A parser for strings that are complete regular expressions, up until the end of the string.
    */
-  def regexExpr[_: P]: P[Regex[Char]] = P(regex ~ End)
+  def regexExpr[_: P]: P[RegexC[String]] = P(regex ~ End).map(_.matched.map(_.mkString_("")))
 
-  def parseRegex(regex: String): Either[String, Regex[Char]] =
+  def parseRegex(regex: String): Either[String, RegexC[String]] =
     parse(regex, regexExpr(_), verboseFailures = true) match {
       case f @ Failure(_, _, _) => Left(f.msg)
       case Success(value, _) => Right(value)

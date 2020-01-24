@@ -6,31 +6,46 @@ sidebar_label: overview
 
 Irrec allows you to build, match, and generate regular expressions with a functional API.
 
-The name is a shameless rip-off of [irreg](https://github.com/non/irreg), which this library was inspired by. It's different than irreg in that it uses `rec`ursion schemes, hence the name.
+The name is a shameless rip-off of [irreg](https://github.com/non/irreg), which this library was inspired by. The `rec` in `irrec` originall came from `rec`ursion schemes. The current version does not use recursion schemes and is based off of the Haskell [regex-applicative](https://hackage.haskell.org/package/regex-applicative) library.
 
 ## creating regular expressions
 
 ```scala mdoc:silent
-import ceedubs.irrec.regex._, Regex._
-import ceedubs.irrec.parse.regex
+import ceedubs.irrec.regex._, combinator._, char._
+import ceedubs.irrec.parse.{regex => r}
+import ceedubs.irrec.regex.Greediness._
+import cats.implicits._
 
-val animal: Regex[Char] = regex("(b|c|r|gn)at")
-val phrase: Regex[Char] = regex("[2-9] (happy|tired|feisty) ") * animal * lit('s')
+sealed abstract class Mood
+case object Happy extends Mood
+case object Tired extends Mood
+case object Feisty extends Mood
+
+case class Animals(count: Int, mood: Mood, kind: String)
+
+val animal: RegexC[String] = r("(b|c|r|gn)at")
+val mood: RegexC[Mood] = r("happy").as[Mood](Happy) | r("tired").as(Tired) | r("feisty").as(Feisty)
+val animalsR: RegexC[Animals] =
+  (digit <* horizontalWhitespaceChar.repeat(1, Some(2), Greedy),
+  mood <* horizontalWhitespaceChar.repeat(1, Some(2), NonGreedy),
+  animal <* lit('s').optional
+  ).mapN((count, mood, kind) => Animals(count, mood, kind))
 ```
 
 ```scala mdoc
-phrase.pprint
+animalsR.pprint
 ```
 
-## matching against a regular expression
+## parsing with a regular expression
 
 ```scala mdoc:silent
-val matchesPhrase: String => Boolean = phrase.stringMatcher
+val animals: ParseState[Char, Animals] = animalsR.compile
 ```
 
 ```scala mdoc
-matchesPhrase("7 feisty cats")
-matchesPhrase("3 expensive toasters")
+animals.parseOnlyS("1 tired bat")
+animals.parseOnlyS("7 feisty cats")
+animals.parseOnlyS("3 expensive toasters")
 ```
 
 ## generating data that matches a regular expression
@@ -40,9 +55,9 @@ import ceedubs.irrec.regex.CharRegexGen.regexMatchingStringGen
 import org.scalacheck.Gen
 import org.scalacheck.rng.Seed
 
-val phraseGen: Gen[String] = regexMatchingStringGen(phrase)
+val phraseGen: Gen[String] = regexMatchingStringGen(animalsR)
 ```
 
 ```scala mdoc
-Gen.listOfN(3, phraseGen).apply(Gen.Parameters.default, Seed(79817L))
+Gen.listOfN(3, phraseGen).apply(Gen.Parameters.default, Seed(79813L))
 ```
