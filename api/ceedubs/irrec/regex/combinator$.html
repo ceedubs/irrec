@@ -506,6 +506,22 @@
       </span>
       
       
+    </li><li name="ceedubs.irrec.regex.combinator#elem" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="elem[In,M,Out](f:In=&gt;Option[Out],metadata:M):ceedubs.irrec.regex.Regex[In,M,Out]"></a><a id="elem[In,M,Out]((In)⇒Option[Out],M):Regex[In,M,Out]"></a>
+      <span class="permalink">
+      <a href="../../../ceedubs/irrec/regex/combinator$.html#elem[In,M,Out](f:In=&gt;Option[Out],metadata:M):ceedubs.irrec.regex.Regex[In,M,Out]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">elem</span><span class="tparams">[<span name="In">In</span>, <span name="M">M</span>, <span name="Out">Out</span>]</span><span class="params">(<span name="f">f: (<span class="extype" name="ceedubs.irrec.regex.combinator.elem.In">In</span>) ⇒ <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<span class="extype" name="ceedubs.irrec.regex.combinator.elem.Out">Out</span>]</span>, <span name="metadata">metadata: <span class="extype" name="ceedubs.irrec.regex.combinator.elem.M">M</span> = <span class="symbol">&quot;elem&quot;</span></span>)</span><span class="result">: <a href="Regex.html" class="extype" name="ceedubs.irrec.regex.Regex">Regex</a>[<span class="extype" name="ceedubs.irrec.regex.combinator.elem.In">In</span>, <span class="extype" name="ceedubs.irrec.regex.combinator.elem.M">M</span>, <span class="extype" name="ceedubs.irrec.regex.combinator.elem.Out">Out</span>]</span>
+      </span>
+      
+      <p class="shortcomment cmt">A match on a single input element.</p>
     </li><li name="ceedubs.irrec.regex.combinator#empty" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="empty[In,M]:ceedubs.irrec.regex.Regex[In,M,Unit]"></a><a id="empty[In,M]:Regex[In,M,Unit]"></a>
       <span class="permalink">
@@ -988,6 +1004,23 @@
       </span>
       
       
+    </li><li name="ceedubs.irrec.regex.combinator#pred" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="pred[In,M,Out](f:In=&gt;Boolean,metadata:M):ceedubs.irrec.regex.Regex[In,M,In]"></a><a id="pred[In,M,Out]((In)⇒Boolean,M):Regex[In,M,In]"></a>
+      <span class="permalink">
+      <a href="../../../ceedubs/irrec/regex/combinator$.html#pred[In,M,Out](f:In=&gt;Boolean,metadata:M):ceedubs.irrec.regex.Regex[In,M,In]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">pred</span><span class="tparams">[<span name="In">In</span>, <span name="M">M</span>, <span name="Out">Out</span>]</span><span class="params">(<span name="f">f: (<span class="extype" name="ceedubs.irrec.regex.combinator.pred.In">In</span>) ⇒ <a href="https://www.scala-lang.org/api/2.12.10/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a></span>, <span name="metadata">metadata: <span class="extype" name="ceedubs.irrec.regex.combinator.pred.M">M</span> = <span class="symbol">&quot;pred&quot;</span></span>)</span><span class="result">: <a href="Regex.html" class="extype" name="ceedubs.irrec.regex.Regex">Regex</a>[<span class="extype" name="ceedubs.irrec.regex.combinator.pred.In">In</span>, <span class="extype" name="ceedubs.irrec.regex.combinator.pred.M">M</span>, <span class="extype" name="ceedubs.irrec.regex.combinator.pred.In">In</span>]</span>
+      </span>
+      
+      <p class="shortcomment cmt">A predicate to run on a single input element.</p><div class="fullcomment"><div class="comment cmt"><p>A predicate to run on a single input element.
+</p></div><dl class="paramcmts block"><dt class="param">f</dt><dd class="cmt"><p>the predicate - should return true if the element matches and false otherwise</p></dd></dl></div>
     </li><li name="ceedubs.irrec.regex.combinator#range" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="range[A](l:A,r:A)(implicitevidence$5:cats.Order[A]):ceedubs.irrec.regex.RegexM[A,A]"></a><a id="range[A](A,A)(Order[A]):RegexM[A,A]"></a>
       <span class="permalink">
