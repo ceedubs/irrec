@@ -11,6 +11,20 @@ import cats.implicits._
 object combinator {
   import Regex._
 
+  /**
+   * A match on a single input element.
+   */
+  def elem[In, M, Out](f: In => Option[Out], metadata: M = "elem"): Regex[In, M, Out] =
+    Regex.Elem(metadata, f)
+
+  /**
+   * A predicate to run on a single input element.
+   *
+   * @param f the predicate - should return true if the element matches and false otherwise
+   */
+  def pred[In, M, Out](f: In => Boolean, metadata: M = "pred"): Regex[In, M, In] =
+    Regex.Elem(metadata, in => if (f(in)) Some(in) else None)
+
   def matching[A: Order](m: Match[A]): RegexM[A, A] =
     mapMatch(m, identity)
 

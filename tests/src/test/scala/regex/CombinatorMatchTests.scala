@@ -15,6 +15,19 @@ import org.scalacheck.Arbitrary.arbitrary
 import cats.laws.discipline.arbitrary._
 
 class CombinatorMatchTests extends IrrecSuite {
+  test("elem match") {
+    elem((x: Int) => if (x % 2 == 0) Some(x) else None).compile.parseOnly(List(4)) should ===(
+      Some(4))
+  }
+
+  test("elem non-match") {
+    elem((x: Int) => if (x % 2 == 0) Some(x) else None).compile.parseOnly(List(3)) should ===(None)
+  }
+
+  test("pred match") { pred((_: Int) % 2 == 0).compile.parseOnly(List(4)) should ===(Some(4)) }
+
+  test("pred non-match") { pred((_: Int) % 2 == 0).compile.parseOnly(List(3)) should ===(None) }
+
   test("literal match") { literal('b').compile.parseOnlyS("b") should ===(Some('b')) }
 
   test("literal non-match") { literal('b').compile.parseOnlyS("a") should ===(None) }
