@@ -69,6 +69,7 @@
 
 <span class="hljs-keyword">case</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Animals</span>(<span class="hljs-params">count: <span class="hljs-type">Int</span>, mood: <span class="hljs-type">Mood</span>, kind: <span class="hljs-type">String</span></span>)</span>
 
+<span class="hljs-comment">// RegexC is a regular expression that matches against a sequence of input `C`haracters</span>
 <span class="hljs-keyword">val</span> animal: <span class="hljs-type">RegexC</span>[<span class="hljs-type">String</span>] = r(<span class="hljs-string">"(b|c|r|gn)at"</span>)
 <span class="hljs-keyword">val</span> mood: <span class="hljs-type">RegexC</span>[<span class="hljs-type">Mood</span>] = r(<span class="hljs-string">"happy"</span>).as[<span class="hljs-type">Mood</span>](<span class="hljs-type">Happy</span>) | r(<span class="hljs-string">"tired"</span>).as(<span class="hljs-type">Tired</span>) | r(<span class="hljs-string">"feisty"</span>).as(<span class="hljs-type">Feisty</span>)
 <span class="hljs-keyword">val</span> animalsR: <span class="hljs-type">RegexC</span>[<span class="hljs-type">Animals</span>] =
