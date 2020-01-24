@@ -23,6 +23,7 @@ case object Feisty extends Mood
 
 case class Animals(count: Int, mood: Mood, kind: String)
 
+// RegexC is a regular expression that matches against a sequence of input `C`haracters
 val animal: RegexC[String] = r("(b|c|r|gn)at")
 val mood: RegexC[Mood] = r("happy").as[Mood](Happy) | r("tired").as(Tired) | r("feisty").as(Feisty)
 val animalsR: RegexC[Animals] =
