@@ -225,7 +225,7 @@ class CombinatorMatchTests extends IrrecSuite {
       r0 <- arbitrary[RegexC[Int]]
       g <- arbitrary[Greediness]
       rStar = r0.star(g, Chain.empty[Int])(_ append _)
-      candidate <- Gen.oneOf(CharRegexGen.regexMatchingStringGen(rStar), arbitrary[String])
+      candidate <- Gen.oneOf(CharRegexGen.genRegexMatchingString(rStar), arbitrary[String])
     } yield (r0, g, rStar, candidate)
     forAll(gen) {
       case (r0, g, rStar, candidate) =>
