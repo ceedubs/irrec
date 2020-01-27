@@ -57,70 +57,69 @@
         </script></nav></div><div class="container mainContainer docsContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 id="__docusaurus" class="postHeaderTitle">usage</h1></header><article><div><span><h2><a class="anchor" aria-hidden="true" id="creating-and-matching-regular-expressions"></a><a href="#creating-and-matching-regular-expressions" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>creating and matching regular expressions</h2>
 <h3><a class="anchor" aria-hidden="true" id="string-regular-expressions"></a><a href="#string-regular-expressions" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>string regular expressions</h3>
 <p>You can create a regular expression via a <code>String</code> literal:</p>
-<pre><code class="hljs css language-scala"><span class="hljs-keyword">import</span> ceedubs.irrec.regex._, combinator._
+<pre><code class="hljs css language-scala"><span class="hljs-keyword">import</span> ceedubs.irrec.regex._
 <span class="hljs-keyword">import</span> ceedubs.irrec.parse.{regex =&gt; r}
 
-<span class="hljs-keyword">val</span> animalLit: <span class="hljs-type">RegexC</span>[<span class="hljs-type">String</span>] = r(<span class="hljs-string">"(b|c|r|gn)at"</span>)
+<span class="hljs-comment">// a RegexC[A] is a regex that parses a `C`har input sequence into an `A` result</span>
+<span class="hljs-keyword">val</span> unitCount: <span class="hljs-type">RegexC</span>[<span class="hljs-type">Int</span>] = r(<span class="hljs-string">""</span><span class="hljs-string">"\d{1,3}"</span><span class="hljs-string">""</span>).map(_.toInt)
 </code></pre>
 <p>You'll even get a compile-time error if the regex is invalid:</p>
-<pre><code class="hljs css language-scala"><span class="hljs-keyword">val</span> invalid: <span class="hljs-type">RegexC</span>[<span class="hljs-type">String</span>] = r(<span class="hljs-string">"a{1,-3}"</span>)
-<span class="hljs-comment">// error: Error compiling regular expression: Expected repeat count such as '{3}', '{1,4}', or '{3,}':1:2, found "{1,-3}"</span>
-<span class="hljs-comment">// val invalid: RegexC[String] = r("a{1,-3}")</span>
-<span class="hljs-comment">//                               ^^^^^^^^^^^^</span>
+<pre><code class="hljs css language-scala"><span class="hljs-keyword">val</span> invalidUnitCount: <span class="hljs-type">RegexC</span>[<span class="hljs-type">String</span>] = r(<span class="hljs-string">""</span><span class="hljs-string">"\d{1,-3}"</span><span class="hljs-string">""</span>).map(_.toInt)
+<span class="hljs-comment">// error: Error compiling regular expression: Expected repeat count such as '{3}', '{1,4}', or '{3,}':1:3, found "{1,-3}"</span>
+<span class="hljs-comment">// val invalidUnitCount: RegexC[String] = r("""\d{1,-3}""").map(_.toInt)</span>
+<span class="hljs-comment">//                                        ^^^^^^^^^^^^^^^^^</span>
 </code></pre>
-<p>Alternatively, you can build up a regular expression using the methods in the
-<code>Regex</code> object, standard Applicative/Alternative methods, and irrec's DSL for combining regexes.</p>
+<p>You can also build a regular expression using the methods in the
+<code>combinator</code> object, standard <a href="https://typelevel.org/cats/typeclasses/applicative.html">Applicative</a>/<a href="https://typelevel.org/cats/typeclasses/alternative.html">Alternative</a> methods, and irrec's DSL for combining regexes.</p>
 <ul>
 <li><code>|</code> denotes that either the expression on the left <em>or</em> the right needs to match.</li>
 <li><code>.star</code> denotes the Kleene star (repeat 0 to many times).</li>
-<li>Applicative methods such as <code>&lt;*</code>, <code>*&gt;</code>, and <code>mapN</code> indicate one match followed by another.</li>
+<li><a href="https://typelevel.org/cats/typeclasses/applicative.html">Applicative</a> methods such as <code>&lt;*</code>, <code>*&gt;</code>, and <code>mapN</code> indicate one match followed by another.</li>
 </ul>
-<pre><code class="hljs css language-scala"><span class="hljs-keyword">import</span> cats.implicits._
+<pre><code class="hljs css language-scala"><span class="hljs-keyword">import</span> ceedubs.irrec.regex.combinator._
+<span class="hljs-keyword">import</span> cats.implicits._
+<span class="hljs-keyword">import</span> java.time.<span class="hljs-type">Duration</span>
+<span class="hljs-keyword">import</span> java.time.temporal.<span class="hljs-type">ChronoUnit</span>
 
-<span class="hljs-keyword">val</span> animalDSL: <span class="hljs-type">RegexC</span>[<span class="hljs-type">Unit</span>] = (oneOf('b', 'c', 'r').void | seq(<span class="hljs-string">"gn"</span>).void) &lt;* seq(<span class="hljs-string">"at"</span>)
-<span class="hljs-keyword">val</span> animalDSLWithMatched: <span class="hljs-type">RegexC</span>[<span class="hljs-type">String</span>] = animalDSL.matchedS
-</code></pre>
-<p>Whether you have created a <code>Regex</code> via a <code>String</code> literal or the DSL, irrec's
-regular expressions are composable.</p>
-<pre><code class="hljs css language-scala"><span class="hljs-keyword">val</span> count: <span class="hljs-type">RegexC</span>[<span class="hljs-type">Char</span>] = range('<span class="hljs-number">2</span>', '<span class="hljs-number">9</span>')
-<span class="hljs-keyword">val</span> adjective: <span class="hljs-type">RegexC</span>[<span class="hljs-type">String</span>] = r(<span class="hljs-string">"happy|tired|feisty"</span>)
-<span class="hljs-keyword">val</span> animalPhrase: <span class="hljs-type">RegexC</span>[<span class="hljs-type">String</span>] = (
-  count &lt;* lit(' '),
-  adjective &lt;* lit(' '),
-  animalDSL,
-  lit('s').optional
-).mapN((c, adj, a, s) =&gt; <span class="hljs-string">s""</span><span class="hljs-string">"$c $adj $a${s.getOrElse("</span><span class="hljs-string">")}"</span><span class="hljs-string">""</span>)
-</code></pre>
-<pre><code class="hljs css language-scala">animalPhrase.pprint
-<span class="hljs-comment">// res1: String = "[2-9]\\u0020(?:happy|tired|feisty)\\u0020(?:b|c|r|gn)at(?:s|)"</span>
-</code></pre>
-<h3><a class="anchor" aria-hidden="true" id="non-string-regular-expressions"></a><a href="#non-string-regular-expressions" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>non-string regular expressions</h3>
-<p>While <code>RegexC</code> is the most common choice, irrec supports regular expressions for types other than chars/strings. For example if your input is a stream of integers instead of a string:</p>
-<pre><code class="hljs css language-scala"><span class="hljs-keyword">import</span> <span class="hljs-type">Greediness</span>._
+<span class="hljs-keyword">val</span> chronoUnit: <span class="hljs-type">RegexC</span>[<span class="hljs-type">ChronoUnit</span>] = r(<span class="hljs-string">"ms|millis?"</span>).as(<span class="hljs-type">ChronoUnit</span>.<span class="hljs-type">MILLIS</span>) |
+  r(<span class="hljs-string">"s|seconds?"</span>).as(<span class="hljs-type">ChronoUnit</span>.<span class="hljs-type">SECONDS</span>) |
+  r(<span class="hljs-string">"m|mins?|minutes?"</span>).as(<span class="hljs-type">ChronoUnit</span>.<span class="hljs-type">MINUTES</span>)
 
-<span class="hljs-keyword">val</span> numRegex: <span class="hljs-type">RegexM</span>[<span class="hljs-type">Int</span>, <span class="hljs-type">Unit</span>] = lit(<span class="hljs-number">1</span>).many.void &lt;* range(<span class="hljs-number">2</span>, <span class="hljs-number">4</span>).repeat(<span class="hljs-number">1</span>, <span class="hljs-type">Some</span>(<span class="hljs-number">3</span>), <span class="hljs-type">Greedy</span>) &lt;* oneOf(<span class="hljs-number">5</span>, <span class="hljs-number">6</span>).oneOrMore(<span class="hljs-type">Greedy</span>)
-
-<span class="hljs-keyword">val</span> numMatcher: <span class="hljs-type">Stream</span>[<span class="hljs-type">Int</span>] =&gt; <span class="hljs-type">Boolean</span> = numRegex.matcher[<span class="hljs-type">Stream</span>]
+<span class="hljs-keyword">val</span> duration: <span class="hljs-type">RegexC</span>[<span class="hljs-type">Duration</span>] = (
+  r(<span class="hljs-string">"-|negative "</span>).optional.map(_.isDefined),
+  unitCount &lt;* lit(' ').optional,
+  chronoUnit
+).mapN{ (isNegative, count, unit) =&gt;
+  <span class="hljs-keyword">val</span> d = <span class="hljs-type">Duration</span>.of(count.toLong, unit)
+  <span class="hljs-keyword">if</span> (isNegative) d.negated <span class="hljs-keyword">else</span> d
+}
 </code></pre>
-<pre><code class="hljs css language-scala">numMatcher(<span class="hljs-type">Stream</span>(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">5</span>))
-<span class="hljs-comment">// res2: Boolean = true</span>
-
-numMatcher(<span class="hljs-type">Stream</span>(<span class="hljs-number">1</span>, <span class="hljs-number">1</span>, <span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">4</span>, <span class="hljs-number">5</span>, <span class="hljs-number">6</span>, <span class="hljs-number">5</span>))
-<span class="hljs-comment">// res3: Boolean = true</span>
-
-numMatcher(<span class="hljs-type">Stream</span>(<span class="hljs-number">0</span>, <span class="hljs-number">5</span>, <span class="hljs-number">42</span>))
-<span class="hljs-comment">// res4: Boolean = false</span>
+<p>Once you've built a regular expression, you can compile it and parse input with it.</p>
+<pre><code class="hljs css language-scala"><span class="hljs-keyword">val</span> durationParser: <span class="hljs-type">ParseState</span>[<span class="hljs-type">Char</span>, <span class="hljs-type">Duration</span>] = duration.compile
 </code></pre>
-<p>The <code>M</code> in <code>RegexM</code> stands for <a href="https://ceedubs.github.io/irrec/api/ceedubs/irrec/regex/Match.html">Match</a>. It is useful for matches on any discrete input type such as characters or numbers.</p>
+<pre><code class="hljs css language-scala"><span class="hljs-comment">// parseOnly parses a sequence of input elements</span>
+durationParser.parseOnly(<span class="hljs-type">Stream</span>('<span class="hljs-number">3</span>', 'm', 's'))
+<span class="hljs-comment">// res1: Option[Duration] = Some(PT0.003S)</span>
+
+<span class="hljs-comment">// parseOnlyS is specialized to String input</span>
+durationParser.parseOnlyS(<span class="hljs-string">"3ms"</span>)
+<span class="hljs-comment">// res2: Option[Duration] = Some(PT0.003S)</span>
+
+durationParser.parseOnlyS(<span class="hljs-string">"negative 10 seconds"</span>)
+<span class="hljs-comment">// res3: Option[Duration] = Some(PT-10S)</span>
+
+durationParser.parseOnlyS(<span class="hljs-string">"eleventy buckets"</span>)
+<span class="hljs-comment">// res4: Option[Duration] = None</span>
+</code></pre>
 <h2><a class="anchor" aria-hidden="true" id="pretty-printing"></a><a href="#pretty-printing" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>pretty printing</h2>
 <p>Regular expressions can be printed in a (hopefully) POSIX style:</p>
-<pre><code class="hljs css language-scala">animalLit.pprint
-<span class="hljs-comment">// res5: String = "(?:b|c|r|gn)at"</span>
+<pre><code class="hljs css language-scala">duration.pprint
+<span class="hljs-comment">// res5: String = "(?:-|negative\\u0020|)[0-9](?:[0-9][0-9]|[0-9]|)(?:\\u0020|)(?:ms|milli(?:s|)|s|second(?:s|)|m|min(?:s|)|minute(?:s|))"</span>
 </code></pre>
 <h2><a class="anchor" aria-hidden="true" id="java-pattern"></a><a href="#java-pattern" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Java <code>Pattern</code></h2>
 <p>Regular expressions can be converted to a <code>java.util.regex.Pattern</code>:</p>
-<pre><code class="hljs css language-scala">animalLit.toPattern
-<span class="hljs-comment">// res6: java.util.regex.Pattern = (?:b|c|r|gn)at</span>
+<pre><code class="hljs css language-scala">duration.toPattern
+<span class="hljs-comment">// res6: java.util.regex.Pattern = (?:-|negative\u0020|)[0-9](?:[0-9][0-9]|[0-9]|)(?:\u0020|)(?:ms|milli(?:s|)|s|second(?:s|)|m|min(?:s|)|minute(?:s|))</span>
 </code></pre>
 <h2><a class="anchor" aria-hidden="true" id="generating-random-data"></a><a href="#generating-random-data" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>generating random data</h2>
 <h3><a class="anchor" aria-hidden="true" id="random-matches-for-a-regular-expression"></a><a href="#random-matches-for-a-regular-expression" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>random matches for a regular expression</h3>
@@ -129,25 +128,43 @@ numMatcher(<span class="hljs-type">Stream</span>(<span class="hljs-number">0</sp
 <span class="hljs-keyword">import</span> org.scalacheck.<span class="hljs-type">Gen</span>
 <span class="hljs-keyword">import</span> org.scalacheck.rng.<span class="hljs-type">Seed</span>
 
-<span class="hljs-keyword">val</span> phraseGen: <span class="hljs-type">Gen</span>[<span class="hljs-type">String</span>] = regexMatchingStringGen(animalPhrase)
+<span class="hljs-keyword">val</span> genDurationString: <span class="hljs-type">Gen</span>[<span class="hljs-type">String</span>] = genRegexMatchingString(duration)
 </code></pre>
-<pre><code class="hljs css language-scala"><span class="hljs-type">Gen</span>.listOfN(<span class="hljs-number">3</span>, phraseGen).apply(<span class="hljs-type">Gen</span>.<span class="hljs-type">Parameters</span>.<span class="hljs-keyword">default</span>, <span class="hljs-type">Seed</span>(<span class="hljs-number">1046525</span>L))
+<pre><code class="hljs css language-scala"><span class="hljs-type">Gen</span>.listOfN(<span class="hljs-number">3</span>, genDurationString).apply(<span class="hljs-type">Gen</span>.<span class="hljs-type">Parameters</span>.<span class="hljs-keyword">default</span>, <span class="hljs-type">Seed</span>(<span class="hljs-number">1046531</span>L))
 <span class="hljs-comment">// res7: Option[List[String]] = Some(</span>
-<span class="hljs-comment">//   List("3 tired cats", "3 happy rat", "6 happy gnat")</span>
+<span class="hljs-comment">//   List("-39 mins", "573milli", "negative 3s")</span>
+<span class="hljs-comment">// )</span>
+</code></pre>
+<p>Sometimes you may want to generate both matches and non-matches for your regular expression to make sure that both cases are handled. There are various <code>Gen</code> instances that will generate input that matches the regular expresssion roughly half of the time.</p>
+<pre><code class="hljs css language-scala"><span class="hljs-keyword">val</span> genDurationCandidateString: <span class="hljs-type">Gen</span>[<span class="hljs-type">String</span>] =
+  <span class="hljs-type">Gen</span>.resize(<span class="hljs-number">12</span>, genRegexCandidateString(duration))
+
+<span class="hljs-keyword">val</span> genExamples: <span class="hljs-type">Gen</span>[<span class="hljs-type">List</span>[(<span class="hljs-type">String</span>, <span class="hljs-type">Option</span>[<span class="hljs-type">Duration</span>])]] =
+  <span class="hljs-type">Gen</span>.listOfN(<span class="hljs-number">3</span>, genDurationCandidateString).map(candidates =&gt;
+    candidates.map(candidate =&gt; (candidate, durationParser.parseOnlyS(candidate)))
+  )
+</code></pre>
+<pre><code class="hljs css language-scala">genExamples.apply(<span class="hljs-type">Gen</span>.<span class="hljs-type">Parameters</span>.<span class="hljs-keyword">default</span>, <span class="hljs-type">Seed</span>(<span class="hljs-number">1046531</span>L))
+<span class="hljs-comment">// res8: Option[List[(String, Option[Duration])]] = Some(</span>
+<span class="hljs-comment">//   List(</span>
+<span class="hljs-comment">//     ("negative 5 mins", Some(PT-5M)),</span>
+<span class="hljs-comment">//     ("\ue4d5\u1b81\ubaab\uf876\u04cd\u5d59\u8efa", None),</span>
+<span class="hljs-comment">//     ("95 seconds", Some(PT1M35S))</span>
+<span class="hljs-comment">//   )</span>
 <span class="hljs-comment">// )</span>
 </code></pre>
 <h3><a class="anchor" aria-hidden="true" id="random-regular-expressions"></a><a href="#random-regular-expressions" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>random regular expressions</h3>
 <p>Irrec provies support for creating random (valid) regular expressions along with potential matches for them.</p>
-<pre><code class="hljs css language-scala"><span class="hljs-keyword">val</span> regexGen: <span class="hljs-type">Gen</span>[<span class="hljs-type">RegexC</span>[<span class="hljs-type">List</span>[<span class="hljs-type">Long</span>]]] = <span class="hljs-type">Gen</span>.resize(<span class="hljs-number">12</span>, <span class="hljs-type">CharRegexGen</span>.genAsciiRegex)
+<pre><code class="hljs css language-scala"><span class="hljs-keyword">val</span> regexGen: <span class="hljs-type">Gen</span>[<span class="hljs-type">RegexC</span>[<span class="hljs-type">List</span>[<span class="hljs-type">Long</span>]]] = <span class="hljs-type">Gen</span>.resize(<span class="hljs-number">12</span>, genAsciiRegex)
 
 <span class="hljs-keyword">val</span> randomRegex1: <span class="hljs-type">RegexC</span>[<span class="hljs-type">List</span>[<span class="hljs-type">Long</span>]] = regexGen.apply(<span class="hljs-type">Gen</span>.<span class="hljs-type">Parameters</span>.<span class="hljs-keyword">default</span>, <span class="hljs-type">Seed</span>(<span class="hljs-number">105769</span>L)).get
 </code></pre>
 <pre><code class="hljs css language-scala">randomRegex1.pprint
-<span class="hljs-comment">// res8: String = "i[^\\u0004\\n\\u0016%/4Llz][&amp;y-z],\\fC"</span>
+<span class="hljs-comment">// res9: String = "i[^\\u0004\\n\\u0016%/4Llz][&amp;y-z],\\fC"</span>
 </code></pre>
 <p>You can now generate random data to match this regular expression as described <a href="#random-matches-for-a-regular-expression">here</a>. Alternatively, you can generate a regular expression and a match for it in one step:</p>
 <pre><code class="hljs css language-scala"><span class="hljs-keyword">val</span> regexAndMatchGen: <span class="hljs-type">Gen</span>[<span class="hljs-type">RegexAndCandidate</span>[<span class="hljs-type">Char</span>, <span class="hljs-type">Double</span>]] =
-  <span class="hljs-type">Gen</span>.resize(<span class="hljs-number">12</span>, <span class="hljs-type">CharRegexGen</span>.genAlphaNumRegexAndMatch)
+  <span class="hljs-type">Gen</span>.resize(<span class="hljs-number">12</span>, genAlphaNumRegexAndMatch)
 
 <span class="hljs-keyword">val</span> regexesAndMatchesGen: <span class="hljs-type">Gen</span>[<span class="hljs-type">List</span>[<span class="hljs-type">RegexAndCandidate</span>[<span class="hljs-type">Char</span>, <span class="hljs-type">Double</span>]]] =
   <span class="hljs-type">Gen</span>.listOfN(<span class="hljs-number">4</span>, regexAndMatchGen)
@@ -157,7 +174,7 @@ numMatcher(<span class="hljs-type">Stream</span>(<span class="hljs-number">0</sp
 <pre><code class="hljs css language-scala">regexesAndMatches.map(x =&gt;
   (x.r.pprint, x.candidate.mkString)
 )
-<span class="hljs-comment">// res9: List[(String, String)] = List(</span>
+<span class="hljs-comment">// res10: List[(String, String)] = List(</span>
 <span class="hljs-comment">//   (</span>
 <span class="hljs-comment">//     "(?:(?:PC)*[0-137CZelty])*[48BITo-qz]",</span>
 <span class="hljs-comment">//     "ZPCPCPCPCPCPCPCPCtPCPCPCPCPCPCPCPClPCPCPCPCPCPCPCPC7B"</span>
@@ -169,7 +186,7 @@ numMatcher(<span class="hljs-type">Stream</span>(<span class="hljs-number">0</sp
 </code></pre>
 <p>Sometimes you may want to generate both matches and non-matches for your random regular expression to make sure that both cases are handled. There are various <code>Gen</code> instances for <code>RegexAndCandidate</code> that will generate random regular expressions along with data that matches the regular expresssion roughly half of the time.</p>
 <pre><code class="hljs css language-scala"><span class="hljs-keyword">val</span> regexAndCandidateGen: <span class="hljs-type">Gen</span>[<span class="hljs-type">RegexAndCandidate</span>[<span class="hljs-type">Char</span>, <span class="hljs-type">Double</span>]] =
-  <span class="hljs-type">Gen</span>.resize(<span class="hljs-number">12</span>, <span class="hljs-type">CharRegexGen</span>.genAlphaNumRegexAndCandidate)
+  <span class="hljs-type">Gen</span>.resize(<span class="hljs-number">12</span>, genAlphaNumRegexAndCandidate)
 
 <span class="hljs-keyword">val</span> regexesAndCandidatesGen: <span class="hljs-type">Gen</span>[<span class="hljs-type">List</span>[<span class="hljs-type">RegexAndCandidate</span>[<span class="hljs-type">Char</span>, <span class="hljs-type">Double</span>]]] =
   <span class="hljs-type">Gen</span>.listOfN(<span class="hljs-number">4</span>, regexAndCandidateGen)
@@ -179,7 +196,7 @@ numMatcher(<span class="hljs-type">Stream</span>(<span class="hljs-number">0</sp
 <pre><code class="hljs css language-scala">regexesAndCandidates.map(x =&gt;
   (x.r.pprint, x.candidate.mkString, x.r.compile.parseOnly(x.candidate))
 )
-<span class="hljs-comment">// res10: List[(String, String, Option[Double])] = List(</span>
+<span class="hljs-comment">// res11: List[(String, String, Option[Double])] = List(</span>
 <span class="hljs-comment">//   ("(?:9|[7Mfv]|W|[37NPWZbh]|T)77", "JR5NhLVVaVXX", None),</span>
 <span class="hljs-comment">//   ("N*", "NNNNNNNNN", Some(1.7251210970894804E-38)),</span>
 <span class="hljs-comment">//   (</span>
@@ -190,4 +207,22 @@ numMatcher(<span class="hljs-type">Stream</span>(<span class="hljs-number">0</sp
 <span class="hljs-comment">//   ("N(?:T|0)[^5BDGJTa-bl-mry][^9B-CTt]", "NTFz", Some(-5.057373126129461E225))</span>
 <span class="hljs-comment">// )</span>
 </code></pre>
-</span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/irrec/docs/getting-irrec"><span class="arrow-prev">← </span><span>getting irrec</span></a><a class="docs-next button" href="/irrec/docs/regex-explorer"><span>regex explorer</span><span class="arrow-next"> →</span></a></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#creating-and-matching-regular-expressions">creating and matching regular expressions</a><ul class="toc-headings"><li><a href="#string-regular-expressions">string regular expressions</a></li><li><a href="#non-string-regular-expressions">non-string regular expressions</a></li></ul></li><li><a href="#pretty-printing">pretty printing</a></li><li><a href="#java-pattern">Java <code>Pattern</code></a></li><li><a href="#generating-random-data">generating random data</a><ul class="toc-headings"><li><a href="#random-matches-for-a-regular-expression">random matches for a regular expression</a></li><li><a href="#random-regular-expressions">random regular expressions</a></li></ul></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/irrec/" class="nav-home"><img src="/irrec/img/irrec-logo.png" alt="irrec" width="66" height="58"/></a><div><a href="/irrec/docs/en/overview.html">Getting Started</a><a href="/irrec/docs/en/usage.html">Guide</a><a href="/irrec/docs/en/regex-explorer.html">Regular Expression Explorer</a></div><div><a href="https://github.com/ceedubs/irrec">GitHub</a><a href="/irrec/docs/en/warnings.html">more information</a></div></section><section class="copyright">Copyright © 2020 Cody Allen</section></footer></div></body></html>
+<h3><a class="anchor" aria-hidden="true" id="non-string-regular-expressions"></a><a href="#non-string-regular-expressions" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>non-string regular expressions</h3>
+<p>While <code>RegexC</code> is the most common choice, irrec supports regular expressions for types other than chars/strings. For example if your input is a stream of integers instead of a string:</p>
+<pre><code class="hljs css language-scala"><span class="hljs-keyword">import</span> <span class="hljs-type">Greediness</span>._
+
+<span class="hljs-keyword">val</span> numRegex: <span class="hljs-type">RegexM</span>[<span class="hljs-type">Int</span>, <span class="hljs-type">Unit</span>] = lit(<span class="hljs-number">1</span>).many.void &lt;* range(<span class="hljs-number">2</span>, <span class="hljs-number">4</span>).repeat(<span class="hljs-number">1</span>, <span class="hljs-type">Some</span>(<span class="hljs-number">3</span>), <span class="hljs-type">Greedy</span>) &lt;* oneOf(<span class="hljs-number">5</span>, <span class="hljs-number">6</span>).oneOrMore(<span class="hljs-type">Greedy</span>)
+
+<span class="hljs-keyword">val</span> numMatcher: <span class="hljs-type">Stream</span>[<span class="hljs-type">Int</span>] =&gt; <span class="hljs-type">Boolean</span> = numRegex.matcher[<span class="hljs-type">Stream</span>]
+</code></pre>
+<pre><code class="hljs css language-scala">numMatcher(<span class="hljs-type">Stream</span>(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">5</span>))
+<span class="hljs-comment">// res12: Boolean = true</span>
+
+numMatcher(<span class="hljs-type">Stream</span>(<span class="hljs-number">1</span>, <span class="hljs-number">1</span>, <span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">4</span>, <span class="hljs-number">5</span>, <span class="hljs-number">6</span>, <span class="hljs-number">5</span>))
+<span class="hljs-comment">// res13: Boolean = true</span>
+
+numMatcher(<span class="hljs-type">Stream</span>(<span class="hljs-number">0</span>, <span class="hljs-number">5</span>, <span class="hljs-number">42</span>))
+<span class="hljs-comment">// res14: Boolean = false</span>
+</code></pre>
+<p>The <code>M</code> in <code>RegexM</code> stands for <a href="https://ceedubs.github.io/irrec/api/ceedubs/irrec/regex/Match.html">Match</a>. It is useful for matches on any discrete input type such as characters or numbers.</p>
+</span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/irrec/docs/getting-irrec"><span class="arrow-prev">← </span><span>getting irrec</span></a><a class="docs-next button" href="/irrec/docs/regex-explorer"><span>regex explorer</span><span class="arrow-next"> →</span></a></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#creating-and-matching-regular-expressions">creating and matching regular expressions</a><ul class="toc-headings"><li><a href="#string-regular-expressions">string regular expressions</a></li></ul></li><li><a href="#pretty-printing">pretty printing</a></li><li><a href="#java-pattern">Java <code>Pattern</code></a></li><li><a href="#generating-random-data">generating random data</a><ul class="toc-headings"><li><a href="#random-matches-for-a-regular-expression">random matches for a regular expression</a></li><li><a href="#random-regular-expressions">random regular expressions</a></li><li><a href="#non-string-regular-expressions">non-string regular expressions</a></li></ul></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/irrec/" class="nav-home"><img src="/irrec/img/irrec-logo.png" alt="irrec" width="66" height="58"/></a><div><a href="/irrec/docs/en/overview.html">Getting Started</a><a href="/irrec/docs/en/usage.html">Guide</a><a href="/irrec/docs/en/regex-explorer.html">Regular Expression Explorer</a></div><div><a href="https://github.com/ceedubs/irrec">GitHub</a><a href="/irrec/docs/en/warnings.html">more information</a></div></section><section class="copyright">Copyright © 2020 Cody Allen</section></footer></div></body></html>
