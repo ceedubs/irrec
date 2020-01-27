@@ -14,7 +14,7 @@ class CharRegexGenTests extends IrrecSuite {
       r1 <- arbitrary[RegexC[Long]]
       r3 <- arbitrary[RegexC[Double]]
       r = r1.void <* r2 <* r3
-      s <- regexMatchingStringGen.apply(r)
+      s <- genRegexMatchingString.apply(r)
     } yield (r, s)
 
     forAll(noShrink(gen)) {
@@ -25,10 +25,10 @@ class CharRegexGenTests extends IrrecSuite {
     }
   }
 
-  test("regexMatchingStringGen is consistent with RegexMatchingStreamGen") {
+  test("genRegexMatchingString is consistent with RegexMatchingStreamGen") {
     val gen = for {
       r <- arbitrary[RegexC[Long]]
-      s <- regexMatchingStringGen(r)
+      s <- genRegexMatchingString(r)
     } yield (r, s)
 
     forAll(gen) {

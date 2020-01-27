@@ -58,7 +58,7 @@ object CharRegexGen {
     r => streamGen(r).map(_.mkString)
   }
 
-  def regexMatchingStringGen[Out]: RegexC[Out] => Gen[String] =
+  def genRegexMatchingString[Out]: RegexC[Out] => Gen[String] =
     regexMatchingStringGenFromDiet(supportedCharacters)
 
   def genRegexCandidateString[Out]: RegexC[Out] => Gen[String] =

@@ -25,12 +25,15 @@ case class Animals(count: Int, mood: Mood, kind: String)
 
 // RegexC is a regular expression that matches against a sequence of input `C`haracters
 val animal: RegexC[String] = r("(b|c|r|gn)at")
-val mood: RegexC[Mood] = r("happy").as[Mood](Happy) | r("tired").as(Tired) | r("feisty").as(Feisty)
+
+val mood: RegexC[Mood] = r("happy").as[Mood](Happy) | r("tired").as(Tired) |
+  r("feisty").as(Feisty)
+
 val animalsR: RegexC[Animals] =
   (digit <* horizontalWhitespaceChar.repeat(1, Some(2), Greedy),
   mood <* horizontalWhitespaceChar.repeat(1, Some(2), NonGreedy),
   animal <* lit('s').optional
-  ).mapN((count, mood, kind) => Animals(count, mood, kind))
+  ).mapN(Animals.apply)
 ```
 
 ```scala mdoc
@@ -52,11 +55,11 @@ animals.parseOnlyS("3 expensive toasters")
 ## generating data that matches a regular expression
 
 ```scala mdoc:silent
-import ceedubs.irrec.regex.CharRegexGen.regexMatchingStringGen
+import ceedubs.irrec.regex.CharRegexGen.genRegexMatchingString
 import org.scalacheck.Gen
 import org.scalacheck.rng.Seed
 
-val phraseGen: Gen[String] = regexMatchingStringGen(animalsR)
+val phraseGen: Gen[String] = genRegexMatchingString(animalsR)
 ```
 
 ```scala mdoc

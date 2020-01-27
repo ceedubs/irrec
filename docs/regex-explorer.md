@@ -24,7 +24,7 @@ import ceedubs.irrec.parse.Parser
 import org.scalajs.dom
 import org.scalajs.dom.html.Input
 import fastparse.Parsed.{Failure, Success}
-import ceedubs.irrec.regex.CharRegexGen.regexMatchingStringGen
+import ceedubs.irrec.regex.CharRegexGen.genRegexMatchingString
 import org.scalacheck.Gen
 import org.scalacheck.rng.Seed
 import cats.implicits._
@@ -40,7 +40,7 @@ val regexErrorText = node.querySelector("p.regex-error-msg")
 val regexMatchesList = node.querySelector("ul.regex-matches")
 
 def genMatches(r: RegexC[_], seed: Seed): List[String] = {
-  val matchGen = regexMatchingStringGen(r)
+  val matchGen = genRegexMatchingString(r)
   Gen.listOfN(30, matchGen)
   .map(_.distinct.take(5))
   .apply(Gen.Parameters.default, seed)
