@@ -2,7 +2,7 @@
 import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
 val catsVersion = "2.0.0"
-val catsCollectionsVersion = "0.8.0"
+val catsCollectionsVersion = "0.9.0"
 val scalacheckVersion = "1.14.3"
 val fastParseVersion = "2.1.2"
 val scalaJsDomVersion = "0.9.8"
@@ -69,7 +69,10 @@ lazy val parser = crossProject(JSPlatform, JVMPlatform)
   .in(file("parser"))
   .settings(
     moduleName := "irrec-parser",
-    libraryDependencies += "com.lihaoyi" %%% "fastparse" % fastParseVersion)
+    libraryDependencies ++= Seq(
+      "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided",
+      "com.lihaoyi" %%% "fastparse" % fastParseVersion)
+  )
   .settings(commonSettings)
   .dependsOn(regex)
 
