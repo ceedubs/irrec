@@ -4,6 +4,7 @@ package regex
 import RegexGen._
 import RegexMatchGen._
 
+import cats.implicits._
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary.arbitrary
 

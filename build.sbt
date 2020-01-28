@@ -1,7 +1,7 @@
 // shadow sbt-scalajs' crossProject and CrossType from Scala.js 0.6.x
 import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
-val catsVersion = "1.6.1"
+val catsVersion = "2.0.0"
 val catsCollectionsVersion = "0.8.0"
 val scalacheckVersion = "1.13.5"
 val fastParseVersion = "2.1.2"
@@ -49,7 +49,9 @@ lazy val tests = crossProject(JSPlatform, JVMPlatform)
   .dependsOn(regexGen, parser)
   .settings(
     moduleName := "irrec-tests",
-    libraryDependencies += catsOrg %%% "cats-testkit" % catsVersion % Test)
+    libraryDependencies ++= Seq(
+      catsOrg %%% "cats-laws" % catsVersion % Test,
+      catsOrg %%% "discipline-scalatest" % "1.0.0" % Test))
   .settings(commonSettings)
   .settings(noPublishSettings)
 

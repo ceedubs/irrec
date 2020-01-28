@@ -4,7 +4,9 @@ package regex
 import RegexGen._
 
 import cats.Eq
+import cats.implicits._
 import cats.laws.discipline.AlternativeTests
+import org.scalatestplus.scalacheck.Checkers.check
 
 class RegexTests extends IrrecSuite {
   test("Regex Alternative laws") {

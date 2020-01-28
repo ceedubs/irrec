@@ -3,9 +3,11 @@ package regex
 
 import RegexGen._
 import CharRegexGen._
-import org.scalacheck.Arbitrary.arbitrary
 import ceedubs.irrec.parse.{regex => parse}
 import NoShrink.noShrink
+
+import cats.implicits._
+import org.scalacheck.Arbitrary.arbitrary
 
 class CharRegexGenTests extends IrrecSuite {
   test("regexMatchingStandardStreamGen supports negated character classes") {

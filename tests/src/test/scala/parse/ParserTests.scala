@@ -12,6 +12,7 @@ import Parser.parseRegex
 
 import fastparse._
 import org.scalatest.compatible.Assertion
+import cats.implicits._
 import cats.data.NonEmptyList
 import cats.collections.{Diet, Range}
 
