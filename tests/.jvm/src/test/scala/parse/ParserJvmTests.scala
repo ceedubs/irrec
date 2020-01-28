@@ -3,6 +3,7 @@ package parse
 
 import Parser.parseRegex
 
+import cats.implicits._
 import java.util.regex.Pattern
 
 /**

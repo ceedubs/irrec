@@ -12,6 +12,7 @@ import RegexMatchGen.genRegexMatch
 import cats.data.{Chain, NonEmptyChain, NonEmptyList}
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary.arbitrary
+import cats.implicits._
 import cats.laws.discipline.arbitrary._
 
 class CombinatorMatchTests extends IrrecSuite {

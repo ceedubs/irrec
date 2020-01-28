@@ -3,6 +3,7 @@ package regex
 
 import RegexGen.Support._
 
+import cats.implicits._
 import org.scalacheck.Gen
 
 class RegexGenTests extends IrrecSuite {

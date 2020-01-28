@@ -4,6 +4,8 @@ package regex
 import ceedubs.irrec.parse.{regex => parse}
 import ceedubs.irrec.regex.char._
 import ceedubs.irrec.regex.combinator._
+
+import cats.implicits._
 import org.scalacheck.Gen
 
 class CharRegexMatchTests extends IrrecSuite {
