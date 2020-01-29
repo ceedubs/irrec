@@ -66,7 +66,7 @@ class MatchTests extends IrrecSuite {
   }
 
   test("traverseM identity") {
-    val cfg = standardIntConfig.copy(includeZero = true, includeOne = true)
+    val cfg = standardIntConfig.copy(includeFail = true, includeEps = true)
     val gen = genRegexAndCandidate[Int, Long](cfg, RegexMatchGen.intMatchingGen)
     forAll(gen) { rc =>
       val rTraversed = Regex.traverseM[Id, Int, Match[Int], Match[Int], Long](rc.r)(identity)

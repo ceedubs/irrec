@@ -17,23 +17,26 @@ object RegexGen {
   import Support._
 
   /**
-   * Configuration for generating regular expressions.
+   * Configuration for generating regular expressions with input type `In`.
    */
-  final case class Config[A](
-    val genA: Gen[A],
-    val genMatch: Gen[Match[A]],
-    val includeZero: Boolean,
-    val includeOne: Boolean)
+  final case class Config[In](
+    gen: Gen[In],
+    cogen: Cogen[In],
+    order: Order[In],
+    genMatch: Gen[Match[In]],
+    includeFail: Boolean,
+    includeEps: Boolean)
 
   object Config {
-    def fromDiscreteDiet[A: Choose: Discrete: Order](available: Diet[A]): Config[A] = {
-      val genA = dietMatchingGen(available)
-      new Config(
-        genA = genA,
-        genMatch = genMatch(genA, genNonEmptySubDiet(available, _ => 1)),
-        includeZero = false,
-        includeOne = false
-      )
+    def fromDiscreteDiet[A: Choose: Cogen: Discrete: Order](available: Diet[A]): Config[A] = {
+      val genIn = dietMatchingGen(available)
+      Config[A](
+        gen = genIn,
+        cogen = implicitly,
+        order = implicitly,
+        genMatch = RegexGen.genMatch(genIn, genNonEmptySubDiet(available, _ => 1)),
+        includeFail = false,
+        includeEps = false)
     }
   }
 
@@ -57,12 +60,13 @@ object RegexGen {
   val genGreediness: Gen[Greediness] = Gen.oneOf(Greediness.Greedy, Greediness.NonGreedy)
   implicit val arbGreendiness: Arbitrary[Greediness] = Arbitrary(genGreediness)
 
-  // TODO Should we take a Gen[A] instead of expecting an Arbitrary[A]?
-  // TODO should the implicit parameters go into the config?
+  // TODO Should we take a Gen[Out] instead of expecting an Arbitrary[Out]?
   // TODO should this be public?
-  private def genRegexWithDepth[In: Order: Cogen, Out: Arbitrary: Cogen](
+  private def genRegexWithDepth[In, Out: Arbitrary: Cogen](
     cfg: Config[In],
-    depth: Int): Gen[RegexM[In, Out]] =
+    depth: Int): Gen[RegexM[In, Out]] = {
+    implicit val cogenIn = cfg.cogen
+    implicit val orderIn = cfg.order
     if (depth <= 1)
       Gen.frequency(
         // Elem
@@ -73,7 +77,7 @@ object RegexGen {
           } yield combinator.mapMatch(m, f)
         ),
         // Fail
-        (if (cfg.includeZero) 1 else 0) -> Gen.const(combinator.fail)
+        (if (cfg.includeFail) 1 else 0) -> Gen.const(combinator.fail)
       )
     else
       Gen.frequency(
@@ -121,8 +125,9 @@ object RegexGen {
           } yield combinator.star(rI, g, z)(fold)
         )
       )
+  }
 
-  def genRegex[In: Order: Cogen, Out: Arbitrary: Cogen](cfg: Config[In]): Gen[RegexM[In, Out]] =
+  def genRegex[In, Out: Arbitrary: Cogen](cfg: Config[In]): Gen[RegexM[In, Out]] =
     Gen.sized(maxSize =>
       Gen.choose(1, math.max(maxSize, 1)).flatMap(depth => genRegexWithDepth[In, Out](cfg, depth)))
 
@@ -131,7 +136,7 @@ object RegexGen {
    *
    * The returned function takes an `Int` that indicates the desired "depth" of the regex.
    */
-  private def genRegexWithEv[In: Cogen: Order](
+  private def genRegexWithEv[In](
     cfg: Config[In]): Int => Gen[TypeWith[RegexWithEv[In, Match[In], ?]]] = {
     val leafGen: Gen[TypeWith[RegexWithEv[In, Match[In], ?]]] = Gen.frequency(
       9 -> genTypeWithGenAndCogen.map { outType =>
@@ -140,7 +145,7 @@ object RegexGen {
         TypeWith(RegexWithEv.fromRegexGen(genRegexWithDepth[In, outType.T](cfg, 1)))
       },
       // Eps
-      (if (cfg.includeOne) 2 else 0) -> Gen.const(
+      (if (cfg.includeEps) 2 else 0) -> Gen.const(
         TypeWith(RegexWithEv.fromRegexGen(Gen.const(combinator.empty[In, Match[In]]))))
     )
     def go(depth: Int): Gen[TypeWith[RegexWithEv[In, Match[In], ?]]] =
