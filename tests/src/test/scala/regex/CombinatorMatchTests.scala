@@ -4,10 +4,11 @@ package regex
 import ceedubs.irrec.regex.combinator._
 import ceedubs.irrec.regex.{combinator => C}
 import Greediness._
-import RegexGen._
+import gen.{CharRegexGen, RegexAndCandidate}
+import gen.RegexGen._
 import ceedubs.irrec.parse.{regex => parse}
-import RegexAndCandidate.genIntRegexAndMatch
-import RegexMatchGen.genRegexMatch
+import gen.RegexAndCandidate.genIntRegexAndMatch
+import gen.RegexMatchGen.genRegexMatch
 
 import cats.data.{Chain, NonEmptyChain, NonEmptyList}
 import org.scalacheck.Gen

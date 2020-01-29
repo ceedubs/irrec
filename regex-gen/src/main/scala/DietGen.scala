@@ -1,5 +1,6 @@
 package ceedubs.irrec
 package regex
+package gen
 
 import org.scalacheck.Gen, Gen.Choose
 import cats.kernel.Order

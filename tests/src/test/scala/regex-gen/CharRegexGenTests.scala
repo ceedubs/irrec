@@ -1,5 +1,6 @@
 package ceedubs.irrec
 package regex
+package gen
 
 import RegexGen._
 import CharRegexGen._

@@ -2,9 +2,10 @@ package ceedubs.irrec
 package regex
 
 import Match._
-import CharRegexGen._
-import RegexGen._
-import RegexAndCandidate.genRegexAndCandidate
+import gen.CharRegexGen._
+import gen.RegexGen._
+import gen.{DietGen, RegexMatchGen}
+import gen.RegexAndCandidate.genRegexAndCandidate
 
 import cats.Id
 import cats.implicits._
@@ -65,7 +66,7 @@ class MatchTests extends IrrecSuite {
   }
 
   test("traverseM identity") {
-    val cfg = RegexGen.standardIntConfig.copy(includeZero = true, includeOne = true)
+    val cfg = standardIntConfig.copy(includeZero = true, includeOne = true)
     val gen = genRegexAndCandidate[Int, Long](cfg, RegexMatchGen.intMatchingGen)
     forAll(gen) { rc =>
       val rTraversed = Regex.traverseM[Id, Int, Match[Int], Match[Int], Long](rc.r)(identity)

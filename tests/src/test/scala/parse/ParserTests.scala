@@ -7,7 +7,7 @@ import ceedubs.irrec.regex.CharacterClasses
 import ceedubs.irrec.regex.Match
 import ceedubs.irrec.regex.Match.MatchSet
 import ceedubs.irrec.parse.{regex => parse}
-import CharRegexGen._
+import ceedubs.irrec.regex.gen.CharRegexGen._
 import Parser.parseRegex
 
 import fastparse._

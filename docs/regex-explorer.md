@@ -24,7 +24,7 @@ import ceedubs.irrec.parse.Parser
 import org.scalajs.dom
 import org.scalajs.dom.html.Input
 import fastparse.Parsed.{Failure, Success}
-import ceedubs.irrec.regex.CharRegexGen.genRegexMatchingString
+import ceedubs.irrec.regex.gen.CharRegexGen.genRegexMatchingString
 import org.scalacheck.Gen
 import org.scalacheck.rng.Seed
 import cats.implicits._
