@@ -218,7 +218,10 @@ val commonSettings: Seq[Setting[_]] = Seq(
   addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3"),
   scalaVersion := scala212Version,
   crossScalaVersions := List("2.11.12", scala212Version),
-  autoAPIMappings := true
+  autoAPIMappings := true,
+  testOptions in Test += {
+    Tests.Argument(TestFrameworks.ScalaTest, "-oDF")
+  }
 ) ++ scalacOptionSettings
 
 val commonJsSettings: Seq[Setting[_]] = Seq(

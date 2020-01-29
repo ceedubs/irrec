@@ -12,4 +12,10 @@ class ParseStateTests extends IrrecSuite {
     // shouldn't throw an exception
     r.compile.parseOnly(input) should ===(None)
   }
+
+  test("parseOnly stack safety") {
+    val r = parse("(a|b)*c").void
+    val input = Stream.fill(100000)('b').append(List('c'))
+    r.compile.parseOnly(input) should ===(Some(()))
+  }
 }
