@@ -1,5 +1,6 @@
 package ceedubs.irrec
 package regex
+package gen
 
 import cats.{Monad, StackSafeMonad}
 import org.scalacheck.Gen

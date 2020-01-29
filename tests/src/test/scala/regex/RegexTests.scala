@@ -1,7 +1,8 @@
 package ceedubs.irrec
 package regex
 
-import RegexGen._
+import gen.RegexEq
+import gen.RegexGen._
 
 import cats.Eq
 import cats.implicits._

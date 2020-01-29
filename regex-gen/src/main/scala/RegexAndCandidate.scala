@@ -1,5 +1,6 @@
 package ceedubs.irrec
 package regex
+package gen
 
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 import cats.Order

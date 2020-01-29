@@ -1,5 +1,6 @@
 package ceedubs.irrec
 package regex
+package gen
 
 /**
  * As presented by Erik Osheim https://www.youtube.com/watch?v=O78hnJuzQwA

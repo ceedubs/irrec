@@ -1,8 +1,9 @@
 package ceedubs.irrec
 package regex
+package gen
 
-import ceedubs.irrec.regex.DietGen.dietMatchingGen
-import ceedubs.irrec.regex.RegexMatchGen.dietMatchToGen
+import ceedubs.irrec.regex.gen.DietGen.dietMatchingGen
+import ceedubs.irrec.regex.gen.RegexMatchGen.dietMatchToGen
 
 import org.scalacheck.{Arbitrary, Cogen, Gen}, Arbitrary.arbitrary
 import cats.implicits._

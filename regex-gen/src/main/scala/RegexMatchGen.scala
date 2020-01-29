@@ -1,8 +1,9 @@
 package ceedubs.irrec
 package regex
+package gen
 
-import ceedubs.irrec.regex.DietGen.dietMatchingGen
-import ceedubs.irrec.regex.ScalacheckSupport._
+import ceedubs.irrec.regex.gen.DietGen.dietMatchingGen
+import ceedubs.irrec.regex.gen.ScalacheckSupport._
 
 import cats.{~>, Order}
 import org.scalacheck.Gen, Gen.Choose

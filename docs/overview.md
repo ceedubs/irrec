@@ -55,7 +55,7 @@ animals.parseOnlyS("3 expensive toasters")
 ## generating data that matches a regular expression
 
 ```scala mdoc:silent
-import ceedubs.irrec.regex.CharRegexGen.genRegexMatchingString
+import ceedubs.irrec.regex.gen.CharRegexGen.genRegexMatchingString
 import org.scalacheck.Gen
 import org.scalacheck.rng.Seed
 

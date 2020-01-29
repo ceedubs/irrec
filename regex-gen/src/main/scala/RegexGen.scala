@@ -1,9 +1,10 @@
 package ceedubs.irrec
 package regex
+package gen
 
 import DietGen._
 import ceedubs.irrec.regex.Match.MatchSet
-import ceedubs.irrec.regex.ScalacheckSupport._
+import ceedubs.irrec.regex.gen.ScalacheckSupport._
 
 import cats.implicits._
 import cats.Order

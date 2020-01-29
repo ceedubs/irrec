@@ -1,7 +1,7 @@
 package ceedubs.irrec
 package regex
 
-import CharRegexGen._
+import gen.CharRegexGen._
 
 class RegexPrettyPrinterJvmTests extends IrrecSuite {
   test("char regex pretty printer matches java Pattern") {
