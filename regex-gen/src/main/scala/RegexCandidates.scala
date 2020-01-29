@@ -32,7 +32,7 @@ object RegexCandidates {
 
   implicit val regexMByteCandidates: RegexCandidates[Byte, Match[Byte]] =
     new GenInRegexCandidates[Byte, Match[Byte]] {
-      def genIn: Gen[Byte] = RegexGen.standardByteConfig.genA
+      def genIn: Gen[Byte] = RegexGen.standardByteConfig.gen
 
       def genMatchingStream[Out](r: Regex[Byte, Match[Byte], Out]): Gen[Stream[Byte]] =
         regexMatchingStreamGen[Byte](RegexMatchGen.byteMatchingGen)
@@ -41,7 +41,7 @@ object RegexCandidates {
 
   implicit val regexMIntCandidates: RegexCandidates[Int, Match[Int]] =
     new GenInRegexCandidates[Int, Match[Int]] {
-      def genIn: Gen[Int] = RegexGen.standardIntConfig.genA
+      def genIn: Gen[Int] = RegexGen.standardIntConfig.gen
 
       def genMatchingStream[Out](r: Regex[Int, Match[Int], Out]): Gen[Stream[Int]] =
         regexMatchingStreamGen[Int](RegexMatchGen.intMatchingGen)
@@ -50,7 +50,7 @@ object RegexCandidates {
 
   implicit val regexMLongCandidates: RegexCandidates[Long, Match[Long]] =
     new GenInRegexCandidates[Long, Match[Long]] {
-      def genIn: Gen[Long] = RegexGen.standardLongConfig.genA
+      def genIn: Gen[Long] = RegexGen.standardLongConfig.gen
 
       def genMatchingStream[Out](r: Regex[Long, Match[Long], Out]): Gen[Stream[Long]] =
         regexMatchingStreamGen[Long](RegexMatchGen.longMatchingGen)

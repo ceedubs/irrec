@@ -46,7 +46,7 @@ object RegexAndCandidate {
     matchToGen: Match[In] => Gen[In]): Gen[RegexAndCandidate[In, Out]] = {
     val probablyNotMatching = for {
       r <- RegexGen.genRegex[In, Out](cfg)
-      c <- Gen.containerOf[Stream, In](cfg.genA)
+      c <- Gen.containerOf[Stream, In](cfg.gen)
     } yield RegexAndCandidate(r, c)
 
     Gen.oneOf(probablyNotMatching, genRegexAndMatch[In, Out](cfg, matchToGen))
