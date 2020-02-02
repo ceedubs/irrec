@@ -118,7 +118,10 @@ object RegexPrettyPrinter {
           Out,
           (Out, i) => Out)] ~> λ[a => (Int, String)]] { t =>
           val inner = parensMaybe(countRangePrecedence, go(t._1), true)
-          val quantifier = s"{${t._2},${t._3.getOrElse("")}}"
+          val quantifier = (t._2, t._3) match {
+            case (0, Some(1)) => "?"
+            case (min, max) => s"{$min,${max.getOrElse("")}}"
+          }
           val g = t._4 match {
             case Greediness.Greedy => ""
             case Greediness.NonGreedy => "?"
