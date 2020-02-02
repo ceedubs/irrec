@@ -55,6 +55,9 @@ object combinator {
     greediness: Greediness): Regex[In, M, Option[Out]] =
     repeatFold(r, 0, Some(1), greediness, none[Out])((_, o) => Some(o))
 
+  def optional_[In, M, Out](r: Regex[In, M, Out]): Regex[In, M, Unit] =
+    optional(r, Greediness.Greedy).void
+
   def either[In, M, Out1, Out2](
     l: Regex[In, M, Out1],
     r: Regex[In, M, Out2]): Regex[In, M, Either[Out1, Out2]] =
@@ -66,6 +69,9 @@ object combinator {
 
   def star[In, M, Out](r: Regex[In, M, Out], g: Greediness): Regex[In, M, Chain[Out]] =
     starFold(r, g, Chain.empty[Out])(_ append _)
+
+  def star_[In, M, Out](r: Regex[In, M, Out]): Regex[In, M, Unit] =
+    star(r, Greediness.Greedy).void
 
   def many[In, M, Out](r: Regex[In, M, Out]): Regex[In, M, Chain[Out]] =
     star(r, Greediness.Greedy)

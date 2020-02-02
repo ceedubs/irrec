@@ -33,6 +33,7 @@ You can also build a regular expression using the methods in the
 
 ```scala mdoc:silent
 import ceedubs.irrec.regex.combinator._
+import Greediness.Greedy
 import cats.implicits._
 import java.time.Duration
 import java.time.temporal.ChronoUnit
@@ -42,8 +43,8 @@ val chronoUnit: RegexC[ChronoUnit] = r("ms|millis?").as(ChronoUnit.MILLIS) |
   r("m|mins?|minutes?").as(ChronoUnit.MINUTES)
 
 val duration: RegexC[Duration] = (
-  r("-|negative ").optional.map(_.isDefined),
-  unitCount <* lit(' ').optional,
+  r("-|negative ").optional(Greedy).map(_.isDefined),
+  unitCount <* lit(' ').optional_,
   chronoUnit
 ).mapN{ (isNegative, count, unit) =>
   val d = Duration.of(count.toLong, unit)

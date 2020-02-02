@@ -219,6 +219,11 @@ class CombinatorMatchTests extends IrrecSuite {
     }
   }
 
+  test("optional_ match present") {
+    (lit('a') <* lit('b').optional_ product lit('c')).compile.parseOnlyS("abc") should ===(
+      Some(('a', 'c')))
+  }
+
   test("non-greedy optional match") {
     (lit('a') product wildcard[Char].optional(NonGreedy) product lit('b')).compile
       .parseOnlyS("ab") should ===(Some((('a', None), 'b')))
@@ -229,6 +234,23 @@ class CombinatorMatchTests extends IrrecSuite {
       (lit('a') product lit('b').optional(g) product lit('c')).compile.parseOnlyS("ac") should ===(
         Some((('a', None), 'c')))
     }
+  }
+
+  test("optional_ match not present") {
+    (lit('a') <* lit('b').optional_ product lit('c')).compile.parseOnlyS("ac") should ===(
+      Some(('a', 'c')))
+  }
+
+  test("star_ match 0") {
+    (lit('a').star_ *> lit('b')).compile.parseOnlyS("b") should ===(Some('b'))
+  }
+
+  test("star_ match 1") {
+    (lit('a').star_ *> lit('b')).compile.parseOnlyS("ab") should ===(Some('b'))
+  }
+
+  test("star_ match multiple") {
+    (lit('a').star_ *> lit('b')).compile.parseOnlyS("aab") should ===(Some('b'))
   }
 
   test("chain consistent with starFold") {
