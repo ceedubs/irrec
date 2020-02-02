@@ -220,8 +220,8 @@ class CombinatorMatchTests extends IrrecSuite {
   }
 
   test("non-greedy optional match") {
-    (lit('a') product wildcard[Char].optional(NonGreedy) product lit('b')).compile.parseOnlyS("ab") should ===(
-      Some((('a', None), 'b')))
+    (lit('a') product wildcard[Char].optional(NonGreedy) product lit('b')).compile
+      .parseOnlyS("ab") should ===(Some((('a', None), 'b')))
   }
 
   test("optional match not present") {

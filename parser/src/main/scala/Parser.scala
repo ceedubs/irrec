@@ -17,16 +17,6 @@ import cats.implicits._
 
 object Parser {
   sealed abstract class RepeatCount extends Product with Serializable {
-    def min: Int = this match {
-      case RepeatCount.Exact(n) => n
-      case RepeatCount.Range(lower, _, _) => lower
-    }
-
-    def max: Option[Int] = this match {
-      case RepeatCount.Exact(n) => Some(n)
-      case RepeatCount.Range(_, upper, _) => upper
-    }
-
     def onRegex(regex: RegexC[Unit]): RegexC[Unit] = this match {
       case RepeatCount.Exact(n) => regex.count(n).void
       case RepeatCount.Range(min, max, g) => regex.repeat(min, max, g).void
