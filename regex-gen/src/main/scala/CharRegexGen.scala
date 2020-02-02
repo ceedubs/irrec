@@ -63,5 +63,8 @@ object CharRegexGen {
     regexMatchingStringGenFromDiet(supportedCharacters)
 
   def genRegexCandidateString[Out]: RegexC[Out] => Gen[String] =
-    r => Gen.oneOf(regexMatchingStringGenFromDiet(supportedCharacters)(r), arbitrary[String])
+    r =>
+      Gen.oneOf(
+        regexMatchingStringGenFromDiet(supportedCharacters)(r),
+        Gen.frequency(2 -> Gen.asciiStr, 1 -> arbitrary[String]))
 }

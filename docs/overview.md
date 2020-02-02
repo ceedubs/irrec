@@ -11,7 +11,7 @@ The name is a shameless rip-off of [irreg](https://github.com/non/irreg), which 
 ## creating regular expressions
 
 ```scala mdoc:silent
-import ceedubs.irrec.regex._, combinator._, char._
+import ceedubs.irrec.regex._, char._
 import ceedubs.irrec.parse.{regex => r}
 import ceedubs.irrec.regex.Greediness._
 import cats.implicits._
@@ -32,7 +32,7 @@ val mood: RegexC[Mood] = r("happy").as[Mood](Happy) | r("tired").as(Tired) |
 val animalsR: RegexC[Animals] =
   (digit <* horizontalWhitespaceChar.repeat(1, Some(2), Greedy),
   mood <* horizontalWhitespaceChar.repeat(1, Some(2), NonGreedy),
-  animal <* lit('s').optional
+  animal <* r("s?")
   ).mapN(Animals.apply)
 ```
 

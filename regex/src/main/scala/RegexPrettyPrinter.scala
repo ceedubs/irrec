@@ -10,6 +10,7 @@ object RegexPrettyPrinter {
   private val andThenPrecedence: Int = 2
   private val orPrecedence: Int = 3
   private val starPrecedence: Int = 1
+  private val countRangePrecedence: Int = 1
   private val epsPrecedence: Int = 0
   private val failPrecedence: Int = 0
   private val matchPrecedence: Int = 0
@@ -77,7 +78,7 @@ object RegexPrettyPrinter {
     value: (Int, String),
     parensForEqualPrecedence: Boolean): String =
     if (value._1 > currentPrecedence || (parensForEqualPrecedence && value._1 === currentPrecedence))
-      s"(?:${value._2})"
+      s"(${value._2})"
     else value._2
 
   // TODO documentation
@@ -102,7 +103,28 @@ object RegexPrettyPrinter {
               false))),
         star = λ[λ[i => (Regex[In, Match[In], i], Greediness, Out, (Out, i) => Out)] ~> λ[a => (
           Int,
-          String)]](t => (starPrecedence, parensMaybe(starPrecedence, go(t._1), true) + "*")),
+          String)]] { t =>
+          val end = t._2 match {
+            case Greediness.Greedy => "*"
+            case Greediness.NonGreedy => "*?"
+          }
+          (starPrecedence, parensMaybe(starPrecedence, go(t._1), true) + end)
+        },
+        repeat = λ[λ[i => (
+          Regex[In, Match[In], i],
+          Int,
+          Option[Int],
+          Greediness,
+          Out,
+          (Out, i) => Out)] ~> λ[a => (Int, String)]] { t =>
+          val inner = parensMaybe(countRangePrecedence, go(t._1), true)
+          val quantifier = s"{${t._2},${t._3.getOrElse("")}}"
+          val g = t._4 match {
+            case Greediness.Greedy => ""
+            case Greediness.NonGreedy => "?"
+          }
+          (countRangePrecedence, s"$inner$quantifier$g")
+        },
         mapped =
           λ[λ[a => (Regex[In, Match[In], a], a => Out)] ~> λ[a => (Int, String)]](t => go(t._1)),
         or = {

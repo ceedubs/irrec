@@ -213,25 +213,56 @@ class CombinatorMatchTests extends IrrecSuite {
   test("seq non-match") { seq("abc").compile.parseOnlyS("bcd") should ===(None) }
 
   test("optional match present") {
-    (lit('a') product lit('b').optional product lit('c')).compile.parseOnlyS("abc") should ===(
-      Some((('a', 'b'.some), 'c')))
+    forAll { g: Greediness =>
+      (lit('a') product lit('b').optional(g) product lit('c')).compile.parseOnlyS("abc") should ===(
+        Some((('a', 'b'.some), 'c')))
+    }
+  }
+
+  test("optional_ match present") {
+    (lit('a') <* lit('b').optional_ product lit('c')).compile.parseOnlyS("abc") should ===(
+      Some(('a', 'c')))
+  }
+
+  test("non-greedy optional match") {
+    (lit('a') product wildcard[Char].optional(NonGreedy) product lit('b')).compile
+      .parseOnlyS("ab") should ===(Some((('a', None), 'b')))
   }
 
   test("optional match not present") {
-    (lit('a') product lit('b').optional product lit('c')).compile.parseOnlyS("ac") should ===(
-      Some((('a', None), 'c')))
+    forAll { g: Greediness =>
+      (lit('a') product lit('b').optional(g) product lit('c')).compile.parseOnlyS("ac") should ===(
+        Some((('a', None), 'c')))
+    }
   }
 
-  test("chain consistent with star") {
+  test("optional_ match not present") {
+    (lit('a') <* lit('b').optional_ product lit('c')).compile.parseOnlyS("ac") should ===(
+      Some(('a', 'c')))
+  }
+
+  test("star_ match 0") {
+    (lit('a').star_ *> lit('b')).compile.parseOnlyS("b") should ===(Some('b'))
+  }
+
+  test("star_ match 1") {
+    (lit('a').star_ *> lit('b')).compile.parseOnlyS("ab") should ===(Some('b'))
+  }
+
+  test("star_ match multiple") {
+    (lit('a').star_ *> lit('b')).compile.parseOnlyS("aab") should ===(Some('b'))
+  }
+
+  test("chain consistent with starFold") {
     val gen = for {
       r0 <- arbitrary[RegexC[Int]]
       g <- arbitrary[Greediness]
-      rStar = r0.star(g, Chain.empty[Int])(_ append _)
+      rStar = r0.starFold(g, Chain.empty[Int])(_ append _)
       candidate <- Gen.oneOf(CharRegexGen.genRegexMatchingString(rStar), arbitrary[String])
     } yield (r0, g, rStar, candidate)
     forAll(gen) {
       case (r0, g, rStar, candidate) =>
-        val rChain = r0.chain(g)
+        val rChain = r0.star(g)
 
         rChain.compile.parseOnlyS(candidate) should ===(rStar.compile.parseOnlyS(candidate))
     }
@@ -239,7 +270,7 @@ class CombinatorMatchTests extends IrrecSuite {
 
   test("greedy chain") {
     forAll { (g: Greediness) =>
-      val r = wildcard[Char].chain(Greedy).product(lit('a').oneOrMore(g))
+      val r = wildcard[Char].star(Greedy).product(lit('a').oneOrMore(g))
       r.compile.parseOnlyS("aaaaa") should ===(
         Some((Chain('a', 'a', 'a', 'a'), NonEmptyChain('a'))))
     }
@@ -247,7 +278,7 @@ class CombinatorMatchTests extends IrrecSuite {
 
   test("non-greedy chain") {
     forAll { (g: Greediness) =>
-      val r = wildcard[Char].chain(NonGreedy).product(lit('a').oneOrMore(g))
+      val r = wildcard[Char].star(NonGreedy).product(lit('a').oneOrMore(g))
       r.compile.parseOnlyS("aaaaa") should ===(
         Some((Chain.empty, NonEmptyChain('a', 'a', 'a', 'a', 'a'))))
     }
@@ -388,7 +419,7 @@ class CombinatorMatchTests extends IrrecSuite {
 
   test("if r matches x, r.chain matches n * x") {
     forAll(genIntRegexAndMatch[Long], Gen.chooseNum(0, 10), arbitrary[Greediness]) { (rc, n, g) =>
-      rc.r.chain(g).matcher[Stream].apply(Stream.fill(n)(rc.candidate).flatten) should ===(true)
+      rc.r.star(g).matcher[Stream].apply(Stream.fill(n)(rc.candidate).flatten) should ===(true)
     }
   }
 
@@ -415,7 +446,7 @@ class CombinatorMatchTests extends IrrecSuite {
 
     forAll(gen) {
       case (min, r, rRepeat, g, c) =>
-        val rCount = r.count(min).map2(r.chain(g))(_ ++ _)
+        val rCount = r.count(min).map2(r.star(g))(_ ++ _)
         rCount.matcher[Stream].apply(c) should ===(rRepeat.matcher[Stream].apply(c))
     }
   }

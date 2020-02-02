@@ -50,55 +50,57 @@ object combinator {
     case _ => Regex.Or(NonEmptyList(l, r :: Nil))
   }
 
-  def optional[In, M, Out](r: Regex[In, M, Out]): Regex[In, M, Option[Out]] =
-    r.map[Option[Out]](Some(_)) | none[Out].pure[Regex[In, M, ?]]
+  def optional[In, M, Out](
+    r: Regex[In, M, Out],
+    greediness: Greediness): Regex[In, M, Option[Out]] =
+    repeatFold(r, 0, Some(1), greediness, none[Out])((_, o) => Some(o))
+
+  def optional_[In, M, Out](r: Regex[In, M, Out]): Regex[In, M, Unit] =
+    optional(r, Greediness.Greedy).void
 
   def either[In, M, Out1, Out2](
     l: Regex[In, M, Out1],
     r: Regex[In, M, Out2]): Regex[In, M, Either[Out1, Out2]] =
     l.map(Either.left[Out1, Out2](_)) | r.map(Either.right[Out1, Out2](_))
 
-  def star[In, M, Out1, Out2](r: Regex[In, M, Out1], g: Greediness, z: Out2)(
+  def starFold[In, M, Out1, Out2](r: Regex[In, M, Out1], g: Greediness, z: Out2)(
     fold: (Out2, Out1) => Out2): Regex[In, M, Out2] =
     Regex.Star(r, g, z, fold)
 
-  def chain[In, M, Out](r: Regex[In, M, Out], g: Greediness): Regex[In, M, Chain[Out]] =
-    star(r, g, Chain.empty[Out])(_ append _)
+  def star[In, M, Out](r: Regex[In, M, Out], g: Greediness): Regex[In, M, Chain[Out]] =
+    starFold(r, g, Chain.empty[Out])(_ append _)
+
+  def star_[In, M, Out](r: Regex[In, M, Out]): Regex[In, M, Unit] =
+    star(r, Greediness.Greedy).void
 
   def many[In, M, Out](r: Regex[In, M, Out]): Regex[In, M, Chain[Out]] =
-    chain(r, Greediness.Greedy)
+    star(r, Greediness.Greedy)
 
   def few[In, M, Out](r: Regex[In, M, Out]): Regex[In, M, Chain[Out]] =
-    chain(r, Greediness.NonGreedy)
+    star(r, Greediness.NonGreedy)
 
   def count[In, M, Out](n: Int, r: Regex[In, M, Out]): Regex[In, M, Chain[Out]] =
-    Chain.fromSeq(1 to n).traverse(_ => r)
+    repeat(r, n, Some(n), Greediness.Greedy)
+
+  def repeatFold[In, M, Out1, Out2](
+    r: Regex[In, M, Out1],
+    minInclusive: Int,
+    maxInclusive: Option[Int],
+    greediness: Greediness,
+    z: Out2)(fold: (Out2, Out1) => Out2): Regex[In, M, Out2] =
+    Regex.Repeat[In, M, Out1, Out2](r, minInclusive, maxInclusive, greediness, z, fold)
 
   def repeat[In, M, Out](
     r: Regex[In, M, Out],
     minInclusive: Int,
     maxInclusive: Option[Int],
-    greediness: Greediness): Regex[In, M, Chain[Out]] = {
-    val tail = maxInclusive.fold(chain(r, greediness).some) { max =>
-      if (max <= minInclusive) None
-      else {
-        (0 to (max - minInclusive)).toList.toNel.map { counts =>
-          val orderedCounts = greediness match {
-            case Greediness.Greedy => counts.reverse
-            case Greediness.NonGreedy => counts
-          }
-          Regex.Or(orderedCounts.map(i => count(i, r)))
-        }
-      }
-    }
-    val head = count(minInclusive, r)
-    tail.fold(head)(tail => head.map2(tail)(_ concat _))
-  }
+    greediness: Greediness): Regex[In, M, Chain[Out]] =
+    repeatFold(r, minInclusive, maxInclusive, greediness, Chain.empty[Out])(_.append(_))
 
   def oneOrMore[In, M, Out](
     r: Regex[In, M, Out],
     greediness: Greediness): Regex[In, M, NonEmptyChain[Out]] =
-    r.map2(r.chain(greediness))(NonEmptyChain.fromChainPrepend(_, _))
+    r.map2(r.star(greediness))(NonEmptyChain.fromChainPrepend(_, _))
 
   def map[In, M, Out, Out2](r: Regex[In, M, Out])(f: Out => Out2): Regex[In, M, Out2] =
     Regex.FMap(r, f)
@@ -158,6 +160,16 @@ object combinator {
         case ((s0, z), (s1, i)) =>
           (s0 concat s1, f(z, i))
       }): Regex[In, M, (Chain[In], Out)]
+    case rs @ Repeat(r, min, max, g, z, f) =>
+      Repeat[In, M, (Chain[In], rs.Init), (Chain[In], Out)](
+        withMatched(r),
+        min,
+        max,
+        g,
+        (Chain.empty[In], z), {
+          case ((s0, z), (s1, i)) =>
+            (s0 concat s1, f(z, i))
+        }): Regex[In, M, (Chain[In], Out)]
     case FMap(r, f) => withMatched(r).map { case (matched, out0) => (matched, f(out0)) }
     case Eps => r.map(o => (Chain.empty, o))
     case Fail() => Fail()
