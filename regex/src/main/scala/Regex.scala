@@ -28,6 +28,12 @@ sealed abstract class Regex[-In, +M, Out] extends Serializable {
   def star(greediness: Greediness): Regex[In, M, Chain[Out]] =
     combinator.star(this, greediness)
 
+  def starFold[Out2](g: Greediness, z: Out2)(fold: (Out2, Out) => Out2) =
+    combinator.starFold(this, g, z)(fold)
+
+  def quantifyFold[Out2](q: Quantifier, z: Out2)(fold: (Out2, Out) => Out2) =
+    combinator.quantifyFold(this, q, z)(fold)
+
   def * : Regex[In, M, Chain[Out]] = star(Greediness.Greedy)
 
   def *? : Regex[In, M, Chain[Out]] = star(Greediness.NonGreedy)
@@ -95,33 +101,38 @@ object Regex {
 
   final case class Repeat[-In, +M, I, Out](
     r: Regex[In, M, I],
-    minInclusive: Int,
-    maxInclusive: Option[Int],
-    greediness: Greediness,
+    quantifier: Quantifier,
     z: Out,
     fold: (Out, I) => Out)
       extends Regex[In, M, Out] {
     type Init = I
 
-    def expand: Regex[In, M, Out] = {
-      val tail = maxInclusive.fold(combinator.star(r, greediness).some) { max =>
-        if (max <= minInclusive) None
-        else {
-          (0 to (max - minInclusive)).toList.toNel.map { counts =>
-            val orderedCounts = greediness match {
-              // TODO reversed?
-              case Greediness.Greedy => counts.reverse
-              case Greediness.NonGreedy => counts
-            }
-            Regex.Or(orderedCounts.map(i => expandedCount(i, r)))
+    def expand: Regex[In, M, Out] =
+      quantifier match {
+        case Quantifier.Exact(n) => expandedCount(n, r).map(_.foldLeft(z)(fold))
+        case Quantifier.Optional(g) =>
+          g match {
+            case Greediness.Greedy => Or(NonEmptyList.of(r.map(i => fold(z, i)), Eps.as(z)))
+            case Greediness.NonGreedy => Or(NonEmptyList.of(Eps.as(z), r.map(i => fold(z, i))))
           }
-        }
+        case Quantifier.Range(minInclusive, maxInclusive, greediness) =>
+          val tail = maxInclusive.fold(combinator.star(r, greediness).some) { max =>
+            if (max <= minInclusive) None
+            else {
+              (0 to (max - minInclusive)).toList.toNel.map { counts =>
+                val orderedCounts = greediness match {
+                  case Greediness.Greedy => counts.reverse
+                  case Greediness.NonGreedy => counts
+                }
+                Regex.Or(orderedCounts.map(i => expandedCount(i, r)))
+              }
+            }
+          }
+          val head = expandedCount(minInclusive, r)
+          tail
+            .fold(head)(tail => head.map2(tail)(_ concat _))
+            .map(_.foldLeft(z)(fold))
       }
-      val head = expandedCount(minInclusive, r)
-      tail
-        .fold(head)(tail => head.map2(tail)(_ concat _))
-        .map(_.foldLeft(z)(fold))
-    }
   }
 
   // TODO efficiently handle with NFA
@@ -136,7 +147,7 @@ object Regex {
     case Eps => F.pure(Eps)
     case x @ Fail() => F.pure(x)
     case Star(r, g, z, fold) => traverseM(r)(f).map(Star(_, g, z, fold))
-    case Repeat(r, min, max, g, z, fold) => traverseM(r)(f).map(Repeat(_, min, max, g, z, fold))
+    case Repeat(r, q, z, fold) => traverseM(r)(f).map(Repeat(_, q, z, fold))
     case FMap(r, g) => traverseM(r)(f).map(FMap(_, g))
     case Or(alternatives) => alternatives.traverse(traverseM(_)(f)).map(Or(_))
     case AndThen(l, r) => traverseM(l)(f).map2(traverseM(r)(f))(AndThen(_, _))
@@ -149,8 +160,7 @@ object Regex {
     elem: (M, In => Option[Out]) => R,
     andThen: λ[i => (Regex[In, M, i => Out], Regex[In, M, i])] ~> λ[a => R],
     star: λ[i => (Regex[In, M, i], Greediness, Out, (Out, i) => Out)] ~> λ[a => R],
-    repeat: λ[i => (Regex[In, M, i], Int, Option[Int], Greediness, Out, (Out, i) => Out)] ~> λ[
-      a => R],
+    repeat: λ[i => (Regex[In, M, i], Quantifier, Out, (Out, i) => Out)] ~> λ[a => R],
     mapped: λ[a => (Regex[In, M, a], a => Out)] ~> λ[a => R],
     or: NonEmptyList[Regex[In, M, Out]] => R,
     void: Is[Unit, Out] => Regex[In, M, ?] ~> λ[a => R]
@@ -159,7 +169,7 @@ object Regex {
     case Or(alternatives) => or(alternatives)
     case e: Elem[In, M, Out] => elem(e.metadata, e.apply)
     case Star(r, g, z, f) => star((r, g, z, f))
-    case Repeat(r, min, max, g, z, f) => repeat((r, min, max, g, z, f))
+    case Repeat(r, q, z, f) => repeat((r, q, z, f))
     case FMap(r, f) => mapped((r, f))
     case Eps => eps(Is.refl[Unit])
     case Fail() => fail()
@@ -243,18 +253,12 @@ object Regex {
             threads(z, _)
           }
         },
-      repeat = new (λ[i => (
-        Regex[In, (ThreadId, M), i],
-        Int,
-        Option[Int],
-        Greediness,
-        A,
-        (A, i) => A)] ~> λ[a => ContOut]) {
-        def apply[i](
-          t: (Regex[In, (ThreadId, M), i], Int, Option[Int], Greediness, A, (A, i) => A)): ContOut =
-          sys.error(
-            "compileCont called with a Repeat instance that hadn't been expanded. This should never happen.")
-      },
+      repeat =
+        new (λ[i => (Regex[In, (ThreadId, M), i], Quantifier, A, (A, i) => A)] ~> λ[a => ContOut]) {
+          def apply[i](t: (Regex[In, (ThreadId, M), i], Quantifier, A, (A, i) => A)): ContOut =
+            sys.error(
+              "compileCont called with a Repeat instance that hadn't been expanded. This should never happen.")
+        },
       mapped = new (λ[a => (Regex[In, (ThreadId, M), a], a => A)] ~> λ[a => ContOut]) {
         def apply[i](t: (Regex[In, (ThreadId, M), i], i => A)): ContOut = {
           val rc = compileCont[In, M, i, R](t._1)
@@ -298,8 +302,8 @@ object Regex {
         case Or(alternatives) => f(Or(alternatives.map(apply(_))))
         case FMap(r, g) => f(FMap(apply(r), g))
         case Star(r, greediness, z, fold) => f(Star(apply(r), greediness, z, fold))
-        case Repeat(r, minInclusive, maxInclusive, greediness, z, fold) =>
-          f(Repeat(apply(r), minInclusive, maxInclusive, greediness, z, fold))
+        case Repeat(r, q, z, fold) =>
+          f(Repeat(apply(r), q, z, fold))
         case Void(r) => f(Void(apply(r)))
       }
     }

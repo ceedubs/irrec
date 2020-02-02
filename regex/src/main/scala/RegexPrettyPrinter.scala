@@ -110,23 +110,12 @@ object RegexPrettyPrinter {
           }
           (starPrecedence, parensMaybe(starPrecedence, go(t._1), true) + end)
         },
-        repeat = λ[λ[i => (
-          Regex[In, Match[In], i],
+        repeat = λ[λ[i => (Regex[In, Match[In], i], Quantifier, Out, (Out, i) => Out)] ~> λ[a => (
           Int,
-          Option[Int],
-          Greediness,
-          Out,
-          (Out, i) => Out)] ~> λ[a => (Int, String)]] { t =>
+          String)]] { t =>
           val inner = parensMaybe(countRangePrecedence, go(t._1), true)
-          val quantifier = (t._2, t._3) match {
-            case (0, Some(1)) => "?"
-            case (min, max) => s"{$min,${max.getOrElse("")}}"
-          }
-          val g = t._4 match {
-            case Greediness.Greedy => ""
-            case Greediness.NonGreedy => "?"
-          }
-          (countRangePrecedence, s"$inner$quantifier$g")
+          if (inner === "") (epsPrecedence, "")
+          else (countRangePrecedence, inner + t._2.pprint)
         },
         mapped =
           λ[λ[a => (Regex[In, Match[In], a], a => Out)] ~> λ[a => (Int, String)]](t => go(t._1)),

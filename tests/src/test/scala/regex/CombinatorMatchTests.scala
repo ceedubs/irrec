@@ -6,6 +6,7 @@ import ceedubs.irrec.regex.{combinator => C}
 import Greediness._
 import gen.{CharRegexGen, RegexAndCandidate}
 import gen.RegexGen._
+import gen.GreedinessGen.genGreediness
 import ceedubs.irrec.parse.{regex => parse}
 import gen.RegexAndCandidate.genIntRegexAndMatch
 import gen.RegexMatchGen.genRegexMatch
