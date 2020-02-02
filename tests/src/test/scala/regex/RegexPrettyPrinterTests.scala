@@ -31,6 +31,16 @@ class RegexPrettyPrinterTests extends IrrecSuite {
     lit('a').repeat(1, Some(4), Greedy).star(NonGreedy).pprint should ===("(a{1,4})*?")
     lit('a').star(Greedy).repeat(1, Some(4), NonGreedy).star(NonGreedy).pprint should ===(
       "((a*){1,4}?)*?")
+    seq("ab").repeat(0, Some(1), Greedy).pprint should ===("(ab)?")
+    seq("ab").repeat(0, Some(1), NonGreedy).pprint should ===("(ab)??")
+  }
+
+  test("pretty print ?") {
+    seq("ab").?.pprint should ===("(ab)?")
+  }
+
+  test("pretty print ??") {
+    seq("ab").??.pprint should ===("(ab)??")
   }
 
   test(
