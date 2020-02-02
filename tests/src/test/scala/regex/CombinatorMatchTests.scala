@@ -213,13 +213,22 @@ class CombinatorMatchTests extends IrrecSuite {
   test("seq non-match") { seq("abc").compile.parseOnlyS("bcd") should ===(None) }
 
   test("optional match present") {
-    (lit('a') product lit('b').optional product lit('c')).compile.parseOnlyS("abc") should ===(
-      Some((('a', 'b'.some), 'c')))
+    forAll { g: Greediness =>
+      (lit('a') product lit('b').optional(g) product lit('c')).compile.parseOnlyS("abc") should ===(
+        Some((('a', 'b'.some), 'c')))
+    }
+  }
+
+  test("non-greedy optional match") {
+    (lit('a') product wildcard[Char].optional(NonGreedy) product lit('b')).compile.parseOnlyS("ab") should ===(
+      Some((('a', None), 'b')))
   }
 
   test("optional match not present") {
-    (lit('a') product lit('b').optional product lit('c')).compile.parseOnlyS("ac") should ===(
-      Some((('a', None), 'c')))
+    forAll { g: Greediness =>
+      (lit('a') product lit('b').optional(g) product lit('c')).compile.parseOnlyS("ac") should ===(
+        Some((('a', None), 'c')))
+    }
   }
 
   test("chain consistent with starFold") {

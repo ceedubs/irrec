@@ -8,6 +8,7 @@ import ceedubs.irrec.regex.Match
 import ceedubs.irrec.regex.Match.MatchSet
 import ceedubs.irrec.parse.{regex => parse}
 import ceedubs.irrec.regex.gen.CharRegexGen._
+import Greediness._
 import Parser.parseRegex
 
 import fastparse._
@@ -59,19 +60,19 @@ class ParserTests extends IrrecSuite {
   }
 
   test("regex parsing matches literal*") {
-    val expected = lit('a').star(Greediness.Greedy).void
+    val expected = lit('a').star(Greedy).void
     val r = parse("a*")
     sameRegex(r, expected)
   }
 
   test("regex parsing matches literal* then another matcher") {
-    val expected = lit('a').star(Greediness.Greedy) *> lit('b').void
+    val expected = lit('a').star(Greedy) *> lit('b').void
     val r = parse("a*b")
     sameRegex(r, expected)
   }
 
   test("regex parsing handles precedence with *") {
-    val expected = lit('a').void | (lit('c') *> lit('d').star(Greediness.Greedy).void)
+    val expected = lit('a').void | (lit('c') *> lit('d').star(Greedy).void)
     val r = parse("a|cd*")
     sameRegex(r, expected)
   }
@@ -146,56 +147,62 @@ class ParserTests extends IrrecSuite {
   }
 
   test("regex parsing supports exact repeat counts") {
-    val expected = lit('a') *> lit('b').repeat(3, Some(3), Greediness.Greedy) *> lit('e').void
+    val expected = lit('a') *> lit('b').repeat(3, Some(3), Greedy) *> lit('e').void
     val r = parse("ab{3}e")
     sameRegex(r, expected)
   }
 
   test("regex parsing supports non-greedy repeat counts with upper bound") {
-    val expected = lit('a') *> lit('b').repeat(2, Some(3), Greediness.NonGreedy) *> lit('e').void
+    val expected = lit('a') *> lit('b').repeat(2, Some(3), NonGreedy) *> lit('e').void
     val r = parse("ab{2,3}?e")
     sameRegex(r, expected)
   }
 
   test("regex parsing supports non-greedy repeat counts without upper bound") {
-    val expected = lit('a') *> lit('b').repeat(2, None, Greediness.NonGreedy) *> lit('e').void
+    val expected = lit('a') *> lit('b').repeat(2, None, NonGreedy) *> lit('e').void
     val r = parse("ab{2,}?e")
     sameRegex(r, expected)
   }
 
   test("regex parsing supports greedy repeat counts with upper bound") {
-    val expected = lit('a') *> lit('b').repeat(2, Some(3), Greediness.Greedy) *> lit('e').void
+    val expected = lit('a') *> lit('b').repeat(2, Some(3), Greedy) *> lit('e').void
     val r = parse("ab{2,3}e")
     sameRegex(r, expected)
   }
 
   test("regex parsing supports greedy repeat counts without upper bound") {
-    val expected = lit('a') *> lit('b').repeat(2, None, Greediness.Greedy) *> lit('e').void
+    val expected = lit('a') *> lit('b').repeat(2, None, Greedy) *> lit('e').void
     val r = parse("ab{2,}e")
     sameRegex(r, expected)
   }
 
   test("regex parsing supports count ranges starting with 1") {
-    val expected = lit('a') *> lit('b').repeat(1, Some(3), Greediness.Greedy) *> lit('e').void
+    val expected = lit('a') *> lit('b').repeat(1, Some(3), Greedy) *> lit('e').void
     val r = parse("ab{1,3}e")
     sameRegex(r, expected)
   }
 
   test("regex parsing supports count ranges starting with 0") {
-    val expected = lit('a') *> lit('b').repeat(0, Some(3), Greediness.Greedy) *> lit('e').void
+    val expected = lit('a') *> lit('b').repeat(0, Some(3), Greedy) *> lit('e').void
     val r = parse("ab{0,3}e")
     sameRegex(r, expected)
   }
 
   test("regex parsing supports count ranges with unbounded upper limit") {
-    val expected = lit('a') *> lit('b').repeat(1, None, Greediness.Greedy) *> lit('e').void
+    val expected = lit('a') *> lit('b').repeat(1, None, Greedy) *> lit('e').void
     val r = parse("ab{1,}e")
     sameRegex(r, expected)
   }
 
-  test("regex parsing supports optional elements") {
-    val expected = lit('a') *> lit('b').optional *> lit('e').void
+  test("regex parsing supports optional greedy elements") {
+    val expected = lit('a') *> lit('b').optional(Greedy) *> lit('e').void
     val r = parse("ab?e")
+    sameRegex(r, expected)
+  }
+
+  test("regex parsing supports optional non-greedy elements") {
+    val expected = lit('a') *> lit('b').optional(NonGreedy) *> lit('e').void
+    val r = parse("ab??e")
     sameRegex(r, expected)
   }
 

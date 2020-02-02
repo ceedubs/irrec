@@ -198,7 +198,8 @@ object Parser {
       P("*?").map(_ => r.star(Greediness.NonGreedy).void) |
         P("*").map(_ => r.star(Greediness.Greedy).void) |
         P("+").map(_ => r.oneOrMore(Greediness.Greedy).void) |
-        P("?").map(_ => r.optional.void) |
+        P("??").map(_ => r.optional(Greediness.NonGreedy).void) |
+        P("?").map(_ => r.optional(Greediness.Greedy).void) |
         repeatCount.map(_.onRegex(r)) |
         Pass(r)
     }

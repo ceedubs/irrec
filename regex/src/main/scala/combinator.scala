@@ -50,8 +50,8 @@ object combinator {
     case _ => Regex.Or(NonEmptyList(l, r :: Nil))
   }
 
-  def optional[In, M, Out](r: Regex[In, M, Out]): Regex[In, M, Option[Out]] =
-    r.map[Option[Out]](Some(_)) | none[Out].pure[Regex[In, M, ?]]
+  def optional[In, M, Out](r: Regex[In, M, Out], greediness: Greediness): Regex[In, M, Option[Out]] =
+    repeatFold(r, 0, Some(1), greediness, none[Out])((_, o) => Some(o))
 
   def either[In, M, Out1, Out2](
     l: Regex[In, M, Out1],

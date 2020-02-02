@@ -18,8 +18,6 @@ final class RegexOps[In, M, Out](private val r: Regex[In, M, Out]) extends AnyVa
 
   def compile: ParseState[In, Out] = Regex.compile(r)
 
-  def optional: Regex[In, M, Option[Out]] = combinator.optional(r)
-
   def withMatched: Regex[In, M, (Chain[In], Out)] =
     combinator.withMatched(r)
 
