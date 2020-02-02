@@ -42,7 +42,7 @@ object RegexGen {
 
   def genMatch[A: Discrete: Order](genA: Gen[A], genDietA: Gen[Diet[A]]): Gen[Match[A]] =
     Gen.frequency(
-      9 -> genA.map(Match.lit(_)),
+      16 -> genA.map(Match.lit(_)),
       3 -> genDietA.map(MatchSet.allow(_)),
       2 -> genDietA.map(MatchSet.forbid(_)),
       1 -> Gen.const(Match.wildcard)
@@ -82,7 +82,7 @@ object RegexGen {
     else
       Gen.frequency(
         // AndThen
-        5 -> (
+        20 -> (
           for {
             rIDepth <- Gen.choose(1, depth - 1)
             rIGen <- genRegexWithEv[In](cfg).apply(rIDepth)
@@ -95,7 +95,7 @@ object RegexGen {
           } yield combinator.andThen(rf, rI)
         ),
         // FMap
-        2 -> (for {
+        3 -> (for {
           regexGen <- genRegexWithEv[In](cfg).apply(depth - 1)
           r <- regexGen.evidence.regexGen
           f <- {
@@ -111,8 +111,24 @@ object RegexGen {
             nel <- depths.traverse(depth => genRegexWithDepth[In, Out](cfg, depth))
           } yield Regex.Or[In, Match[In], Out](nel)
         ),
+        // Repeat
+        3 -> (
+          for {
+            maxCount <- Gen.choose(1, math.min(depth - 1, 5))
+            rIGen <- genRegexWithEv[In](cfg).apply(depth - maxCount)
+            rI <- rIGen.evidence.regexGen
+            min <- Gen.chooseNum(0, maxCount)
+            max <- Gen.frequency(1 -> None, 5 -> Some(maxCount))
+            g <- arbitrary[Greediness]
+            z <- arbitrary[Out]
+            fold <- {
+              implicit val iCogen = rIGen.evidence.cogenOut
+              arbitrary[(Out, rIGen.T) => Out]
+            }
+          } yield combinator.repeatFold(rI, min, max, g, z)(fold)
+        ),
         // Star
-        1 -> (
+        2 -> (
           for {
             rIGen <- genRegexWithEv[In](cfg).apply(depth - 1)
             rI <- rIGen.evidence.regexGen
@@ -122,7 +138,7 @@ object RegexGen {
               implicit val iCogen = rIGen.evidence.cogenOut
               arbitrary[(Out, rIGen.T) => Out]
             }
-          } yield combinator.star(rI, g, z)(fold)
+          } yield combinator.starFold(rI, g, z)(fold)
         )
       )
   }

@@ -89,7 +89,7 @@ duration.toPattern
 
 ### random matches for a regular expression
 
-Irrec provides support for creating [Scalacheck](https://www.scalacheck.org/) generators that produce values that match a regular expression. This generation is done efficiently as opposed to generating a bunch of random values and then filtering the ones that don't match the regular expression (which would quickly lead to Scalacheck giving up on generating matching values).
+Irrec provides [Scalacheck](https://www.scalacheck.org/) generators that produce values that match a regular expression. These can be useful for tests, or even just for glancing at random matches to ensure that your regular expression does what you intended. Check out the [regex-explorer](regex-explorer.md) for interactive browser-based regular expression exploration powered by irrec.
 
 ```scala mdoc:silent
 import ceedubs.irrec.regex.gen._, CharRegexGen._
@@ -103,6 +103,10 @@ val genDurationString: Gen[String] = genRegexMatchingString(duration)
 Gen.listOfN(3, genDurationString).apply(Gen.Parameters.default, Seed(1046531L))
 ```
 
+Were all of those results input that you intended your regular expression to accept?
+
+This generation is done efficiently as opposed to generating a bunch of random values and then filtering the ones that don't match the regular expression (which would quickly lead to Scalacheck giving up on generating matching values).
+
 Sometimes you may want to generate both matches and non-matches for your regular expression to make sure that both cases are handled. There are various `Gen` instances that will generate input that matches the regular expresssion roughly half of the time.
 
 ```scala mdoc:silent
@@ -110,13 +114,13 @@ val genDurationCandidateString: Gen[String] =
   Gen.resize(12, genRegexCandidateString(duration))
 
 val genExamples: Gen[List[(String, Option[Duration])]] =
-  Gen.listOfN(3, genDurationCandidateString).map(candidates =>
+  Gen.listOfN(4, genDurationCandidateString).map(candidates =>
     candidates.map(candidate => (candidate, durationParser.parseOnlyS(candidate)))
   )
 ```
 
 ```scala mdoc
-genExamples.apply(Gen.Parameters.default, Seed(1046531L))
+genExamples.apply(Gen.Parameters.default, Seed(1046533L))
 ```
 
 ### random regular expressions
@@ -154,13 +158,10 @@ regexesAndMatches.map(x =>
 Sometimes you may want to generate both matches and non-matches for your random regular expression to make sure that both cases are handled. There are various `Gen` instances for `RegexAndCandidate` that will generate random regular expressions along with data that matches the regular expresssion roughly half of the time.
 
 ```scala mdoc:silent
-val regexAndCandidateGen: Gen[RegexAndCandidate[Char, Double]] =
-  Gen.resize(12, genAlphaNumRegexAndCandidate)
-
 val regexesAndCandidatesGen: Gen[List[RegexAndCandidate[Char, Double]]] =
-  Gen.listOfN(4, regexAndCandidateGen)
+  Gen.listOfN(4, genAlphaNumRegexAndCandidate)
 
-val regexesAndCandidates: List[RegexAndCandidate[Char, Double]] = regexesAndCandidatesGen.apply(Gen.Parameters.default.withSize(30), Seed(105771L)).get
+val regexesAndCandidates: List[RegexAndCandidate[Char, Double]] = regexesAndCandidatesGen.apply(Gen.Parameters.default.withSize(15), Seed(105375L)).get
 ```
 
 ```scala mdoc

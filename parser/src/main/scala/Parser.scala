@@ -19,18 +19,24 @@ object Parser {
   sealed abstract class RepeatCount extends Product with Serializable {
     def min: Int = this match {
       case RepeatCount.Exact(n) => n
-      case RepeatCount.Range(lower, _) => lower
+      case RepeatCount.Range(lower, _, _) => lower
     }
 
     def max: Option[Int] = this match {
       case RepeatCount.Exact(n) => Some(n)
-      case RepeatCount.Range(_, upper) => upper
+      case RepeatCount.Range(_, upper, _) => upper
+    }
+
+    def onRegex(regex: RegexC[Unit]): RegexC[Unit] = this match {
+      case RepeatCount.Exact(n) => regex.count(n).void
+      case RepeatCount.Range(min, max, g) => regex.repeat(min, max, g).void
     }
   }
 
   object RepeatCount {
     final case class Exact(n: Int) extends RepeatCount
-    final case class Range(lowerInclusive: Int, upperInclusive: Option[Int]) extends RepeatCount
+    final case class Range(lowerInclusive: Int, upperInclusive: Option[Int], greediness: Greediness)
+        extends RepeatCount
   }
 
   private val escapableCharToLit: Map[Char, Char] = specialNonCharClassCharToLit + ('-' -> '-')
@@ -115,9 +121,11 @@ object Parser {
   def repeatCount[_: P]: P[RepeatCount] =
     P(
       "{" ~/ (
-        (posInt ~ "," ~/ posInt.?).map { case (l, h) => RepeatCount.Range(l, h) } |
-          posInt.map(RepeatCount.Exact(_))
-      ) ~ "}").opaque("repeat count such as '{3}', '{1,4}', or '{3,}'")
+        (posInt ~ "," ~/ posInt.? ~/ "}" ~/ (P("?").map(_ => Greediness.NonGreedy) | Pass(
+          Greediness.Greedy))).map { case (l, h, g) => RepeatCount.Range(l, h, g) } |
+          (posInt.map(RepeatCount.Exact(_)) ~ "}")
+      )
+    ).opaque("repeat count such as '{3}', '{1,4}', `{1, 4}?`, '{3,}', or `{3,}?")
 
   def charOrRange[_: P]: P[Match.MatchSet[Char]] =
     matchCharRange.map(r => MatchSet.allow(Diet.fromRange(r))) |
@@ -187,12 +195,11 @@ object Parser {
 
   def factor[_: P]: P[RegexC[Unit]] = P {
     base.flatMap { r =>
-      // TODO greediness
-      // TODO voids
-      P("*").map(_ => r.chain(Greediness.Greedy).void) |
+      P("*?").map(_ => r.star(Greediness.NonGreedy).void) |
+        P("*").map(_ => r.star(Greediness.Greedy).void) |
         P("+").map(_ => r.oneOrMore(Greediness.Greedy).void) |
         P("?").map(_ => r.optional.void) |
-        repeatCount.map(count => r.repeat(count.min, count.max, Greediness.Greedy).void) |
+        repeatCount.map(_.onRegex(r)) |
         Pass(r)
     }
   }

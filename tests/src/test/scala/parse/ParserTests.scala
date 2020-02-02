@@ -16,7 +16,6 @@ import cats.implicits._
 import cats.data.NonEmptyList
 import cats.collections.{Diet, Range}
 
-// TODO greediness?
 class ParserTests extends IrrecSuite {
   test("regex parsing works for single literal") {
     val expected = lit('a')
@@ -60,19 +59,19 @@ class ParserTests extends IrrecSuite {
   }
 
   test("regex parsing matches literal*") {
-    val expected = lit('a').chain(Greediness.Greedy).void
+    val expected = lit('a').star(Greediness.Greedy).void
     val r = parse("a*")
     sameRegex(r, expected)
   }
 
   test("regex parsing matches literal* then another matcher") {
-    val expected = lit('a').chain(Greediness.Greedy) *> lit('b').void
+    val expected = lit('a').star(Greediness.Greedy) *> lit('b').void
     val r = parse("a*b")
     sameRegex(r, expected)
   }
 
   test("regex parsing handles precedence with *") {
-    val expected = lit('a').void | (lit('c') *> lit('d').chain(Greediness.Greedy).void)
+    val expected = lit('a').void | (lit('c') *> lit('d').star(Greediness.Greedy).void)
     val r = parse("a|cd*")
     sameRegex(r, expected)
   }
@@ -152,6 +151,30 @@ class ParserTests extends IrrecSuite {
     sameRegex(r, expected)
   }
 
+  test("regex parsing supports non-greedy repeat counts with upper bound") {
+    val expected = lit('a') *> lit('b').repeat(2, Some(3), Greediness.NonGreedy) *> lit('e').void
+    val r = parse("ab{2,3}?e")
+    sameRegex(r, expected)
+  }
+
+  test("regex parsing supports non-greedy repeat counts without upper bound") {
+    val expected = lit('a') *> lit('b').repeat(2, None, Greediness.NonGreedy) *> lit('e').void
+    val r = parse("ab{2,}?e")
+    sameRegex(r, expected)
+  }
+
+  test("regex parsing supports greedy repeat counts with upper bound") {
+    val expected = lit('a') *> lit('b').repeat(2, Some(3), Greediness.Greedy) *> lit('e').void
+    val r = parse("ab{2,3}e")
+    sameRegex(r, expected)
+  }
+
+  test("regex parsing supports greedy repeat counts without upper bound") {
+    val expected = lit('a') *> lit('b').repeat(2, None, Greediness.Greedy) *> lit('e').void
+    val r = parse("ab{2,}e")
+    sameRegex(r, expected)
+  }
+
   test("regex parsing supports count ranges starting with 1") {
     val expected = lit('a') *> lit('b').repeat(1, Some(3), Greediness.Greedy) *> lit('e').void
     val r = parse("ab{1,3}e")
@@ -178,7 +201,7 @@ class ParserTests extends IrrecSuite {
 
   test("regex parsing handles complex nested expressions") {
     val expected = (lit('a').void | (lit('b') *> wildcard[Char]
-      .chain(Greediness.Greedy)
+      .star(Greediness.Greedy)
       .void)) *> lit('d').void
     val r = parse("(?:a|b.*)d")
     sameRegex(r, expected)
@@ -403,7 +426,7 @@ class ParserTests extends IrrecSuite {
   }
 
   test("regex parsing handles + matches in nested bits") {
-    val expected = lit('a') *> (lit('b') *> lit('c').chain(Greediness.Greedy))
+    val expected = lit('a') *> (lit('b') *> lit('c').star(Greediness.Greedy))
       .oneOrMore(Greediness.Greedy) *> lit('d').void
     val r = parse("a(?:bc*)+d")
     sameRegex(r, expected)
