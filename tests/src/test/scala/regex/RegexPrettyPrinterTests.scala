@@ -12,12 +12,12 @@ class RegexPrettyPrinterTests extends IrrecSuite {
     lit('a').pprint should ===("a")
     lit('a').star(Greedy).pprint should ===("a*")
     lit('a').star(NonGreedy).pprint should ===("a*?")
-    lit('a').many.many.pprint should ===("(a*)*")
-    lit('a').few.few.pprint should ===("(a*?)*?")
-    lit('a').many.many.many.pprint should ===("((a*)*)*")
+    lit('a').*.*.pprint should ===("(a*)*")
+    lit('a').*?.*?.pprint should ===("(a*?)*?")
+    lit('a').*.*.*.pprint should ===("((a*)*)*")
     (lit('a') | lit('b')).pprint should ===("a|b")
-    (lit('a') | lit('b')).many.pprint should ===("(a|b)*")
-    (lit('a') <* lit('b') <* (lit('c') | lit('d')).many).pprint should ===("ab(c|d)*")
+    (lit('a') | lit('b')).*.pprint should ===("(a|b)*")
+    (lit('a') <* lit('b') <* (lit('c') | lit('d')).*).pprint should ===("ab(c|d)*")
   }
 
   test("char regex repeat pretty print examples") {

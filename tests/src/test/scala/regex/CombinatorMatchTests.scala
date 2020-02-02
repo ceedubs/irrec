@@ -99,34 +99,34 @@ class CombinatorMatchTests extends IrrecSuite {
     literal('b').product(literal('c')).compile.parseOnlyS("bcd") should ===(None)
   }
 
-  test("many zero") { literal('b').many.compile.parseOnlyS("") should ===(Some(Chain.empty)) }
+  test("* zero") { literal('b').*.compile.parseOnlyS("") should ===(Some(Chain.empty)) }
 
-  test("many one") { literal('b').many.compile.parseOnlyS("b") should ===(Some(Chain.one('b'))) }
+  test("* one") { literal('b').*.compile.parseOnlyS("b") should ===(Some(Chain.one('b'))) }
 
-  test("many two") { literal('b').many.compile.parseOnlyS("bb") should ===(Some(Chain('b', 'b'))) }
+  test("* two") { literal('b').*.compile.parseOnlyS("bb") should ===(Some(Chain('b', 'b'))) }
 
-  test("many three") {
-    or(literal('b'), literal('c')).many.compile.parseOnlyS("bcb") should ===(
+  test("* three") {
+    or(literal('b'), literal('c')).*.compile.parseOnlyS("bcb") should ===(
       Some(Chain('b', 'c', 'b')))
   }
 
-  test("many trailing") {
-    or(literal('b'), literal('c')).many.compile.parseOnlyS("bcbd") should ===(None)
+  test("* trailing") {
+    or(literal('b'), literal('c')).*.compile.parseOnlyS("bcbd") should ===(None)
   }
 
-  test("few zero") { literal('b').few.compile.parseOnlyS("") should ===(Some(Chain.empty)) }
+  test("*? zero") { literal('b').*?.compile.parseOnlyS("") should ===(Some(Chain.empty)) }
 
-  test("few one") { literal('b').few.compile.parseOnlyS("b") should ===(Some(Chain.one('b'))) }
+  test("*? one") { literal('b').*?.compile.parseOnlyS("b") should ===(Some(Chain.one('b'))) }
 
-  test("few two") { literal('b').few.compile.parseOnlyS("bb") should ===(Some(Chain('b', 'b'))) }
+  test("*? two") { literal('b').*?.compile.parseOnlyS("bb") should ===(Some(Chain('b', 'b'))) }
 
-  test("few three") {
-    or(literal('b'), literal('c')).few.compile.parseOnlyS("bcb") should ===(
+  test("*? three") {
+    or(literal('b'), literal('c')).*?.compile.parseOnlyS("bcb") should ===(
       Some(Chain('b', 'c', 'b')))
   }
 
-  test("few trailing") {
-    or(literal('b'), literal('c')).few.compile.parseOnlyS("bcbd") should ===(None)
+  test("*? trailing") {
+    or(literal('b'), literal('c')).*?.compile.parseOnlyS("bcbd") should ===(None)
   }
 
   test("wildcard") { wildcard[Char].compile.parseOnlyS("b") should ===(Some('b')) }
@@ -219,13 +219,13 @@ class CombinatorMatchTests extends IrrecSuite {
     }
   }
 
-  test("optional_ match present") {
-    (lit('a') <* lit('b').optional_ product lit('c')).compile.parseOnlyS("abc") should ===(
-      Some(('a', 'c')))
-  }
-
   test("non-greedy optional match") {
     (lit('a') product wildcard[Char].optional(NonGreedy) product lit('b')).compile
+      .parseOnlyS("ab") should ===(Some((('a', None), 'b')))
+  }
+
+  test("?? match") {
+    (lit('a') product wildcard[Char].?? product lit('b')).compile
       .parseOnlyS("ab") should ===(Some((('a', None), 'b')))
   }
 
@@ -236,21 +236,20 @@ class CombinatorMatchTests extends IrrecSuite {
     }
   }
 
-  test("optional_ match not present") {
-    (lit('a') <* lit('b').optional_ product lit('c')).compile.parseOnlyS("ac") should ===(
-      Some(('a', 'c')))
+  test("?? match not present") {
+    (lit('a') <* lit('b').?? product lit('c')).compile.parseOnlyS("ac") should ===(Some(('a', 'c')))
   }
 
-  test("star_ match 0") {
-    (lit('a').star_ *> lit('b')).compile.parseOnlyS("b") should ===(Some('b'))
+  test("* match 0") {
+    (lit('a').* *> lit('b')).compile.parseOnlyS("b") should ===(Some('b'))
   }
 
-  test("star_ match 1") {
-    (lit('a').star_ *> lit('b')).compile.parseOnlyS("ab") should ===(Some('b'))
+  test("* match 1") {
+    (lit('a').* *> lit('b')).compile.parseOnlyS("ab") should ===(Some('b'))
   }
 
-  test("star_ match multiple") {
-    (lit('a').star_ *> lit('b')).compile.parseOnlyS("aab") should ===(Some('b'))
+  test("* match multiple") {
+    (lit('a').* *> lit('b')).compile.parseOnlyS("aab") should ===(Some('b'))
   }
 
   test("chain consistent with starFold") {
@@ -276,9 +275,17 @@ class CombinatorMatchTests extends IrrecSuite {
     }
   }
 
-  test("non-greedy chain") {
+  test("non-greedy star") {
     forAll { (g: Greediness) =>
       val r = wildcard[Char].star(NonGreedy).product(lit('a').oneOrMore(g))
+      r.compile.parseOnlyS("aaaaa") should ===(
+        Some((Chain.empty, NonEmptyChain('a', 'a', 'a', 'a', 'a'))))
+    }
+  }
+
+  test("*? non-greediness") {
+    forAll { (g: Greediness) =>
+      val r = wildcard[Char].*?.product(lit('a').oneOrMore(g))
       r.compile.parseOnlyS("aaaaa") should ===(
         Some((Chain.empty, NonEmptyChain('a', 'a', 'a', 'a', 'a'))))
     }

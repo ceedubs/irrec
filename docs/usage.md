@@ -44,7 +44,7 @@ val chronoUnit: RegexC[ChronoUnit] = r("ms|millis?").as(ChronoUnit.MILLIS) |
 
 val duration: RegexC[Duration] = (
   r("-|negative ").optional(Greedy).map(_.isDefined),
-  unitCount <* lit(' ').optional_,
+  unitCount <* lit(' ').?,
   chronoUnit
 ).mapN{ (isNegative, count, unit) =>
   val d = Duration.of(count.toLong, unit)
@@ -179,7 +179,7 @@ While `RegexC` is the most common choice, irrec supports regular expressions for
 ```scala mdoc:silent
 import Greediness._
 
-val numRegex: RegexM[Int, Unit] = lit(1).many.void <* range(2, 4).repeat(1, Some(3), Greedy) <* oneOf(5, 6).oneOrMore(Greedy)
+val numRegex: RegexM[Int, Unit] = lit(1).*.void <* range(2, 4).repeat(1, Some(3), Greedy) <* oneOf(5, 6).oneOrMore(Greedy)
 
 val numMatcher: Stream[Int] => Boolean = numRegex.matcher[Stream]
 ```
