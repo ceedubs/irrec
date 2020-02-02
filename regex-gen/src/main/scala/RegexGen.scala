@@ -85,7 +85,7 @@ object RegexGen {
         20 -> (
           for {
             rIDepth <- Gen.choose(1, depth - 1)
-            rIGen <- genRegexWithEv[In](cfg).apply(rIDepth)
+            rIGen <- genGenRegexWithEv[In](cfg).apply(rIDepth)
             rI <- rIGen.evidence.regexGen
             rf <- {
               implicit val arbI = Arbitrary(rIGen.evidence.genOut)
@@ -95,8 +95,8 @@ object RegexGen {
           } yield combinator.andThen(rf, rI)
         ),
         // FMap
-        3 -> (for {
-          regexGen <- genRegexWithEv[In](cfg).apply(depth - 1)
+        2 -> (for {
+          regexGen <- genGenRegexWithEv[In](cfg).apply(depth - 1)
           r <- regexGen.evidence.regexGen
           f <- {
             implicit val cogenOut = regexGen.evidence.cogenOut
@@ -115,7 +115,7 @@ object RegexGen {
         3 -> (
           for {
             maxCount <- Gen.choose(1, math.min(depth - 1, 5))
-            rIGen <- genRegexWithEv[In](cfg).apply(depth - maxCount)
+            rIGen <- genGenRegexWithEv[In](cfg).apply(depth - maxCount)
             rI <- rIGen.evidence.regexGen
             min <- Gen.chooseNum(0, maxCount)
             max <- Gen.frequency(1 -> None, 5 -> Some(maxCount))
@@ -130,7 +130,7 @@ object RegexGen {
         // Star
         2 -> (
           for {
-            rIGen <- genRegexWithEv[In](cfg).apply(depth - 1)
+            rIGen <- genGenRegexWithEv[In](cfg).apply(depth - 1)
             rI <- rIGen.evidence.regexGen
             g <- arbitrary[Greediness]
             z <- arbitrary[Out]
@@ -152,30 +152,30 @@ object RegexGen {
    *
    * The returned function takes an `Int` that indicates the desired "depth" of the regex.
    */
-  private def genRegexWithEv[In](
-    cfg: Config[In]): Int => Gen[TypeWith[RegexWithEv[In, Match[In], ?]]] = {
-    val leafGen: Gen[TypeWith[RegexWithEv[In, Match[In], ?]]] = Gen.frequency(
+  private def genGenRegexWithEv[In](
+    cfg: Config[In]): Int => Gen[TypeWith[GenRegexWithEv[In, Match[In], ?]]] = {
+    val leafGen: Gen[TypeWith[GenRegexWithEv[In, Match[In], ?]]] = Gen.frequency(
       9 -> genTypeWithGenAndCogen.map { outType =>
         implicit val arbOut = Arbitrary(outType.evidence.gen)
         implicit val cogenOut = outType.evidence.cogen
-        TypeWith(RegexWithEv.fromRegexGen(genRegexWithDepth[In, outType.T](cfg, 1)))
+        TypeWith(GenRegexWithEv.fromRegexGen(genRegexWithDepth[In, outType.T](cfg, 1)))
       },
       // Eps
       (if (cfg.includeEps) 2 else 0) -> Gen.const(
-        TypeWith(RegexWithEv.fromRegexGen(Gen.const(combinator.empty[In, Match[In]]))))
+        TypeWith(GenRegexWithEv.fromRegexGen(Gen.const(combinator.empty[In, Match[In]]))))
     )
-    def go(depth: Int): Gen[TypeWith[RegexWithEv[In, Match[In], ?]]] =
+    def go(depth: Int): Gen[TypeWith[GenRegexWithEv[In, Match[In], ?]]] =
       if (depth <= 1) leafGen
       else
         Gen.frequency(
           // Void
           1 -> go(depth - 1).map { r =>
-            TypeWith(RegexWithEv.fromRegexGen(r.evidence.regexGen.map(_.void)))
+            TypeWith(GenRegexWithEv.fromRegexGen(r.evidence.regexGen.map(_.void)))
           },
           9 -> genTypeWithGenAndCogen.map { outType =>
             implicit val arbOut = Arbitrary(outType.evidence.gen)
             implicit val cogenOut = outType.evidence.cogen
-            TypeWith(RegexWithEv.fromRegexGen(genRegexWithDepth[In, outType.T](cfg, depth)))
+            TypeWith(GenRegexWithEv.fromRegexGen(genRegexWithDepth[In, outType.T](cfg, depth)))
           }
         )
     go(_)
@@ -211,19 +211,16 @@ object RegexGen {
         GenAndCogen(arb.arbitrary, cogen)
     }
 
-    // TODO ceedubs is this the right path?
-    // TODO naming
-    // TODO consider helper function for creating functions?
-    final case class RegexWithEv[In, M, Out](
+    final case class GenRegexWithEv[In, M, Out](
       regexGen: Gen[Regex[In, M, Out]],
       genOut: Gen[Out],
       cogenOut: Cogen[Out])
 
-    object RegexWithEv {
+    object GenRegexWithEv {
       def fromRegexGen[In, M, Out](regex: Gen[Regex[In, M, Out]])(
         implicit arbOut: Arbitrary[Out],
-        cogenOut: Cogen[Out]): RegexWithEv[In, M, Out] =
-        RegexWithEv(regex, arbOut.arbitrary, cogenOut)
+        cogenOut: Cogen[Out]): GenRegexWithEv[In, M, Out] =
+        GenRegexWithEv(regex, arbOut.arbitrary, cogenOut)
     }
 
     val genTypeWithGenAndCogen: Gen[TypeWith[GenAndCogen]] = Gen.oneOf(
