@@ -117,15 +117,13 @@ object RegexGen {
             maxCount <- Gen.choose(1, math.min(depth - 1, 5))
             rIGen <- genGenRegexWithEv[In](cfg).apply(depth - maxCount)
             rI <- rIGen.evidence.regexGen
-            min <- Gen.chooseNum(0, maxCount)
-            max <- Gen.frequency(1 -> None, 5 -> Some(maxCount))
-            g <- arbitrary[Greediness]
+            quantifier <- Gen.resize(maxCount, QuantifierGen.genQuantifier)
             z <- arbitrary[Out]
             fold <- {
               implicit val iCogen = rIGen.evidence.cogenOut
               arbitrary[(Out, rIGen.T) => Out]
             }
-          } yield combinator.repeatFold(rI, min, max, g, z)(fold)
+          } yield rI.quantifyFold(quantifier, z)(fold)
         ),
         // Star
         2 -> (

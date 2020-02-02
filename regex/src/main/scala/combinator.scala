@@ -50,6 +50,11 @@ object combinator {
     case _ => Regex.Or(NonEmptyList(l, r :: Nil))
   }
 
+  // TODO use Repeat constructor
+  def quantifyFold[In, M, Out1, Out2](r: Regex[In, M, Out1], q: Quantifier, z: Out2)(
+    fold: (Out2, Out1) => Out2): Regex[In, M, Out2] =
+    repeatFold(r, q.minCount, q.maxCount, q.greedinessOption.getOrElse(Greediness.Greedy), z)(fold)
+
   def optional[In, M, Out](
     r: Regex[In, M, Out],
     greediness: Greediness): Regex[In, M, Option[Out]] =

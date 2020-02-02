@@ -28,6 +28,9 @@ sealed abstract class Regex[-In, +M, Out] extends Serializable {
   def star(greediness: Greediness): Regex[In, M, Chain[Out]] =
     combinator.star(this, greediness)
 
+  def quantifyFold[Out2](q: Quantifier, z: Out2)(fold: (Out2, Out) => Out2) =
+    combinator.quantifyFold(this, q, z)(fold)
+
   def * : Regex[In, M, Chain[Out]] = star(Greediness.Greedy)
 
   def *? : Regex[In, M, Chain[Out]] = star(Greediness.NonGreedy)
