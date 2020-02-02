@@ -28,17 +28,16 @@ sealed abstract class Regex[-In, +M, Out] extends Serializable {
   def star(greediness: Greediness): Regex[In, M, Chain[Out]] =
     combinator.star(this, greediness)
 
-  def star_ : Regex[In, M, Unit] = combinator.star_(this)
+  def * : Regex[In, M, Chain[Out]] = star(Greediness.Greedy)
+
+  def *? : Regex[In, M, Chain[Out]] = star(Greediness.NonGreedy)
 
   def optional(greediness: Greediness): Regex[In, M, Option[Out]] =
     combinator.optional(this, greediness)
 
-  def optional_ : Regex[In, M, Unit] =
-    combinator.optional_(this)
+  def ? : Regex[In, M, Option[Out]] = optional(Greediness.Greedy)
 
-  def many: Regex[In, M, Chain[Out]] = combinator.many(this)
-
-  def few: Regex[In, M, Chain[Out]] = combinator.few(this)
+  def ?? : Regex[In, M, Option[Out]] = optional(Greediness.NonGreedy)
 
   def oneOrMore(greediness: Greediness): Regex[In, M, NonEmptyChain[Out]] =
     combinator.oneOrMore(this, greediness)
