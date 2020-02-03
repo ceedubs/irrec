@@ -16,18 +16,6 @@ import cats.collections.{Diet, Range}
 import cats.implicits._
 
 object Parser {
-  sealed abstract class RepeatCount extends Product with Serializable {
-    def onRegex(regex: RegexC[Unit]): RegexC[Unit] = this match {
-      case RepeatCount.Exact(n) => regex.count(n).void
-      case RepeatCount.Range(min, max, g) => regex.repeat(min, max, g).void
-    }
-  }
-
-  object RepeatCount {
-    final case class Exact(n: Int) extends RepeatCount
-    final case class Range(lowerInclusive: Int, upperInclusive: Option[Int], greediness: Greediness)
-        extends RepeatCount
-  }
 
   private val escapableCharToLit: Map[Char, Char] = specialNonCharClassCharToLit + ('-' -> '-')
 
@@ -108,12 +96,12 @@ object Parser {
   /**
    * Matches repeat counts like `{3}` or `{1,4}`.
    */
-  def repeatCount[_: P]: P[RepeatCount] =
+  def quantifier[_: P]: P[Quantifier] =
     P(
       "{" ~/ (
         (posInt ~ "," ~/ posInt.? ~/ "}" ~/ (P("?").map(_ => Greediness.NonGreedy) | Pass(
-          Greediness.Greedy))).map { case (l, h, g) => RepeatCount.Range(l, h, g) } |
-          (posInt.map(RepeatCount.Exact(_)) ~ "}")
+          Greediness.Greedy))).map { case (l, h, g) => Quantifier.Range(l, h, g) } |
+          (posInt.map(Quantifier.Exact(_)) ~ "}")
       )
     ).opaque("repeat count such as '{3}', '{1,4}', `{1, 4}?`, '{3,}', or `{3,}?")
 
@@ -190,7 +178,7 @@ object Parser {
         P("+").map(_ => r.oneOrMore(Greediness.Greedy).void) |
         P("??").map(_ => r.optional(Greediness.NonGreedy).void) |
         P("?").map(_ => r.optional(Greediness.Greedy).void) |
-        repeatCount.map(_.onRegex(r)) |
+        quantifier.map(q => r.quantifyFold(q, ())((_, _) => ())) |
         Pass(r)
     }
   }

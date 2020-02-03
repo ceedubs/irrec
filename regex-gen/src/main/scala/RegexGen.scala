@@ -5,6 +5,7 @@ package gen
 import DietGen._
 import ceedubs.irrec.regex.Match.MatchSet
 import ceedubs.irrec.regex.gen.ScalacheckSupport._
+import GreedinessGen.genGreediness
 
 import cats.implicits._
 import cats.Order
@@ -57,7 +58,6 @@ object RegexGen {
   val standardLongConfig: Config[Long] =
     Config.fromDiscreteDiet(Diet.fromRange(Range(Long.MinValue, Long.MaxValue)))
 
-  val genGreediness: Gen[Greediness] = Gen.oneOf(Greediness.Greedy, Greediness.NonGreedy)
   implicit val arbGreendiness: Arbitrary[Greediness] = Arbitrary(genGreediness)
 
   // TODO Should we take a Gen[Out] instead of expecting an Arbitrary[Out]?
@@ -117,15 +117,13 @@ object RegexGen {
             maxCount <- Gen.choose(1, math.min(depth - 1, 5))
             rIGen <- genGenRegexWithEv[In](cfg).apply(depth - maxCount)
             rI <- rIGen.evidence.regexGen
-            min <- Gen.chooseNum(0, maxCount)
-            max <- Gen.frequency(1 -> None, 5 -> Some(maxCount))
-            g <- arbitrary[Greediness]
+            quantifier <- Gen.resize(maxCount, QuantifierGen.genQuantifier)
             z <- arbitrary[Out]
             fold <- {
               implicit val iCogen = rIGen.evidence.cogenOut
               arbitrary[(Out, rIGen.T) => Out]
             }
-          } yield combinator.repeatFold(rI, min, max, g, z)(fold)
+          } yield rI.quantifyFold(quantifier, z)(fold)
         ),
         // Star
         2 -> (
@@ -196,11 +194,14 @@ object RegexGen {
   implicit def arbLongRegex[Out: Arbitrary: Cogen]: Arbitrary[RegexM[Long, Out]] =
     Arbitrary(genLongRegex)
 
-  def genCharRegex[Out: Arbitrary: Cogen]: Gen[RegexM[Char, Out]] =
+  def genCharRegex[Out: Arbitrary: Cogen]: Gen[RegexC[Out]] =
     CharRegexGen.genStandardCharRegex
 
-  implicit def arbCharRegex[Out: Arbitrary: Cogen]: Arbitrary[RegexM[Char, Out]] =
+  implicit def arbCharRegex[Out: Arbitrary: Cogen]: Arbitrary[RegexC[Out]] =
     Arbitrary(genCharRegex)
+
+  implicit val arbQuantifier: Arbitrary[Quantifier] = Arbitrary(
+    Gen.resize(5, QuantifierGen.genQuantifier))
 
   private[irrec] object Support {
     // TODO should this have Order as well?

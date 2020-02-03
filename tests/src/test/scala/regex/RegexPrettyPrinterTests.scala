@@ -4,6 +4,7 @@ package regex
 import ceedubs.irrec.parse.{regex => parse}
 import combinator._
 import Greediness._
+import ceedubs.irrec.regex.gen.RegexGen._
 
 import cats.implicits._
 
@@ -31,8 +32,6 @@ class RegexPrettyPrinterTests extends IrrecSuite {
     lit('a').repeat(1, Some(4), Greedy).star(NonGreedy).pprint should ===("(a{1,4})*?")
     lit('a').star(Greedy).repeat(1, Some(4), NonGreedy).star(NonGreedy).pprint should ===(
       "((a*){1,4}?)*?")
-    seq("ab").repeat(0, Some(1), Greedy).pprint should ===("(ab)?")
-    seq("ab").repeat(0, Some(1), NonGreedy).pprint should ===("(ab)??")
   }
 
   test("pretty print ?") {
@@ -55,6 +54,14 @@ class RegexPrettyPrinterTests extends IrrecSuite {
 
   test("char regex pretty print should handle Zero") {
     (lit('a') <* combinator.fail <* lit('b')).pprint should ===("a∅b")
+  }
+
+  test("char regex pretty print should ignore repeats on Eps") {
+    forAll { (r1: RegexC[Unit], r2: RegexC[Unit], q: Quantifier) =>
+      val actual = (r1 <* combinator.empty.quantifyFold(q, ())((_, _) => ()) <* r2).pprint
+      val expected = (r1 <* r2).pprint
+      actual should ===(expected)
+    }
   }
 
   test("char regex pretty print should handle One") {

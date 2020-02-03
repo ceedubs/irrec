@@ -43,12 +43,12 @@ object RegexMatchGen {
             λ[λ[i => (RegexM[In, i], Greediness, Out, (Out, i) => Out)] ~> λ[a => Gen[Stream[In]]]](
               t => Gen.containerOf[Stream, Stream[In]](outer.apply(t._1)).map(_.flatten)),
           repeat =
-            λ[λ[i => (RegexM[In, i], Int, Option[Int], Greediness, Out, (Out, i) => Out)] ~> λ[
-              a => Gen[Stream[In]]]](t =>
-              for {
-                count <- Gen.chooseNum(t._2, math.max(t._2, t._3.getOrElse(5)))
-                nestedStream <- Gen.containerOfN[Stream, Stream[In]](count, outer.apply(t._1))
-              } yield nestedStream.flatten),
+            λ[λ[i => (RegexM[In, i], Quantifier, Out, (Out, i) => Out)] ~> λ[a => Gen[Stream[In]]]](
+              t =>
+                for {
+                  count <- QuantifierGen.genCount(t._2)
+                  nestedStream <- Gen.containerOfN[Stream, Stream[In]](count, outer.apply(t._1))
+                } yield nestedStream.flatten),
           mapped =
             λ[λ[a => (RegexM[In, a], a => Out)] ~> λ[a => Gen[Stream[In]]]](t => outer.apply(t._1)),
           or = alternatives => Gen.oneOf(alternatives.toList).flatMap(apply),
