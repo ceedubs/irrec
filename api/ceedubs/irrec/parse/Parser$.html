@@ -203,26 +203,7 @@
         <div id="allMembers">
         
 
-        <div id="types" class="types members">
-              <h3>Type Members</h3>
-              <ol><li name="ceedubs.irrec.parse.Parser.RepeatCount" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="RepeatCountextendsProductwithSerializable"></a><a id="RepeatCount:RepeatCount"></a>
-      <span class="permalink">
-      <a href="../../../ceedubs/irrec/parse/Parser$$RepeatCount.html" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier">sealed abstract </span>
-        <span class="kind">class</span>
-      </span>
-      <span class="symbol">
-        <a title="" href="Parser$$RepeatCount.html"><span class="name">RepeatCount</span></a><span class="result"> extends <a href="https://www.scala-lang.org/api/2.12.10/scala/Product.html#scala.Product" class="extype" name="scala.Product">Product</a> with <a href="https://www.scala-lang.org/api/2.12.10/scala/Serializable.html#scala.Serializable" class="extype" name="scala.Serializable">Serializable</a></span>
-      </span>
-      
-      
-    </li></ol>
-            </div>
+        
 
         
 
@@ -705,6 +686,22 @@ character classes such as <code>*</code> (ex: <code>[*+]</code> matches on liter
       </span>
       
       
+    </li><li name="ceedubs.irrec.parse.Parser#quantifier" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="quantifier[_](implicitevidence$11:fastparse.P[Any]):fastparse.P[ceedubs.irrec.regex.Quantifier]"></a><a id="quantifier[_](P[Any]):P[Quantifier]"></a>
+      <span class="permalink">
+      <a href="../../../ceedubs/irrec/parse/Parser$.html#quantifier[_](implicitevidence$11:fastparse.P[Any]):fastparse.P[ceedubs.irrec.regex.Quantifier]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">quantifier</span><span class="tparams">[<span name="_">_</span>]</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span class="extype" name="fastparse.P">P</span>[<a href="https://www.scala-lang.org/api/2.12.10/scala/Any.html#scala.Any" class="extype" name="scala.Any">Any</a>]</span>)</span><span class="result">: <span class="extype" name="fastparse.P">P</span>[<a href="../regex/Quantifier.html" class="extype" name="ceedubs.irrec.regex.Quantifier">Quantifier</a>]</span>
+      </span>
+      
+      <p class="shortcomment cmt">Matches repeat counts like <code>{3}</code> or <code>{1,4}</code>.</p>
     </li><li name="ceedubs.irrec.parse.Parser#regex" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="regex[_](implicitevidence$22:fastparse.P[Any]):fastparse.P[ceedubs.irrec.regex.RegexC[Unit]]"></a><a id="regex[_](P[Any]):P[RegexC[Unit]]"></a>
       <span class="permalink">
@@ -739,22 +736,6 @@ parser will succeed even if there are trailing characters after a valid regular 
       </span>
       
       <p class="shortcomment cmt">A parser for strings that are complete regular expressions, up until the end of the string.</p>
-    </li><li name="ceedubs.irrec.parse.Parser#repeatCount" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="repeatCount[_](implicitevidence$11:fastparse.P[Any]):fastparse.P[ceedubs.irrec.parse.Parser.RepeatCount]"></a><a id="repeatCount[_](P[Any]):P[RepeatCount]"></a>
-      <span class="permalink">
-      <a href="../../../ceedubs/irrec/parse/Parser$.html#repeatCount[_](implicitevidence$11:fastparse.P[Any]):fastparse.P[ceedubs.irrec.parse.Parser.RepeatCount]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">repeatCount</span><span class="tparams">[<span name="_">_</span>]</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span class="extype" name="fastparse.P">P</span>[<a href="https://www.scala-lang.org/api/2.12.10/scala/Any.html#scala.Any" class="extype" name="scala.Any">Any</a>]</span>)</span><span class="result">: <span class="extype" name="fastparse.P">P</span>[<a href="Parser$$RepeatCount.html" class="extype" name="ceedubs.irrec.parse.Parser.RepeatCount">RepeatCount</a>]</span>
-      </span>
-      
-      <p class="shortcomment cmt">Matches repeat counts like <code>{3}</code> or <code>{1,4}</code>.</p>
     </li><li name="ceedubs.irrec.parse.Parser#shorthandClass" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="shorthandClass[_](implicitevidence$3:fastparse.P[Any]):fastparse.P[ceedubs.irrec.regex.Match.MatchSet[Char]]"></a><a id="shorthandClass[_](P[Any]):P[MatchSet[Char]]"></a>
       <span class="permalink">
@@ -969,22 +950,6 @@ with the character after it.
       </span>
       
       <p class="shortcomment cmt">Matches the wildcard character <code>.</code>.</p>
-    </li><li name="ceedubs.irrec.parse.Parser.RepeatCount" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="RepeatCount"></a><a id="RepeatCount:RepeatCount"></a>
-      <span class="permalink">
-      <a href="../../../ceedubs/irrec/parse/Parser$$RepeatCount$.html" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">object</span>
-      </span>
-      <span class="symbol">
-        <a title="" href="Parser$$RepeatCount$.html"><span class="name">RepeatCount</span></a><span class="result"> extends <a href="https://www.scala-lang.org/api/2.12.10/scala/Serializable.html#scala.Serializable" class="extype" name="scala.Serializable">Serializable</a></span>
-      </span>
-      
-      
     </li>
               </ol>
             </div>

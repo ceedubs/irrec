@@ -132,9 +132,7 @@ durationParser.parseOnlyS(<span class="hljs-string">"eleventy buckets"</span>)
 <span class="hljs-keyword">val</span> genDurationString: <span class="hljs-type">Gen</span>[<span class="hljs-type">String</span>] = genRegexMatchingString(duration)
 </code></pre>
 <pre><code class="hljs css language-scala"><span class="hljs-type">Gen</span>.listOfN(<span class="hljs-number">3</span>, genDurationString).apply(<span class="hljs-type">Gen</span>.<span class="hljs-type">Parameters</span>.<span class="hljs-keyword">default</span>, <span class="hljs-type">Seed</span>(<span class="hljs-number">1046531</span>L))
-<span class="hljs-comment">// res7: Option[List[String]] = Some(</span>
-<span class="hljs-comment">//   List("594 millis", "394 mins", "82 second")</span>
-<span class="hljs-comment">// )</span>
+<span class="hljs-comment">// res7: Option[List[String]] = Some(List("35 millis", "5seconds", "3milli"))</span>
 </code></pre>
 <p>Were all of those results input that you intended your regular expression to accept?</p>
 <p>This generation is done efficiently as opposed to generating a bunch of random values and then filtering the ones that don't match the regular expression (which would quickly lead to Scalacheck giving up on generating matching values).</p>
@@ -152,8 +150,8 @@ durationParser.parseOnlyS(<span class="hljs-string">"eleventy buckets"</span>)
 <span class="hljs-comment">//   List(</span>
 <span class="hljs-comment">//     ("\u007f$@\u0000g", None),</span>
 <span class="hljs-comment">//     ("\u001ayj[?8-W\u001c#aW", None),</span>
-<span class="hljs-comment">//     ("876second", Some(PT14M36S)),</span>
-<span class="hljs-comment">//     ("9millis", Some(PT0.009S))</span>
+<span class="hljs-comment">//     ("-87millis", Some(PT-0.087S)),</span>
+<span class="hljs-comment">//     ("\u0000jK-xb{\u000e", None)</span>
 <span class="hljs-comment">//   )</span>
 <span class="hljs-comment">// )</span>
 </code></pre>
@@ -179,10 +177,10 @@ durationParser.parseOnlyS(<span class="hljs-string">"eleventy buckets"</span>)
   (x.r.pprint, x.candidate.mkString)
 )
 <span class="hljs-comment">// res10: List[(String, String)] = List(</span>
-<span class="hljs-comment">//   ("u??teShU[^9]2", "uteShUX2"),</span>
-<span class="hljs-comment">//   ("fjl.", "fjln"),</span>
-<span class="hljs-comment">//   ("(pzW6)*?", "pzW6pzW6pzW6pzW6pzW6pzW6pzW6pzW6pzW6pzW6pzW6pzW6"),</span>
-<span class="hljs-comment">//   ("Q{1,1}[57FJcr-s]", "QJ")</span>
+<span class="hljs-comment">//   ("u??teShU[^9]2", "uteShUC2"),</span>
+<span class="hljs-comment">//   (".0", "40"),</span>
+<span class="hljs-comment">//   ("M{2}9.OS5.w", "MM9rOS5Jw"),</span>
+<span class="hljs-comment">//   ("([57VYelz]S)??X7", "zSX7")</span>
 <span class="hljs-comment">// )</span>
 </code></pre>
 <p>Sometimes you may want to generate both matches and non-matches for your random regular expression to make sure that both cases are handled. There are various <code>Gen</code> instances for <code>RegexAndCandidate</code> that will generate random regular expressions along with data that matches the regular expresssion roughly half of the time.</p>
@@ -195,7 +193,7 @@ durationParser.parseOnlyS(<span class="hljs-string">"eleventy buckets"</span>)
   (x.r.pprint, x.candidate.mkString, x.r.compile.parseOnly(x.candidate))
 )
 <span class="hljs-comment">// res11: List[(String, String, Option[Double])] = List(</span>
-<span class="hljs-comment">//   ("(b?C[4K](z|1[^3Hei-lnuz])b[2KMOSbempruz])?", "2U6W4C1v86ep85", None),</span>
+<span class="hljs-comment">//   ("(b{0}C[4K](z|1[^3Hei-lnuz])b[2KMOSbempruz]){0,1}", "2U6W4C1v86ep85", None),</span>
 <span class="hljs-comment">//   (</span>
 <span class="hljs-comment">//     "([o]|6|B|3|[13AWov]|R)[25GXej-kvy-z][08EHM-NQVcjrv]",</span>
 <span class="hljs-comment">//     "d7GBzQ8alN15tk7",</span>

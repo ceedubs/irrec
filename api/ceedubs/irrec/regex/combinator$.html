@@ -154,6 +154,10 @@
                         <a class="class" href="ParseState.html" title=""></a>
                         <a href="ParseState.html" title="">ParseState</a>
                       </li><li class="current-entities indented3">
+                        <a class="object" href="Quantifier$.html" title=""></a>
+                        <a class="class" href="Quantifier.html" title=""></a>
+                        <a href="Quantifier.html" title="">Quantifier</a>
+                      </li><li class="current-entities indented3">
                         <a class="object" href="Regex$.html" title=""></a>
                         <a class="class" href="Regex.html" title="A generalized representation of a regular expression."></a>
                         <a href="Regex.html" title="A generalized representation of a regular expression.">Regex</a>
@@ -989,6 +993,22 @@
       
       <p class="shortcomment cmt">A predicate to run on a single input element.</p><div class="fullcomment"><div class="comment cmt"><p>A predicate to run on a single input element.
 </p></div><dl class="paramcmts block"><dt class="param">f</dt><dd class="cmt"><p>the predicate - should return true if the element matches and false otherwise</p></dd></dl></div>
+    </li><li name="ceedubs.irrec.regex.combinator#quantifyFold" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="quantifyFold[In,M,Out1,Out2](r:ceedubs.irrec.regex.Regex[In,M,Out1],q:ceedubs.irrec.regex.Quantifier,z:Out2)(fold:(Out2,Out1)=&gt;Out2):ceedubs.irrec.regex.Regex[In,M,Out2]"></a><a id="quantifyFold[In,M,Out1,Out2](Regex[In,M,Out1],Quantifier,Out2)((Out2,Out1)⇒Out2):Regex[In,M,Out2]"></a>
+      <span class="permalink">
+      <a href="../../../ceedubs/irrec/regex/combinator$.html#quantifyFold[In,M,Out1,Out2](r:ceedubs.irrec.regex.Regex[In,M,Out1],q:ceedubs.irrec.regex.Quantifier,z:Out2)(fold:(Out2,Out1)=&gt;Out2):ceedubs.irrec.regex.Regex[In,M,Out2]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">quantifyFold</span><span class="tparams">[<span name="In">In</span>, <span name="M">M</span>, <span name="Out1">Out1</span>, <span name="Out2">Out2</span>]</span><span class="params">(<span name="r">r: <a href="Regex.html" class="extype" name="ceedubs.irrec.regex.Regex">Regex</a>[<span class="extype" name="ceedubs.irrec.regex.combinator.quantifyFold.In">In</span>, <span class="extype" name="ceedubs.irrec.regex.combinator.quantifyFold.M">M</span>, <span class="extype" name="ceedubs.irrec.regex.combinator.quantifyFold.Out1">Out1</span>]</span>, <span name="q">q: <a href="Quantifier.html" class="extype" name="ceedubs.irrec.regex.Quantifier">Quantifier</a></span>, <span name="z">z: <span class="extype" name="ceedubs.irrec.regex.combinator.quantifyFold.Out2">Out2</span></span>)</span><span class="params">(<span name="fold">fold: (<span class="extype" name="ceedubs.irrec.regex.combinator.quantifyFold.Out2">Out2</span>, <span class="extype" name="ceedubs.irrec.regex.combinator.quantifyFold.Out1">Out1</span>) ⇒ <span class="extype" name="ceedubs.irrec.regex.combinator.quantifyFold.Out2">Out2</span></span>)</span><span class="result">: <a href="Regex.html" class="extype" name="ceedubs.irrec.regex.Regex">Regex</a>[<span class="extype" name="ceedubs.irrec.regex.combinator.quantifyFold.In">In</span>, <span class="extype" name="ceedubs.irrec.regex.combinator.quantifyFold.M">M</span>, <span class="extype" name="ceedubs.irrec.regex.combinator.quantifyFold.Out2">Out2</span>]</span>
+      </span>
+      
+      
     </li><li name="ceedubs.irrec.regex.combinator#range" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="range[A](l:A,r:A)(implicitevidence$5:cats.Order[A]):ceedubs.irrec.regex.RegexM[A,A]"></a><a id="range[A](A,A)(Order[A]):RegexM[A,A]"></a>
       <span class="permalink">
@@ -1018,22 +1038,6 @@
       </span>
       <span class="symbol">
         <span class="name">repeat</span><span class="tparams">[<span name="In">In</span>, <span name="M">M</span>, <span name="Out">Out</span>]</span><span class="params">(<span name="r">r: <a href="Regex.html" class="extype" name="ceedubs.irrec.regex.Regex">Regex</a>[<span class="extype" name="ceedubs.irrec.regex.combinator.repeat.In">In</span>, <span class="extype" name="ceedubs.irrec.regex.combinator.repeat.M">M</span>, <span class="extype" name="ceedubs.irrec.regex.combinator.repeat.Out">Out</span>]</span>, <span name="minInclusive">minInclusive: <a href="https://www.scala-lang.org/api/2.12.10/scala/Int.html#scala.Int" class="extype" name="scala.Int">Int</a></span>, <span name="maxInclusive">maxInclusive: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<a href="https://www.scala-lang.org/api/2.12.10/scala/Int.html#scala.Int" class="extype" name="scala.Int">Int</a>]</span>, <span name="greediness">greediness: <a href="Greediness.html" class="extype" name="ceedubs.irrec.regex.Greediness">Greediness</a></span>)</span><span class="result">: <a href="Regex.html" class="extype" name="ceedubs.irrec.regex.Regex">Regex</a>[<span class="extype" name="ceedubs.irrec.regex.combinator.repeat.In">In</span>, <span class="extype" name="ceedubs.irrec.regex.combinator.repeat.M">M</span>, <a href="http://typelevel.org/cats/api/cats/data/Chain.html#cats.data.Chain" class="extype" name="cats.data.Chain">Chain</a>[<span class="extype" name="ceedubs.irrec.regex.combinator.repeat.Out">Out</span>]]</span>
-      </span>
-      
-      
-    </li><li name="ceedubs.irrec.regex.combinator#repeatFold" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="repeatFold[In,M,Out1,Out2](r:ceedubs.irrec.regex.Regex[In,M,Out1],minInclusive:Int,maxInclusive:Option[Int],greediness:ceedubs.irrec.regex.Greediness,z:Out2)(fold:(Out2,Out1)=&gt;Out2):ceedubs.irrec.regex.Regex[In,M,Out2]"></a><a id="repeatFold[In,M,Out1,Out2](Regex[In,M,Out1],Int,Option[Int],Greediness,Out2)((Out2,Out1)⇒Out2):Regex[In,M,Out2]"></a>
-      <span class="permalink">
-      <a href="../../../ceedubs/irrec/regex/combinator$.html#repeatFold[In,M,Out1,Out2](r:ceedubs.irrec.regex.Regex[In,M,Out1],minInclusive:Int,maxInclusive:Option[Int],greediness:ceedubs.irrec.regex.Greediness,z:Out2)(fold:(Out2,Out1)=&gt;Out2):ceedubs.irrec.regex.Regex[In,M,Out2]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">repeatFold</span><span class="tparams">[<span name="In">In</span>, <span name="M">M</span>, <span name="Out1">Out1</span>, <span name="Out2">Out2</span>]</span><span class="params">(<span name="r">r: <a href="Regex.html" class="extype" name="ceedubs.irrec.regex.Regex">Regex</a>[<span class="extype" name="ceedubs.irrec.regex.combinator.repeatFold.In">In</span>, <span class="extype" name="ceedubs.irrec.regex.combinator.repeatFold.M">M</span>, <span class="extype" name="ceedubs.irrec.regex.combinator.repeatFold.Out1">Out1</span>]</span>, <span name="minInclusive">minInclusive: <a href="https://www.scala-lang.org/api/2.12.10/scala/Int.html#scala.Int" class="extype" name="scala.Int">Int</a></span>, <span name="maxInclusive">maxInclusive: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<a href="https://www.scala-lang.org/api/2.12.10/scala/Int.html#scala.Int" class="extype" name="scala.Int">Int</a>]</span>, <span name="greediness">greediness: <a href="Greediness.html" class="extype" name="ceedubs.irrec.regex.Greediness">Greediness</a></span>, <span name="z">z: <span class="extype" name="ceedubs.irrec.regex.combinator.repeatFold.Out2">Out2</span></span>)</span><span class="params">(<span name="fold">fold: (<span class="extype" name="ceedubs.irrec.regex.combinator.repeatFold.Out2">Out2</span>, <span class="extype" name="ceedubs.irrec.regex.combinator.repeatFold.Out1">Out1</span>) ⇒ <span class="extype" name="ceedubs.irrec.regex.combinator.repeatFold.Out2">Out2</span></span>)</span><span class="result">: <a href="Regex.html" class="extype" name="ceedubs.irrec.regex.Regex">Regex</a>[<span class="extype" name="ceedubs.irrec.regex.combinator.repeatFold.In">In</span>, <span class="extype" name="ceedubs.irrec.regex.combinator.repeatFold.M">M</span>, <span class="extype" name="ceedubs.irrec.regex.combinator.repeatFold.Out2">Out2</span>]</span>
       </span>
       
       
