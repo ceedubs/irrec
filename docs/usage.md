@@ -121,7 +121,7 @@ val genExamples: Gen[List[(String, Option[Duration])]] =
 ```
 
 ```scala mdoc
-genExamples.apply(Gen.Parameters.default, Seed(1046533L))
+genExamples.apply(Gen.Parameters.default, Seed(1046513L))
 ```
 
 ### random regular expressions
@@ -129,9 +129,9 @@ genExamples.apply(Gen.Parameters.default, Seed(1046533L))
 Irrec provies support for creating random (valid) regular expressions along with potential matches for them.
 
 ```scala mdoc:silent
-val regexGen: Gen[RegexC[List[Long]]] = Gen.resize(12, genAsciiRegex)
+val regexGen: Gen[RegexC[List[Long]]] = Gen.resize(16, genAsciiRegex)
 
-val randomRegex1: RegexC[List[Long]] = regexGen.apply(Gen.Parameters.default, Seed(105769L)).get
+val randomRegex1: RegexC[List[Long]] = regexGen.apply(Gen.Parameters.default, Seed(10570573L)).get
 ```
 
 ```scala mdoc
@@ -162,7 +162,7 @@ Sometimes you may want to generate both matches and non-matches for your random 
 val regexesAndCandidatesGen: Gen[List[RegexAndCandidate[Char, Double]]] =
   Gen.listOfN(4, genAlphaNumRegexAndCandidate)
 
-val regexesAndCandidates: List[RegexAndCandidate[Char, Double]] = regexesAndCandidatesGen.apply(Gen.Parameters.default.withSize(15), Seed(105375L)).get
+val regexesAndCandidates: List[RegexAndCandidate[Char, Double]] = regexesAndCandidatesGen.apply(Gen.Parameters.default.withSize(15), Seed(105373L)).get
 ```
 
 ```scala mdoc
