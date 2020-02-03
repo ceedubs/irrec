@@ -61,10 +61,9 @@ sealed abstract class Regex[-In, +M, Out] extends Serializable {
 
 object Regex {
   case object Eps extends Regex[Any, Nothing, Unit]
+
   final case class Fail[A]() extends Regex[Any, Nothing, A]
-  // TODO should this actually have both? Instead could just rely on doing a `map` and changing `M`.
-  // But that assumes that the conversion will be the same for all M
-  // Also that's probably going to mess with type inference
+
   abstract class Elem[-In, +M, Out] extends Regex[In, M, Out] {
     def metadata: M
     def apply(in: In): Option[Out]
@@ -193,6 +192,8 @@ object Regex {
         super.productL(fa)(void(fb))
       override def productR[A, B](fa: Regex[In, M, A])(fb: Regex[In, M, B]): Regex[In, M, B] =
         super.productR(void(fa))(fb)
+      override def as[A, B](fa: Regex[In, M, A], b: B): Regex[In, M, B] =
+        fa.void.map(_ => b)
     }
 
   def assignThreadIds[In, M, A](re: Regex[In, M, A]): Regex[In, (ThreadId, M), A] = {
@@ -201,7 +202,6 @@ object Regex {
   }
 
   // TODO could change this to return a natural transformation
-  // TODO make private or something?
   // TODO Stream is deprecated in 2.13, right?
   // TODO use Cont/ContT?
   // TODO return a custom type?

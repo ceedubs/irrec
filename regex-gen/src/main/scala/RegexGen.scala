@@ -204,7 +204,6 @@ object RegexGen {
     Gen.resize(5, QuantifierGen.genQuantifier))
 
   private[irrec] object Support {
-    // TODO should this have Order as well?
     final case class GenAndCogen[A](gen: Gen[A], cogen: Cogen[A])
 
     object GenAndCogen {
