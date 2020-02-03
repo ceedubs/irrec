@@ -147,7 +147,7 @@ class ParserTests extends IrrecSuite {
   }
 
   test("regex parsing supports exact repeat counts") {
-    val expected = lit('a') *> lit('b').repeat(3, Some(3), Greedy) *> lit('e').void
+    val expected = lit('a') *> lit('b').count(3) *> lit('e').void
     val r = parse("ab{3}e")
     sameRegex(r, expected)
   }
