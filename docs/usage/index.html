@@ -145,24 +145,24 @@ durationParser.parseOnlyS(<span class="hljs-string">"eleventy buckets"</span>)
     candidates.map(candidate =&gt; (candidate, durationParser.parseOnlyS(candidate)))
   )
 </code></pre>
-<pre><code class="hljs css language-scala">genExamples.apply(<span class="hljs-type">Gen</span>.<span class="hljs-type">Parameters</span>.<span class="hljs-keyword">default</span>, <span class="hljs-type">Seed</span>(<span class="hljs-number">1046533</span>L))
+<pre><code class="hljs css language-scala">genExamples.apply(<span class="hljs-type">Gen</span>.<span class="hljs-type">Parameters</span>.<span class="hljs-keyword">default</span>, <span class="hljs-type">Seed</span>(<span class="hljs-number">1046513</span>L))
 <span class="hljs-comment">// res8: Option[List[(String, Option[Duration])]] = Some(</span>
 <span class="hljs-comment">//   List(</span>
-<span class="hljs-comment">//     ("\u007f$@\u0000g", None),</span>
-<span class="hljs-comment">//     ("\u001ayj[?8-W\u001c#aW", None),</span>
-<span class="hljs-comment">//     ("-87millis", Some(PT-0.087S)),</span>
-<span class="hljs-comment">//     ("\u0000jK-xb{\u000e", None)</span>
+<span class="hljs-comment">//     ("negative 2milli", Some(PT-0.002S)),</span>
+<span class="hljs-comment">//     ("7 minute", Some(PT7M)),</span>
+<span class="hljs-comment">//     ("55ms", Some(PT0.055S)),</span>
+<span class="hljs-comment">//     ("Zb97\u001cS[R(ToS", None)</span>
 <span class="hljs-comment">//   )</span>
 <span class="hljs-comment">// )</span>
 </code></pre>
 <h3><a class="anchor" aria-hidden="true" id="random-regular-expressions"></a><a href="#random-regular-expressions" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>random regular expressions</h3>
 <p>Irrec provies support for creating random (valid) regular expressions along with potential matches for them.</p>
-<pre><code class="hljs css language-scala"><span class="hljs-keyword">val</span> regexGen: <span class="hljs-type">Gen</span>[<span class="hljs-type">RegexC</span>[<span class="hljs-type">List</span>[<span class="hljs-type">Long</span>]]] = <span class="hljs-type">Gen</span>.resize(<span class="hljs-number">12</span>, genAsciiRegex)
+<pre><code class="hljs css language-scala"><span class="hljs-keyword">val</span> regexGen: <span class="hljs-type">Gen</span>[<span class="hljs-type">RegexC</span>[<span class="hljs-type">List</span>[<span class="hljs-type">Long</span>]]] = <span class="hljs-type">Gen</span>.resize(<span class="hljs-number">16</span>, genAsciiRegex)
 
-<span class="hljs-keyword">val</span> randomRegex1: <span class="hljs-type">RegexC</span>[<span class="hljs-type">List</span>[<span class="hljs-type">Long</span>]] = regexGen.apply(<span class="hljs-type">Gen</span>.<span class="hljs-type">Parameters</span>.<span class="hljs-keyword">default</span>, <span class="hljs-type">Seed</span>(<span class="hljs-number">105769</span>L)).get
+<span class="hljs-keyword">val</span> randomRegex1: <span class="hljs-type">RegexC</span>[<span class="hljs-type">List</span>[<span class="hljs-type">Long</span>]] = regexGen.apply(<span class="hljs-type">Gen</span>.<span class="hljs-type">Parameters</span>.<span class="hljs-keyword">default</span>, <span class="hljs-type">Seed</span>(<span class="hljs-number">10570573</span>L)).get
 </code></pre>
 <pre><code class="hljs css language-scala">randomRegex1.pprint
-<span class="hljs-comment">// res9: String = "(\\n|[\\u0004\\t\\u001f%Pcilorz~])[^*b][^\\u0004\\f\\u0015\\u0020,@JT\\[n]C"</span>
+<span class="hljs-comment">// res9: String = "a[^#\\-=ESZadhy]\\^"</span>
 </code></pre>
 <p>You can now generate random data to match this regular expression as described <a href="#random-matches-for-a-regular-expression">here</a>. Alternatively, you can generate a regular expression and a match for it in one step:</p>
 <pre><code class="hljs css language-scala"><span class="hljs-keyword">val</span> regexAndMatchGen: <span class="hljs-type">Gen</span>[<span class="hljs-type">RegexAndCandidate</span>[<span class="hljs-type">Char</span>, <span class="hljs-type">Double</span>]] =
@@ -187,20 +187,16 @@ durationParser.parseOnlyS(<span class="hljs-string">"eleventy buckets"</span>)
 <pre><code class="hljs css language-scala"><span class="hljs-keyword">val</span> regexesAndCandidatesGen: <span class="hljs-type">Gen</span>[<span class="hljs-type">List</span>[<span class="hljs-type">RegexAndCandidate</span>[<span class="hljs-type">Char</span>, <span class="hljs-type">Double</span>]]] =
   <span class="hljs-type">Gen</span>.listOfN(<span class="hljs-number">4</span>, genAlphaNumRegexAndCandidate)
 
-<span class="hljs-keyword">val</span> regexesAndCandidates: <span class="hljs-type">List</span>[<span class="hljs-type">RegexAndCandidate</span>[<span class="hljs-type">Char</span>, <span class="hljs-type">Double</span>]] = regexesAndCandidatesGen.apply(<span class="hljs-type">Gen</span>.<span class="hljs-type">Parameters</span>.<span class="hljs-keyword">default</span>.withSize(<span class="hljs-number">15</span>), <span class="hljs-type">Seed</span>(<span class="hljs-number">105375</span>L)).get
+<span class="hljs-keyword">val</span> regexesAndCandidates: <span class="hljs-type">List</span>[<span class="hljs-type">RegexAndCandidate</span>[<span class="hljs-type">Char</span>, <span class="hljs-type">Double</span>]] = regexesAndCandidatesGen.apply(<span class="hljs-type">Gen</span>.<span class="hljs-type">Parameters</span>.<span class="hljs-keyword">default</span>.withSize(<span class="hljs-number">15</span>), <span class="hljs-type">Seed</span>(<span class="hljs-number">105373</span>L)).get
 </code></pre>
 <pre><code class="hljs css language-scala">regexesAndCandidates.map(x =&gt;
   (x.r.pprint, x.candidate.mkString, x.r.compile.parseOnly(x.candidate))
 )
 <span class="hljs-comment">// res11: List[(String, String, Option[Double])] = List(</span>
-<span class="hljs-comment">//   ("(b{0}C[4K](z|1[^3Hei-lnuz])b[2KMOSbempruz]){0,1}", "2U6W4C1v86ep85", None),</span>
-<span class="hljs-comment">//   (</span>
-<span class="hljs-comment">//     "([o]|6|B|3|[13AWov]|R)[25GXej-kvy-z][08EHM-NQVcjrv]",</span>
-<span class="hljs-comment">//     "d7GBzQ8alN15tk7",</span>
-<span class="hljs-comment">//     None</span>
-<span class="hljs-comment">//   ),</span>
-<span class="hljs-comment">//   ("I[^7R-SXZ]", "8", None),</span>
-<span class="hljs-comment">//   ("g", "PF", None)</span>
+<span class="hljs-comment">//   ("qF3ubC", "q", None),</span>
+<span class="hljs-comment">//   ("([^Gdq]|u7|V|[^0-13-48FPenqw])2", "u72", Some(5.494733123848757E201)),</span>
+<span class="hljs-comment">//   ("(j*)?LJ(s|r)Aq", "jjjjjjLJrAq", Some(4.9820629634491373E54)),</span>
+<span class="hljs-comment">//   ("25n[4-58IKXaci]vWvW.7O[^3LR-Siot]", "11Z8S", None)</span>
 <span class="hljs-comment">// )</span>
 </code></pre>
 <h3><a class="anchor" aria-hidden="true" id="non-string-regular-expressions"></a><a href="#non-string-regular-expressions" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>non-string regular expressions</h3>
