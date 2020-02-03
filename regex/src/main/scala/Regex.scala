@@ -152,8 +152,7 @@ object Regex {
     elem: (M, In => Option[Out]) => R,
     andThen: λ[i => (Regex[In, M, i => Out], Regex[In, M, i])] ~> λ[a => R],
     star: λ[i => (Regex[In, M, i], Greediness, Out, (Out, i) => Out)] ~> λ[a => R],
-    repeat: λ[i => (Regex[In, M, i], Int, Option[Int], Greediness, Out, (Out, i) => Out)] ~> λ[
-      a => R],
+    repeat: λ[i => (Regex[In, M, i], Quantifier, Out, (Out, i) => Out)] ~> λ[a => R],
     mapped: λ[a => (Regex[In, M, a], a => Out)] ~> λ[a => R],
     or: NonEmptyList[Regex[In, M, Out]] => R,
     void: Is[Unit, Out] => Regex[In, M, ?] ~> λ[a => R]
@@ -162,7 +161,7 @@ object Regex {
     case Or(alternatives) => or(alternatives)
     case e: Elem[In, M, Out] => elem(e.metadata, e.apply)
     case Star(r, g, z, f) => star((r, g, z, f))
-    case Repeat(r, min, max, g, z, f) => repeat((r, min, max, g, z, f))
+    case Repeat(r, min, max, g, z, f) => repeat((r, Quantifier.Range(min, max, g), z, f))
     case FMap(r, f) => mapped((r, f))
     case Eps => eps(Is.refl[Unit])
     case Fail() => fail()
@@ -246,18 +245,12 @@ object Regex {
             threads(z, _)
           }
         },
-      repeat = new (λ[i => (
-        Regex[In, (ThreadId, M), i],
-        Int,
-        Option[Int],
-        Greediness,
-        A,
-        (A, i) => A)] ~> λ[a => ContOut]) {
-        def apply[i](
-          t: (Regex[In, (ThreadId, M), i], Int, Option[Int], Greediness, A, (A, i) => A)): ContOut =
-          sys.error(
-            "compileCont called with a Repeat instance that hadn't been expanded. This should never happen.")
-      },
+      repeat =
+        new (λ[i => (Regex[In, (ThreadId, M), i], Quantifier, A, (A, i) => A)] ~> λ[a => ContOut]) {
+          def apply[i](t: (Regex[In, (ThreadId, M), i], Quantifier, A, (A, i) => A)): ContOut =
+            sys.error(
+              "compileCont called with a Repeat instance that hadn't been expanded. This should never happen.")
+        },
       mapped = new (λ[a => (Regex[In, (ThreadId, M), a], a => A)] ~> λ[a => ContOut]) {
         def apply[i](t: (Regex[In, (ThreadId, M), i], i => A)): ContOut = {
           val rc = compileCont[In, M, i, R](t._1)

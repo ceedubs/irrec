@@ -34,11 +34,13 @@ class RegexPrettyPrinterTests extends IrrecSuite {
       "((a*){1,4}?)*?")
   }
 
-  test("pretty print ?") {
+  // TODO
+  ignore("pretty print ?") {
     seq("ab").?.pprint should ===("(ab)?")
   }
 
-  test("pretty print ??") {
+  // TODO
+  ignore("pretty print ??") {
     seq("ab").??.pprint should ===("(ab)??")
   }
 
