@@ -194,10 +194,10 @@ object RegexGen {
   implicit def arbLongRegex[Out: Arbitrary: Cogen]: Arbitrary[RegexM[Long, Out]] =
     Arbitrary(genLongRegex)
 
-  def genCharRegex[Out: Arbitrary: Cogen]: Gen[RegexM[Char, Out]] =
+  def genCharRegex[Out: Arbitrary: Cogen]: Gen[RegexC[Out]] =
     CharRegexGen.genStandardCharRegex
 
-  implicit def arbCharRegex[Out: Arbitrary: Cogen]: Arbitrary[RegexM[Char, Out]] =
+  implicit def arbCharRegex[Out: Arbitrary: Cogen]: Arbitrary[RegexC[Out]] =
     Arbitrary(genCharRegex)
 
   implicit val arbQuantifier: Arbitrary[Quantifier] = Arbitrary(
