@@ -51,7 +51,7 @@ lazy val tests = crossProject(JSPlatform, JVMPlatform)
     moduleName := "irrec-tests",
     libraryDependencies ++= Seq(
       catsOrg %%% "cats-laws" % catsVersion % Test,
-      catsOrg %%% "discipline-scalatest" % "1.0.0" % Test))
+      catsOrg %%% "discipline-scalatest" % "1.0.1" % Test))
   .settings(commonSettings)
   .settings(noPublishSettings)
 
