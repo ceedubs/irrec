@@ -17,15 +17,11 @@ class MatchTests extends IrrecSuite {
   import MatchTests._
 
   test("empty matchset matches everything") {
-    forAll { c: Char =>
-      MatchSet.forbid(Diet.empty).matches(c) should ===(true)
-    }
+    forAll { c: Char => MatchSet.forbid(Diet.empty).matches(c) should ===(true) }
   }
 
   test("allowing a single item only matches that item") {
-    forAll { (x: Char, y: Char) =>
-      MatchSet.allow(Diet.one(x)).matches(y) should ===(x == y)
-    }
+    forAll((x: Char, y: Char) => MatchSet.allow(Diet.one(x)).matches(y) should ===(x == y))
   }
 
   test("allow(x) union forbid(x) should allow everything") {
