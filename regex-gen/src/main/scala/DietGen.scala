@@ -17,9 +17,7 @@ object DietGen {
 
   def weightedDietMatchingGen[A](diet: Diet[A], weight: Range[A] => Int)(
     implicit chooseA: Choose[A]): Gen[A] =
-    genWeightedDietRange(diet, weight).flatMap { range =>
-      Gen.choose(range.start, range.end)
-    }
+    genWeightedDietRange(diet, weight).flatMap(range => Gen.choose(range.start, range.end))
 
   def dietMatchingGen[A: Choose](diet: Diet[A]): Gen[A] = weightedDietMatchingGen[A](diet, _ => 1)
 

@@ -41,31 +41,31 @@ class CharRegexMatchTests extends IrrecSuite {
     parse("a[bd-fh]j").compile.parseOnlyS("afj") should ===(Some("afj"))
   }
 
-  test("digit character single match") { digit.compile.parseOnlyS("2") should ===(Some(2)) }
+  test("digit character single match")(digit.compile.parseOnlyS("2") should ===(Some(2)))
 
-  test("digit character non-match") { digit.compile.parseOnlyS("a") should ===(None) }
+  test("digit character non-match")(digit.compile.parseOnlyS("a") should ===(None))
 
   test("non-digit character single match") {
     nonDigit.compile.parseOnlyS("a") should ===(Some('a'))
   }
 
-  test("non-digit character non-match") { nonDigit.compile.parseOnlyS("3") should ===(None) }
+  test("non-digit character non-match")(nonDigit.compile.parseOnlyS("3") should ===(None))
 
-  test("word character single match") { wordChar.compile.parseOnlyS("a") should ===(Some('a')) }
+  test("word character single match")(wordChar.compile.parseOnlyS("a") should ===(Some('a')))
 
-  test("word character non-match") { wordChar.compile.parseOnlyS("%") should ===(None) }
+  test("word character non-match")(wordChar.compile.parseOnlyS("%") should ===(None))
 
   test("non-word character single match") {
     nonWordChar.compile.parseOnlyS("%") should ===(Some('%'))
   }
 
-  test("non-word character non-match") { nonWordChar.compile.parseOnlyS("a") should ===(None) }
+  test("non-word character non-match")(nonWordChar.compile.parseOnlyS("a") should ===(None))
 
   test("whitespace character single match") {
     whitespaceChar.compile.parseOnlyS(" ") should ===(Some(' '))
   }
 
-  test("whitespace character non-match") { whitespaceChar.compile.parseOnlyS("%") should ===(None) }
+  test("whitespace character non-match")(whitespaceChar.compile.parseOnlyS("%") should ===(None))
 
   test("whitespace character negated range match") {
     lit('a').product(nonWhitespaceChar).product(lit('c')).compile.parseOnlyS("abc") should ===(
@@ -87,17 +87,13 @@ class CharRegexMatchTests extends IrrecSuite {
   test("word character match") {
     val gen = Gen.oneOf(Gen.alphaNumChar, Gen.const('_'))
     val rc = wordChar.compile
-    forAll(gen) { c =>
-      rc.parseOnlyS(c.toString) should ===(Some(c))
-    }
+    forAll(gen)(c => rc.parseOnlyS(c.toString) should ===(Some(c)))
   }
 
   test("whitespace character match") {
     val gen = Gen.oneOf('\t', '\n', '\f', '\r', ' ')
     val rc = whitespaceChar.compile
-    forAll(gen) { c =>
-      rc.parseOnlyS(c.toString) should ===(Some(c))
-    }
+    forAll(gen)(c => rc.parseOnlyS(c.toString) should ===(Some(c)))
   }
 
   test("withMatchedS match") {

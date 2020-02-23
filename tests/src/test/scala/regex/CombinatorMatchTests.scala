@@ -27,15 +27,15 @@ class CombinatorMatchTests extends IrrecSuite {
     elem((x: Int) => if (x % 2 == 0) Some(x) else None).compile.parseOnly(List(3)) should ===(None)
   }
 
-  test("pred match") { pred((_: Int) % 2 == 0).compile.parseOnly(List(4)) should ===(Some(4)) }
+  test("pred match")(pred((_: Int) % 2 == 0).compile.parseOnly(List(4)) should ===(Some(4)))
 
-  test("pred non-match") { pred((_: Int) % 2 == 0).compile.parseOnly(List(3)) should ===(None) }
+  test("pred non-match")(pred((_: Int) % 2 == 0).compile.parseOnly(List(3)) should ===(None))
 
-  test("literal match") { literal('b').compile.parseOnlyS("b") should ===(Some('b')) }
+  test("literal match")(literal('b').compile.parseOnlyS("b") should ===(Some('b')))
 
-  test("literal non-match") { literal('b').compile.parseOnlyS("a") should ===(None) }
+  test("literal non-match")(literal('b').compile.parseOnlyS("a") should ===(None))
 
-  test("literal with trailing") { literal('b').compile.parseOnlyS("ba") should ===(None) }
+  test("literal with trailing")(literal('b').compile.parseOnlyS("ba") should ===(None))
 
   test("or left match") {
     or(literal('b'), literal('c')).compile.parseOnlyS("b") should ===(Some('b'))
@@ -53,7 +53,7 @@ class CombinatorMatchTests extends IrrecSuite {
     or(literal('b'), literal('c')).compile.parseOnlyS("cb") should ===(None)
   }
 
-  test("or no match") { or(literal('b'), literal('c')).compile.parseOnlyS("a") should ===(None) }
+  test("or no match")(or(literal('b'), literal('c')).compile.parseOnlyS("a") should ===(None))
 
   test("or no match with trailing") {
     or(literal('b'), literal('c')).compile.parseOnlyS("ad") should ===(None)
@@ -100,11 +100,11 @@ class CombinatorMatchTests extends IrrecSuite {
     literal('b').product(literal('c')).compile.parseOnlyS("bcd") should ===(None)
   }
 
-  test("* zero") { literal('b').*.compile.parseOnlyS("") should ===(Some(Chain.empty)) }
+  test("* zero")(literal('b').*.compile.parseOnlyS("") should ===(Some(Chain.empty)))
 
-  test("* one") { literal('b').*.compile.parseOnlyS("b") should ===(Some(Chain.one('b'))) }
+  test("* one")(literal('b').*.compile.parseOnlyS("b") should ===(Some(Chain.one('b'))))
 
-  test("* two") { literal('b').*.compile.parseOnlyS("bb") should ===(Some(Chain('b', 'b'))) }
+  test("* two")(literal('b').*.compile.parseOnlyS("bb") should ===(Some(Chain('b', 'b'))))
 
   test("* three") {
     or(literal('b'), literal('c')).*.compile.parseOnlyS("bcb") should ===(
@@ -115,11 +115,11 @@ class CombinatorMatchTests extends IrrecSuite {
     or(literal('b'), literal('c')).*.compile.parseOnlyS("bcbd") should ===(None)
   }
 
-  test("*? zero") { literal('b').*?.compile.parseOnlyS("") should ===(Some(Chain.empty)) }
+  test("*? zero")(literal('b').*?.compile.parseOnlyS("") should ===(Some(Chain.empty)))
 
-  test("*? one") { literal('b').*?.compile.parseOnlyS("b") should ===(Some(Chain.one('b'))) }
+  test("*? one")(literal('b').*?.compile.parseOnlyS("b") should ===(Some(Chain.one('b'))))
 
-  test("*? two") { literal('b').*?.compile.parseOnlyS("bb") should ===(Some(Chain('b', 'b'))) }
+  test("*? two")(literal('b').*?.compile.parseOnlyS("bb") should ===(Some(Chain('b', 'b'))))
 
   test("*? three") {
     or(literal('b'), literal('c')).*?.compile.parseOnlyS("bcb") should ===(
@@ -130,24 +130,22 @@ class CombinatorMatchTests extends IrrecSuite {
     or(literal('b'), literal('c')).*?.compile.parseOnlyS("bcbd") should ===(None)
   }
 
-  test("wildcard") { wildcard[Char].compile.parseOnlyS("b") should ===(Some('b')) }
+  test("wildcard")(wildcard[Char].compile.parseOnlyS("b") should ===(Some('b')))
 
-  test("wildcard trailing") { wildcard[Char].compile.parseOnlyS("bc") should ===(None) }
+  test("wildcard trailing")(wildcard[Char].compile.parseOnlyS("bc") should ===(None))
 
-  test("wildcard empty") { wildcard[Char].compile.parseOnlyS("") should ===(None) }
+  test("wildcard empty")(wildcard[Char].compile.parseOnlyS("") should ===(None))
 
-  test("inside range") { range('a', 'c').compile.parseOnlyS("b") should ===(Some('b')) }
+  test("inside range")(range('a', 'c').compile.parseOnlyS("b") should ===(Some('b')))
 
-  test("left range") { range('a', 'c').compile.parseOnlyS("a") should ===(Some('a')) }
+  test("left range")(range('a', 'c').compile.parseOnlyS("a") should ===(Some('a')))
 
-  test("right range") { range('a', 'c').compile.parseOnlyS("c") should ===(Some('c')) }
+  test("right range")(range('a', 'c').compile.parseOnlyS("c") should ===(Some('c')))
 
-  test("outside range") { range('a', 'c').compile.parseOnlyS("d") should ===(None) }
+  test("outside range")(range('a', 'c').compile.parseOnlyS("d") should ===(None))
 
   test("oneOrMore zero") {
-    forAll { (g: Greediness) =>
-      literal('b').oneOrMore(g).compile.parseOnlyS("") should ===(None)
-    }
+    forAll((g: Greediness) => literal('b').oneOrMore(g).compile.parseOnlyS("") should ===(None))
   }
 
   test("oneOrMore one") {
@@ -173,21 +171,21 @@ class CombinatorMatchTests extends IrrecSuite {
     literal('b').count(0).compile.parseOnlyS("") should ===(Some(Chain.empty))
   }
 
-  test("count zero non-empty") { literal('b').count(0).compile.parseOnlyS("b") should ===(None) }
+  test("count zero non-empty")(literal('b').count(0).compile.parseOnlyS("b") should ===(None))
 
-  test("count 1 empty") { literal('b').count(1).compile.parseOnlyS("") should ===(None) }
+  test("count 1 empty")(literal('b').count(1).compile.parseOnlyS("") should ===(None))
 
   test("count 1 match") {
     literal('b').count(1).compile.parseOnlyS("b") should ===(Some(Chain.one('b')))
   }
 
-  test("count 1 non-match") { literal('b').count(1).compile.parseOnlyS("c") should ===(None) }
+  test("count 1 non-match")(literal('b').count(1).compile.parseOnlyS("c") should ===(None))
 
   test("count 2 match") {
     literal('b').count(2).compile.parseOnlyS("bb") should ===(Some(Chain('b', 'b')))
   }
 
-  test("count 2 non-match") { literal('b').count(2).compile.parseOnlyS("bc") should ===(None) }
+  test("count 2 non-match")(literal('b').count(2).compile.parseOnlyS("bc") should ===(None))
 
   test("oneOf first match") {
     C.oneOf('a', 'b', 'c').compile.parseOnlyS("a") should ===(Some('a'))
@@ -201,17 +199,17 @@ class CombinatorMatchTests extends IrrecSuite {
     C.oneOf('a', 'b', 'c').compile.parseOnlyS("c") should ===(Some('c'))
   }
 
-  test("oneOf non match") { C.oneOf('a', 'b', 'c').compile.parseOnlyS("d") should ===(None) }
+  test("oneOf non match")(C.oneOf('a', 'b', 'c').compile.parseOnlyS("d") should ===(None))
 
-  test("seq empty match") { seq("").compile.parseOnlyS("") should ===(Some(Chain.empty)) }
+  test("seq empty match")(seq("").compile.parseOnlyS("") should ===(Some(Chain.empty)))
 
-  test("seq empty non-match") { seq("").compile.parseOnlyS("a") should ===(None) }
+  test("seq empty non-match")(seq("").compile.parseOnlyS("a") should ===(None))
 
-  test("seq single match") { seq("a").compile.parseOnlyS("a") should ===(Some(Chain.one('a'))) }
+  test("seq single match")(seq("a").compile.parseOnlyS("a") should ===(Some(Chain.one('a'))))
 
-  test("seq match") { seq("abc").compile.parseOnlyS("abc") should ===(Some(Chain('a', 'b', 'c'))) }
+  test("seq match")(seq("abc").compile.parseOnlyS("abc") should ===(Some(Chain('a', 'b', 'c'))))
 
-  test("seq non-match") { seq("abc").compile.parseOnlyS("bcd") should ===(None) }
+  test("seq non-match")(seq("abc").compile.parseOnlyS("bcd") should ===(None))
 
   test("optional match present") {
     forAll { g: Greediness =>
@@ -357,8 +355,7 @@ class CombinatorMatchTests extends IrrecSuite {
 
   test("repeat(0, 0) doesn't match non-empty") {
     forAll(arbitrary[RegexM[Int, Unit]], Gen.nonEmptyListOf(arbitrary[Int]), arbitrary[Greediness]) {
-      (r, c, g) =>
-        r.repeat(0, Some(0), g).void.compile.parseOnly(c) should ===(None)
+      (r, c, g) => r.repeat(0, Some(0), g).void.compile.parseOnly(c) should ===(None)
     }
   }
 

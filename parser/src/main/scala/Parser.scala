@@ -74,9 +74,12 @@ object Parser {
    * Positive integers within the max range of Scala's `Int`.
    */
   def posInt[_: P]: P[Int] =
-    P(CharIn("0-9").rep(1).!.flatMap { s =>
-      Either.catchNonFatal(s.toInt).fold(_ => Fail, Pass(_))
-    }).opaque(s"integer between 0 and ${Int.MaxValue}")
+    P(
+      CharIn("0-9")
+        .rep(1)
+        .!
+        .flatMap(s => Either.catchNonFatal(s.toInt).fold(_ => Fail, Pass(_))))
+      .opaque(s"integer between 0 and ${Int.MaxValue}")
 
   def singleLitCharClassChar[_: P]: P[Char] =
     P(("\\u" ~ unicodeCodePoint) | ("\\" ~ specialChar | charClassStandardMatchChar))
