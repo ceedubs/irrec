@@ -21,10 +21,11 @@ final case class ParseState[In, A](queue: StateQueue[Thread[In, A]]) extends Any
       }
     }
 
-  private def addThread(t: Thread[In, A]): ParseState[In, A] = t match {
-    case Thread.Accept(_) => ParseState(queue.insertWithoutId(t))
-    case Thread.Cont(id, _) => ParseState(queue.insertUnique(id.asInt, t))
-  }
+  private def addThread(t: Thread[In, A]): ParseState[In, A] =
+    t match {
+      case Thread.Accept(_) => ParseState(queue.insertWithoutId(t))
+      case Thread.Cont(id, _) => ParseState(queue.insertUnique(id.asInt, t))
+    }
 
   def results: List[A] = threads.flatMap(_.result)
 
@@ -46,8 +47,8 @@ final case class ParseState[In, A](queue: StateQueue[Thread[In, A]]) extends Any
 object ParseState {
   def empty[In, A]: ParseState[In, A] = ParseState(StateQueue.empty)
 
-  def fromThreads[F[_], In, A](threads: F[Thread[In, A]])(
-    implicit foldableF: Foldable[F]): ParseState[In, A] =
+  def fromThreads[F[_], In, A](threads: F[Thread[In, A]])(implicit
+    foldableF: Foldable[F]): ParseState[In, A] =
     threads.foldLeft(empty[In, A])(_.addThread(_))
 
   implicit private val indexedSeqFoldable: Foldable[IndexedSeq] =

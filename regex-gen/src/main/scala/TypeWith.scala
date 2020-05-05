@@ -13,8 +13,9 @@ sealed abstract class TypeWith[Ev[_]] {
 object TypeWith {
   type Aux[Ev[_], A] = TypeWith[Ev] { type T = A }
 
-  def apply[Ev[_], A](implicit ev: Ev[A]): TypeWith[Ev] = new TypeWith[Ev] {
-    type T = A
-    def evidence = ev
-  }
+  def apply[Ev[_], A](implicit ev: Ev[A]): TypeWith[Ev] =
+    new TypeWith[Ev] {
+      type T = A
+      def evidence = ev
+    }
 }

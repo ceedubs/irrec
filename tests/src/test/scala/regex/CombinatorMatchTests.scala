@@ -354,8 +354,11 @@ class CombinatorMatchTests extends IrrecSuite {
   }
 
   test("repeat(0, 0) doesn't match non-empty") {
-    forAll(arbitrary[RegexM[Int, Unit]], Gen.nonEmptyListOf(arbitrary[Int]), arbitrary[Greediness]) {
-      (r, c, g) => r.repeat(0, Some(0), g).void.compile.parseOnly(c) should ===(None)
+    forAll(
+      arbitrary[RegexM[Int, Unit]],
+      Gen.nonEmptyListOf(arbitrary[Int]),
+      arbitrary[Greediness]) { (r, c, g) =>
+      r.repeat(0, Some(0), g).void.compile.parseOnly(c) should ===(None)
     }
   }
 

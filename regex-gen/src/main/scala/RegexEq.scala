@@ -15,8 +15,8 @@ import org.scalacheck.rng.Seed
 object RegexEq {
   private val genSeed: Gen[Seed] = Gen.choose(Long.MinValue, Long.MaxValue).map(Seed(_))
 
-  def genRegexEq[In, M](candidateCount: Int)(
-    implicit rc: RegexCandidates[In, M]): Gen[Eq ~> λ[a => Eq[Regex[In, M, a]]]] =
+  def genRegexEq[In, M](candidateCount: Int)(implicit
+    rc: RegexCandidates[In, M]): Gen[Eq ~> λ[a => Eq[Regex[In, M, a]]]] =
     Gen.parameterized { params =>
       genSeed.map { seed =>
         new (Eq ~> λ[a => Eq[Regex[In, M, a]]]) {

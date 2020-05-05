@@ -4,10 +4,11 @@ package regex
 final case class ThreadId(asInt: Int) extends AnyVal
 
 sealed abstract class Thread[In, A] extends Product with Serializable {
-  def result: Option[A] = this match {
-    case Thread.Accept(value) => Some(value)
-    case _ => None
-  }
+  def result: Option[A] =
+    this match {
+      case Thread.Accept(value) => Some(value)
+      case _ => None
+    }
 }
 
 object Thread {

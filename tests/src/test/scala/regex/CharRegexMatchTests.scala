@@ -108,7 +108,7 @@ class CharRegexMatchTests extends IrrecSuite {
 
   test("matchedS match") {
     val r = lit('a') <* lit('b')
-    r.matchedS.compile.parseOnlyS("ab") should ===(Some(("ab")))
+    r.matchedS.compile.parseOnlyS("ab") should ===(Some("ab"))
   }
 
   test("matchedS non-match") {

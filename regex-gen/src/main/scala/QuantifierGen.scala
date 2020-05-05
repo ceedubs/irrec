@@ -26,10 +26,11 @@ object QuantifierGen {
     1 -> genRange
   )
 
-  def genCount(q: Quantifier): Gen[Int] = q match {
-    case Quantifier.Exact(n) => Gen.const(n)
-    case Quantifier.Range(min, max, _) =>
-      Gen.sized(maxSize => Gen.choose(min, max.getOrElse(maxSize)))
-    case Quantifier.Optional(_) => Gen.choose(0, 1)
-  }
+  def genCount(q: Quantifier): Gen[Int] =
+    q match {
+      case Quantifier.Exact(n) => Gen.const(n)
+      case Quantifier.Range(min, max, _) =>
+        Gen.sized(maxSize => Gen.choose(min, max.getOrElse(maxSize)))
+      case Quantifier.Optional(_) => Gen.choose(0, 1)
+    }
 }

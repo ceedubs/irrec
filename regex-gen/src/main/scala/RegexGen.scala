@@ -217,8 +217,8 @@ object RegexGen {
       cogenOut: Cogen[Out])
 
     object GenRegexWithEv {
-      def fromRegexGen[In, M, Out](regex: Gen[Regex[In, M, Out]])(
-        implicit arbOut: Arbitrary[Out],
+      def fromRegexGen[In, M, Out](regex: Gen[Regex[In, M, Out]])(implicit
+        arbOut: Arbitrary[Out],
         cogenOut: Cogen[Out]): GenRegexWithEv[In, M, Out] =
         GenRegexWithEv(regex, arbOut.arbitrary, cogenOut)
     }
@@ -240,13 +240,12 @@ object RegexGen {
     def distributeSumNel(entryCount: Int, extra: Int): Gen[NonEmptyList[Int]] =
       if (entryCount < 1)
         Gen.fail
-      else {
+      else
         Gen.listOfN(extra, Gen.choose(0, entryCount - 1)).map { indices =>
           val sizes = Array.fill(entryCount)(1)
           indices.foreach(i => sizes(i) += 1)
           NonEmptyList.fromListUnsafe(sizes.toList)
         }
-      }
 
     // Scalacheck includes an implicit converstion A => Gen[A], and it can cause hard-to-spot bugs
     implicit private[irrec] def ambGenConversion1[A](a: A): Gen[A] =

@@ -11,14 +11,15 @@ import cats.collections.{Diet, Discrete, Range}
 import cats.implicits._
 
 object RegexMatchGen {
-  def dietMatchToGen[A](available: Diet[A], dietToGen: Diet[A] => Gen[A])(
-    implicit orderA: Order[A],
-    discreteA: Discrete[A]): Match[A] => Gen[A] = _ match {
-    case Match.Literal(expected) => Gen.const(expected)
-    case Match.Wildcard() => dietToGen(available)
-    case Match.MatchSet.Allow(allowed) => dietToGen(allowed)
-    case Match.MatchSet.Forbid(forbidden) => dietToGen(available -- forbidden)
-  }
+  def dietMatchToGen[A](available: Diet[A], dietToGen: Diet[A] => Gen[A])(implicit
+    orderA: Order[A],
+    discreteA: Discrete[A]): Match[A] => Gen[A] =
+    _ match {
+      case Match.Literal(expected) => Gen.const(expected)
+      case Match.Wildcard() => dietToGen(available)
+      case Match.MatchSet.Allow(allowed) => dietToGen(allowed)
+      case Match.MatchSet.Forbid(forbidden) => dietToGen(available -- forbidden)
+    }
 
   val byteMatchingGen: Match[Byte] => Gen[Byte] =
     dietMatchToGen(Diet.fromRange(Range(Byte.MinValue, Byte.MaxValue)), dietMatchingGen(_))
@@ -60,7 +61,7 @@ object RegexMatchGen {
     available: Diet[In]): RegexM[In, Out] => Gen[Stream[In]] =
     regexMatchingStreamGen[In](dietMatchToGen(available, dietMatchingGen(_))).apply
 
-  def genRegexMatch[In, M, Out](r: Regex[In, M, Out])(
-    implicit rc: RegexCandidates[In, M]): Gen[Stream[In]] =
+  def genRegexMatch[In, M, Out](r: Regex[In, M, Out])(implicit
+    rc: RegexCandidates[In, M]): Gen[Stream[In]] =
     rc.genMatchingStream(r)
 }

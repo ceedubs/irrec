@@ -26,11 +26,12 @@ object CharRegexGen {
   def genAsciiRegex[Out: Arbitrary: Cogen]: Gen[RegexC[Out]] =
     RegexGen.genRegex[Char, Out](RegexGen.Config.fromDiscreteDiet(CharacterClasses.ascii))
 
-  def genStandardCharRegex[Out: Arbitrary: Cogen]: Gen[RegexC[Out]] = Gen.frequency(
-    5 -> genAsciiRegex[Out],
-    4 -> genAlphaNumRegex[Out],
-    1 -> genSupportedCharRegex[Out]
-  )
+  def genStandardCharRegex[Out: Arbitrary: Cogen]: Gen[RegexC[Out]] =
+    Gen.frequency(
+      5 -> genAsciiRegex[Out],
+      4 -> genAlphaNumRegex[Out],
+      1 -> genSupportedCharRegex[Out]
+    )
 
   val genSupportedChars: Gen[Char] = dietMatchingGen(supportedCharacters)
 

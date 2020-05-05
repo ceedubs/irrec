@@ -202,10 +202,11 @@ val scalac211Options: Seq[String] = {
 val scalacOptionExclusionsForConsole: Seq[String] = Seq("-Ywarn-unused:imports", "-Xfatal-warnings")
 
 val scalacOptionSettings: Seq[Setting[_]] = {
-  def baseScalaCOptions(scalaVersion: String) = CrossVersion.partialVersion(scalaVersion) match {
-    case Some((2, 11)) => scalac211Options
-    case _ => scalac212Options
-  }
+  def baseScalaCOptions(scalaVersion: String) =
+    CrossVersion.partialVersion(scalaVersion) match {
+      case Some((2, 11)) => scalac211Options
+      case _ => scalac212Options
+    }
 
   Seq(
     scalacOptions ++= baseScalaCOptions(scalaVersion.value),

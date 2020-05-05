@@ -504,12 +504,12 @@ class ParserTests extends IrrecSuite {
   def sameRegex(actual: RegexM[Char, _], expected: RegexM[Char, _]): Assertion = {
     val clue =
       s"""(pprint not optimized):
-         |    actual: ${actual.pprint}
-         |  expected: ${expected.pprint}
-         |(structure):
-         |    actual: ${actual}
-         |  expected: ${expected}
-         |""".stripMargin
+        |    actual: ${actual.pprint}
+        |  expected: ${expected.pprint}
+        |(structure):
+        |    actual: ${actual}
+        |  expected: ${expected}
+        |""".stripMargin
     withClue(clue) {
       // Regex data structures can have structural differences while still being functionally
       // equivalent. For example `Times(x, Times(y, z))` and `Times(Times(x, y), z)`. So we compare
