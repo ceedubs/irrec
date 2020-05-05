@@ -7,12 +7,13 @@ import cats.implicits._
 sealed abstract class Match[A] extends Product with Serializable {
   import Match._
 
-  def matches(a: A)(implicit orderA: Order[A]): Boolean = this match {
-    case Literal(expected) => a === expected
-    case MatchSet.Allow(allowed) => allowed.contains(a)
-    case MatchSet.Forbid(forbidden) => !forbidden.contains(a)
-    case Wildcard() => true
-  }
+  def matches(a: A)(implicit orderA: Order[A]): Boolean =
+    this match {
+      case Literal(expected) => a === expected
+      case MatchSet.Allow(allowed) => allowed.contains(a)
+      case MatchSet.Forbid(forbidden) => !forbidden.contains(a)
+      case Wildcard() => true
+    }
 }
 
 object Match {
@@ -38,10 +39,11 @@ object Match {
         case (Forbid(x), Forbid(y)) => Forbid(x | y)
       }
 
-    def negate: MatchSet[A] = this match {
-      case Allow(x) => Forbid(x)
-      case Forbid(x) => Allow(x)
-    }
+    def negate: MatchSet[A] =
+      this match {
+        case Allow(x) => Forbid(x)
+        case Forbid(x) => Allow(x)
+      }
   }
 
   object MatchSet {

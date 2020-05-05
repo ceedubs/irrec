@@ -52,8 +52,8 @@ object RegexAndCandidate {
     Gen.oneOf(probablyNotMatching, genRegexAndMatch[In, Out](cfg, matchToGen))
   }
 
-  implicit def arbRegexAndCandidate[In, Out](
-    implicit arbRegex: Arbitrary[RegexM[In, Out]],
+  implicit def arbRegexAndCandidate[In, Out](implicit
+    arbRegex: Arbitrary[RegexM[In, Out]],
     candidateGen: RegexCandidates[In, Match[In]]): Arbitrary[RegexAndCandidate[In, Out]] =
     Arbitrary(
       for {

@@ -69,12 +69,13 @@ object ParserJvmTests {
     "word",
     "xdigit")
 
-  def posixClassToJavaClass(posixClassName: String): String = posixClassName match {
-    case "word" => "\\w"
-    case "ascii" => "\\p{ASCII}"
-    case "xdigit" => "\\p{XDigit}"
-    case s =>
-      val (firstChar, rest) = s.splitAt(1)
-      s"\\p{${firstChar.toUpperCase}$rest}"
-  }
+  def posixClassToJavaClass(posixClassName: String): String =
+    posixClassName match {
+      case "word" => "\\w"
+      case "ascii" => "\\p{ASCII}"
+      case "xdigit" => "\\p{XDigit}"
+      case s =>
+        val (firstChar, rest) = s.splitAt(1)
+        s"\\p{${firstChar.toUpperCase}$rest}"
+    }
 }

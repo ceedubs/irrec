@@ -84,8 +84,8 @@ object RegexPrettyPrinter {
   // TODO documentation
   // TODO generalize to not be specific to Match?
   // TODO this formatting is horrendous
-  def pprintWith[In](f: (Boolean, In) => String)(
-    implicit eqA: cats.Eq[In]): Regex[In, Match[In], _] => String = {
+  def pprintWith[In](f: (Boolean, In) => String)(implicit
+    eqA: cats.Eq[In]): Regex[In, Match[In], _] => String = {
     val showMatch = regex.RegexPrettyPrinter.showMatch(f)
     def go[Out](r: Regex[In, Match[In], Out]): (Int, String) =
       Regex.fold[In, Match[In], Out, (Int, String)](
@@ -131,7 +131,6 @@ object RegexPrettyPrinter {
     go(_)._2
   }
 
-  val pprint: Regex[Char, regex.Match[Char], _] => String = {
+  val pprint: Regex[Char, regex.Match[Char], _] => String =
     pprintWith((inRange, c) => regex.RegexPrettyPrinter.showChar(inRange)(c))
-  }
 }

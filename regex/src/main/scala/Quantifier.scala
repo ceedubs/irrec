@@ -5,11 +5,12 @@ import ceedubs.irrec.regex.Greediness._
 sealed abstract class Quantifier extends Product with Serializable {
   import Quantifier._
 
-  def pprint: String = this match {
-    case Exact(n) => s"{$n}"
-    case Range(min, max, g) => s"{$min,${max.getOrElse("")}}${pprintGreediness(g)}"
-    case Optional(g) => s"?${pprintGreediness(g)}"
-  }
+  def pprint: String =
+    this match {
+      case Exact(n) => s"{$n}"
+      case Range(min, max, g) => s"{$min,${max.getOrElse("")}}${pprintGreediness(g)}"
+      case Optional(g) => s"?${pprintGreediness(g)}"
+    }
 }
 
 object Quantifier {
@@ -18,8 +19,9 @@ object Quantifier {
       extends Quantifier
   final case class Optional(greediness: Greediness) extends Quantifier
 
-  def pprintGreediness(greediness: Greediness): String = greediness match {
-    case Greedy => ""
-    case NonGreedy => "?"
-  }
+  def pprintGreediness(greediness: Greediness): String =
+    greediness match {
+      case Greedy => ""
+      case NonGreedy => "?"
+    }
 }

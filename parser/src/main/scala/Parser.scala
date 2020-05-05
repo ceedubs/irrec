@@ -90,11 +90,12 @@ object Parser {
   /**
    * Character range like `a-z`.
    */
-  def matchCharRange[_: P]: P[Range[Char]] = P(
-    (singleLitCharClassChar ~ "-" ~ singleLitCharClassChar).map {
-      case (l, h) => Range(l, h)
-    }
-  )
+  def matchCharRange[_: P]: P[Range[Char]] =
+    P(
+      (singleLitCharClassChar ~ "-" ~ singleLitCharClassChar).map {
+        case (l, h) => Range(l, h)
+      }
+    )
 
   /**
    * Matches repeat counts like `{3}` or `{1,4}`.
@@ -103,7 +104,9 @@ object Parser {
     P(
       "{" ~/ (
         (posInt ~ "," ~/ posInt.? ~/ "}" ~/ (P("?").map(_ => Greediness.NonGreedy) | Pass(
-          Greediness.Greedy))).map { case (l, h, g) => Quantifier.Range(l, h, g) } |
+          Greediness.Greedy))).map {
+          case (l, h, g) => Quantifier.Range(l, h, g)
+        } |
           (posInt.map(Quantifier.Exact(_)) ~ "}")
       )
     ).opaque("repeat count such as '{3}', '{1,4}', `{1, 4}?`, '{3,}', or `{3,}?")
@@ -163,28 +166,30 @@ object Parser {
         ("[" ~ charClassTerm ~ "]")
     )
 
-  def base[_: P]: P[RegexC[Unit]] = P(
-    standardMatchChar.map(lit(_).void) |
-      ("\\" ~/ (("u" ~ unicodeCodePoint | specialChar).map(lit(_).void) | shorthandClass.map(
-        matching(_).void))) |
-      wildcard.map(_.void) |
-      charClass.map(matching(_).void) |
-      // TODO distinguish between capturing and not?
-      ("(?:" ~ regex ~ ")") |
-      ("(" ~ regex ~ ")")
-  )
+  def base[_: P]: P[RegexC[Unit]] =
+    P(
+      standardMatchChar.map(lit(_).void) |
+        ("\\" ~/ (("u" ~ unicodeCodePoint | specialChar).map(lit(_).void) | shorthandClass.map(
+          matching(_).void))) |
+        wildcard.map(_.void) |
+        charClass.map(matching(_).void) |
+        // TODO distinguish between capturing and not?
+        ("(?:" ~ regex ~ ")") |
+        ("(" ~ regex ~ ")")
+    )
 
-  def factor[_: P]: P[RegexC[Unit]] = P {
-    base.flatMap { r =>
-      P("*?").map(_ => r.star(Greediness.NonGreedy).void) |
-        P("*").map(_ => r.star(Greediness.Greedy).void) |
-        P("+").map(_ => r.oneOrMore(Greediness.Greedy).void) |
-        P("??").map(_ => r.optional(Greediness.NonGreedy).void) |
-        P("?").map(_ => r.optional(Greediness.Greedy).void) |
-        quantifier.map(q => r.quantifyFold(q, ())((_, _) => ())) |
-        Pass(r)
+  def factor[_: P]: P[RegexC[Unit]] =
+    P {
+      base.flatMap { r =>
+        P("*?").map(_ => r.star(Greediness.NonGreedy).void) |
+          P("*").map(_ => r.star(Greediness.Greedy).void) |
+          P("+").map(_ => r.oneOrMore(Greediness.Greedy).void) |
+          P("??").map(_ => r.optional(Greediness.NonGreedy).void) |
+          P("?").map(_ => r.optional(Greediness.Greedy).void) |
+          quantifier.map(q => r.quantifyFold(q, ())((_, _) => ())) |
+          Pass(r)
+      }
     }
-  }
 
   // TODO can probably do better than toList call. Do we care?
   def term[_: P]: P[RegexC[Unit]] = P(factor.rep(0).map(_.toList.sequence_))
@@ -193,12 +198,13 @@ object Parser {
    * A parser for a regular expression. You probably want to use [[regexExpr]] instead, as this
    * parser will succeed even if there are trailing characters after a valid regular expression.
    */
-  def regex[_: P]: P[RegexC[Unit]] = P(
-    term.flatMap { r1 =>
-      ("|" ~/ regex).map(r2 => r1 | r2) |
-        Pass(r1)
-    }
-  )
+  def regex[_: P]: P[RegexC[Unit]] =
+    P(
+      term.flatMap { r1 =>
+        ("|" ~/ regex).map(r2 => r1 | r2) |
+          Pass(r1)
+      }
+    )
 
   /**
    * A parser for strings that are complete regular expressions, up until the end of the string.
