@@ -1,6 +1,7 @@
 # parts of this were adapted from https://github.com/higherkindness/droste/blob/bad7dae60a0c32e66918613068d6713d209cc6b4/.travis.yml
 language: nix
 sudo: required
+dist: trusty
 
 stages:
   - name: test
