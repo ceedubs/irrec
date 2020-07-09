@@ -35,7 +35,7 @@ object RegexCandidates {
       def genIn: Gen[Byte] = RegexGen.standardByteConfig.gen
 
       def genMatchingStream[Out](r: Regex[Byte, Match[Byte], Out]): Gen[Stream[Byte]] =
-        regexMatchingStreamGen[Byte](RegexMatchGen.byteMatchingGen)
+        regexMMatchingStreamGen[Byte](RegexMatchGen.byteMatchingGen)
           .apply(r)
     }
 
@@ -44,7 +44,7 @@ object RegexCandidates {
       def genIn: Gen[Int] = RegexGen.standardIntConfig.gen
 
       def genMatchingStream[Out](r: Regex[Int, Match[Int], Out]): Gen[Stream[Int]] =
-        regexMatchingStreamGen[Int](RegexMatchGen.intMatchingGen)
+        regexMMatchingStreamGen[Int](RegexMatchGen.intMatchingGen)
           .apply(r)
     }
 
@@ -53,7 +53,7 @@ object RegexCandidates {
       def genIn: Gen[Long] = RegexGen.standardLongConfig.gen
 
       def genMatchingStream[Out](r: Regex[Long, Match[Long], Out]): Gen[Stream[Long]] =
-        regexMatchingStreamGen[Long](RegexMatchGen.longMatchingGen)
+        regexMMatchingStreamGen[Long](RegexMatchGen.longMatchingGen)
           .apply(r)
     }
 }
