@@ -12,7 +12,7 @@ import org.scalacheck.Arbitrary.arbitrary
 class RegexMatchGenTests extends IrrecSuite {
   test("regexMatchingStreamGen generates a failing stream for fail") {
     val r: RegexC[Long] = combinator.fail
-    val gen = regexMatchingStreamGen[Char](_ => Gen.const('a')).apply(r)
+    val gen = regexMMatchingStreamGen[Char](_ => Gen.const('a')).apply(r)
     gen.sample should ===(None)
   }
 
