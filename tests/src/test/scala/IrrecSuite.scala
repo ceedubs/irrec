@@ -5,6 +5,8 @@ import org.scalatest.matchers.should.Matchers
 import org.typelevel.discipline.scalatest.FunSuiteDiscipline
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import org.scalactic.anyvals.{PosInt, PosZDouble, PosZInt}
+import org.typelevel.discipline.Laws
+import org.scalacheck.Prop
 
 abstract class IrrecSuite
     extends AnyFunSuite
@@ -23,4 +25,12 @@ abstract class IrrecSuite
 
   implicit override val generatorDrivenConfig: PropertyCheckConfiguration =
     checkConfiguration
+
+  def rulesetToProp(rules: Laws#RuleSet): Prop = {
+    val props = rules.all.properties.map {
+      case (id, prop) =>
+        prop.label(id)
+    }
+    Prop.all(props: _*)
+  }
 }

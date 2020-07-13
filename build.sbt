@@ -3,6 +3,7 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
 val catsVersion = "2.0.0"
 val catsCollectionsVersion = "0.9.0"
+val algebraVersion = "1.0.1"
 val scalacheckVersion = "1.14.3"
 val fastParseVersion = "2.1.2"
 val scalaJsDomVersion = "1.0.0"
@@ -51,7 +52,9 @@ lazy val tests = crossProject(JSPlatform, JVMPlatform)
     moduleName := "irrec-tests",
     libraryDependencies ++= Seq(
       catsOrg %%% "cats-laws" % catsVersion % Test,
-      catsOrg %%% "discipline-scalatest" % "1.0.1" % Test))
+      "org.typelevel" %%% "algebra-laws" % algebraVersion % Test,
+      catsOrg %%% "discipline-scalatest" % "1.0.1" % Test)
+  )
   .settings(commonSettings)
   .settings(noPublishSettings)
 

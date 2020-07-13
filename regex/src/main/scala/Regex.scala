@@ -1,6 +1,7 @@
 package ceedubs.irrec
 package regex
 
+import algebra.ring.Rig
 import cats.{~>, Alternative, Applicative, Foldable}
 import cats.data.{Chain, NonEmptyChain, NonEmptyList, State}
 import cats.evidence.Is
@@ -197,6 +198,22 @@ object Regex {
         super.productR(void(fa))(fb)
       override def as[A, B](fa: Regex[In, M, A], b: B): Regex[In, M, B] =
         fa.void.map(_ => b)
+    }
+
+  /**
+   * At the moment this is just a Rig, but a Kleene algebra type class may be introduced in the
+   * future.
+   */
+  implicit def nonCapturingRegexKleene[In, M]: Rig[Regex[In, M, Unit]] =
+    new Rig[Regex[In, M, Unit]] {
+
+      override def plus(x: Regex[In, M, Unit], y: Regex[In, M, Unit]): Regex[In, M, Unit] = x | y
+
+      override def zero: Regex[In, M, Unit] = Regex.Fail()
+
+      override def times(x: Regex[In, M, Unit], y: Regex[In, M, Unit]): Regex[In, M, Unit] = x *> y
+
+      override def one: Regex[In, M, Unit] = Regex.Eps
     }
 
   def assignThreadIds[In, M, A](re: Regex[In, M, A]): Regex[In, (ThreadId, M), A] = {
