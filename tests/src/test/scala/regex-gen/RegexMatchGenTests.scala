@@ -22,9 +22,8 @@ class RegexMatchGenTests extends IrrecSuite {
       c <- genRegexMatch(r)
     } yield (r, c)
 
-    forAll(gen) {
-      case (r, c) =>
-        r.matcher[Stream].apply(c) should ===(true)
+    forAll(gen) { case (r, c) =>
+      r.matcher[Stream].apply(c) should ===(true)
     }
   }
 
@@ -34,9 +33,8 @@ class RegexMatchGenTests extends IrrecSuite {
       c <- genRegexMatch(r)
     } yield (r, c)
 
-    forAll(gen) {
-      case (r, c) =>
-        r.matcher[Stream].apply(c) should ===(true)
+    forAll(gen) { case (r, c) =>
+      r.matcher[Stream].apply(c) should ===(true)
     }
   }
 }

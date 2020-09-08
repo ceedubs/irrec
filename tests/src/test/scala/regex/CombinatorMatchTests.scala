@@ -258,11 +258,10 @@ class CombinatorMatchTests extends IrrecSuite {
       rStar = r0.starFold(g, Chain.empty[Int])(_ append _)
       candidate <- Gen.oneOf(CharRegexGen.genRegexMatchingString(rStar), arbitrary[String])
     } yield (r0, g, rStar, candidate)
-    forAll(gen) {
-      case (r0, g, rStar, candidate) =>
-        val rChain = r0.star(g)
+    forAll(gen) { case (r0, g, rStar, candidate) =>
+      val rChain = r0.star(g)
 
-        rChain.compile.parseOnlyS(candidate) should ===(rStar.compile.parseOnlyS(candidate))
+      rChain.compile.parseOnlyS(candidate) should ===(rStar.compile.parseOnlyS(candidate))
     }
   }
 
@@ -452,10 +451,9 @@ class CombinatorMatchTests extends IrrecSuite {
       g <- arbitrary[Greediness]
     } yield (min, r, rRepeat, g, c)
 
-    forAll(gen) {
-      case (min, r, rRepeat, g, c) =>
-        val rCount = r.count(min).map2(r.star(g))(_ ++ _)
-        rCount.matcher[Stream].apply(c) should ===(rRepeat.matcher[Stream].apply(c))
+    forAll(gen) { case (min, r, rRepeat, g, c) =>
+      val rCount = r.count(min).map2(r.star(g))(_ ++ _)
+      rCount.matcher[Stream].apply(c) should ===(rRepeat.matcher[Stream].apply(c))
     }
   }
 
@@ -465,10 +463,9 @@ class CombinatorMatchTests extends IrrecSuite {
       r1 = oneOfF(values)
       c <- genRegexMatch(r1)
     } yield (values, r1, c)
-    forAll(gen) {
-      case (values, r1, c) =>
-        val r2 = C.oneOf(values.head, values.tail: _*)
-        r1.compile.parseOnly(c) should ===(r2.compile.parseOnly(c))
+    forAll(gen) { case (values, r1, c) =>
+      val r2 = C.oneOf(values.head, values.tail: _*)
+      r1.compile.parseOnly(c) should ===(r2.compile.parseOnly(c))
     }
   }
 
@@ -478,10 +475,9 @@ class CombinatorMatchTests extends IrrecSuite {
       r1 = oneOfF(values)
       c <- genRegexMatch(r1)
     } yield (values, r1, c)
-    forAll(gen) {
-      case (values, r1, c) =>
-        val r2 = oneOfFR(values.map(lit(_)))
-        r1.compile.parseOnly(c) should ===(r2.compile.parseOnly(c))
+    forAll(gen) { case (values, r1, c) =>
+      val r2 = oneOfFR(values.map(lit(_)))
+      r1.compile.parseOnly(c) should ===(r2.compile.parseOnly(c))
     }
   }
 
@@ -492,10 +488,9 @@ class CombinatorMatchTests extends IrrecSuite {
       r1 = oneOfFR(lits)
       c <- genRegexMatch(r1)
     } yield (lits, r1, c)
-    forAll(gen) {
-      case (lits, r1, c) =>
-        val r2 = oneOfR(lits.head, lits.tail: _*)
-        r1.compile.parseOnly(c) should ===(r2.compile.parseOnly(c))
+    forAll(gen) { case (lits, r1, c) =>
+      val r2 = oneOfR(lits.head, lits.tail: _*)
+      r1.compile.parseOnly(c) should ===(r2.compile.parseOnly(c))
     }
   }
 
@@ -505,10 +500,9 @@ class CombinatorMatchTests extends IrrecSuite {
       r1 = seq(values)
       c <- genRegexMatch(r1)
     } yield (values, r1, c)
-    forAll(gen) {
-      case (values, r1, c) =>
-        val r2 = C.allOf(values: _*)
-        r1.compile.parseOnly(c) should ===(r2.compile.parseOnly(c))
+    forAll(gen) { case (values, r1, c) =>
+      val r2 = C.allOf(values: _*)
+      r1.compile.parseOnly(c) should ===(r2.compile.parseOnly(c))
     }
   }
 
@@ -518,10 +512,9 @@ class CombinatorMatchTests extends IrrecSuite {
       r1 = allOfF(values)
       c <- genRegexMatch(r1)
     } yield (values, r1, c)
-    forAll(gen) {
-      case (values, r1, c) =>
-        val r2 = allOfFR(values.map(lit(_)))
-        r1.compile.parseOnly(c) should ===(r2.compile.parseOnly(c))
+    forAll(gen) { case (values, r1, c) =>
+      val r2 = allOfFR(values.map(lit(_)))
+      r1.compile.parseOnly(c) should ===(r2.compile.parseOnly(c))
     }
   }
 
@@ -532,10 +525,9 @@ class CombinatorMatchTests extends IrrecSuite {
       r1 = allOfR(lits: _*)
       c <- genRegexMatch(r1)
     } yield (lits, r1, c)
-    forAll(gen) {
-      case (lits, r1, c) =>
-        val r2 = allOfFR(Chain.fromSeq(lits))
-        r1.compile.parseOnly(c) should ===(r2.compile.parseOnly(c))
+    forAll(gen) { case (lits, r1, c) =>
+      val r2 = allOfFR(Chain.fromSeq(lits))
+      r1.compile.parseOnly(c) should ===(r2.compile.parseOnly(c))
     }
   }
 }

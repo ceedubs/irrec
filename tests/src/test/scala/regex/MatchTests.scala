@@ -79,9 +79,8 @@ class MatchTests extends IrrecSuite {
       c <- genRegexCandidateString(rOr)
     } yield (r1, r2, rOr, c)
 
-    forAll(gen) {
-      case (r1, r2, rOr, candidate) =>
-        (r1 <+> r2).compile.parseOnlyS(candidate) should ===(rOr.compile.parseOnlyS(candidate))
+    forAll(gen) { case (r1, r2, rOr, candidate) =>
+      (r1 <+> r2).compile.parseOnlyS(candidate) should ===(rOr.compile.parseOnlyS(candidate))
     }
   }
 }

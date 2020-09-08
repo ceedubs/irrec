@@ -20,11 +20,10 @@ class CharRegexGenTests extends IrrecSuite {
       s <- genRegexMatchingString.apply(r)
     } yield (r, s)
 
-    forAll(noShrink(gen)) {
-      case NoShrink((r, s)) =>
-        withClue(s"for input string <$s> and input regex <${r.pprint}>") {
-          r.stringMatcher(s) should ===(true)
-        }
+    forAll(noShrink(gen)) { case NoShrink((r, s)) =>
+      withClue(s"for input string <$s> and input regex <${r.pprint}>") {
+        r.stringMatcher(s) should ===(true)
+      }
     }
   }
 
@@ -34,9 +33,8 @@ class CharRegexGenTests extends IrrecSuite {
       s <- genRegexMatchingString(r)
     } yield (r, s)
 
-    forAll(gen) {
-      case (r, s) =>
-        r.stringMatcher(s) should ===(true)
+    forAll(gen) { case (r, s) =>
+      r.stringMatcher(s) should ===(true)
     }
   }
 }
