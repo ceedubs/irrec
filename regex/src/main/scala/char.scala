@@ -186,8 +186,8 @@ object char {
   val nonPunctuationChar: RegexC[Char] = notInSet(CharacterClasses.punctuationChar)
 
   def withMatchedS[Out](r: RegexC[Out]): RegexC[(String, Out)] =
-    r.withMatched.map {
-      case (s, o) => (s.mkString_(""), o)
+    r.withMatched.map { case (s, o) =>
+      (s.mkString_(""), o)
     }
 
   def matchedS[Out](r: RegexC[Out]): RegexC[String] = r.matched.map(_.mkString_(""))

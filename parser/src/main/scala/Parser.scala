@@ -92,8 +92,8 @@ object Parser {
    */
   def matchCharRange[_: P]: P[Range[Char]] =
     P(
-      (singleLitCharClassChar ~ "-" ~ singleLitCharClassChar).map {
-        case (l, h) => Range(l, h)
+      (singleLitCharClassChar ~ "-" ~ singleLitCharClassChar).map { case (l, h) =>
+        Range(l, h)
       }
     )
 
@@ -104,8 +104,8 @@ object Parser {
     P(
       "{" ~/ (
         (posInt ~ "," ~/ posInt.? ~/ "}" ~/ (P("?").map(_ => Greediness.NonGreedy) | Pass(
-          Greediness.Greedy))).map {
-          case (l, h, g) => Quantifier.Range(l, h, g)
+          Greediness.Greedy))).map { case (l, h, g) =>
+          Quantifier.Range(l, h, g)
         } |
           (posInt.map(Quantifier.Exact(_)) ~ "}")
       )
@@ -156,11 +156,11 @@ object Parser {
    */
   def charClass[_: P]: P[MatchSet[Char]] =
     P(
-      ("[^" ~ (positiveCharClassContent.map(_.negate) ~ "&&" ~ charClassTerm).map {
-        case (c1, c2) => c1 intersect c2
+      ("[^" ~ (positiveCharClassContent.map(_.negate) ~ "&&" ~ charClassTerm).map { case (c1, c2) =>
+        c1 intersect c2
       } ~ "]") |
-        ("[^" ~ (positiveCharClassContent.map(_.negate) ~ charClassTerm).map {
-          case (c1, c2) => c1 union c2
+        ("[^" ~ (positiveCharClassContent.map(_.negate) ~ charClassTerm).map { case (c1, c2) =>
+          c1 union c2
         } ~ "]") |
         ("[^" ~ charClassTerm.map(_.negate) ~ "]") |
         ("[" ~ charClassTerm ~ "]")

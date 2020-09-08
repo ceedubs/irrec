@@ -27,9 +27,8 @@ abstract class IrrecSuite
     checkConfiguration
 
   def rulesetToProp(rules: Laws#RuleSet): Prop = {
-    val props = rules.all.properties.map {
-      case (id, prop) =>
-        prop.label(id)
+    val props = rules.all.properties.map { case (id, prop) =>
+      prop.label(id)
     }
     Prop.all(props: _*)
   }

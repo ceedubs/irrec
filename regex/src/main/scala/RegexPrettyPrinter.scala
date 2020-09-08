@@ -30,15 +30,13 @@ object RegexPrettyPrinter {
     whitespaceCharMappings ++ charClassCharsToEscape.map(x => (x, x))
 
   val nonCharClassCharToEscapedChar: Map[Char, String] =
-    specialNonCharClassCharToLit.map {
-      case (special, lit) =>
-        (lit, "\\" + special)
+    specialNonCharClassCharToLit.map { case (special, lit) =>
+      (lit, "\\" + special)
     }
 
   val charClassCharToEscapedChar: Map[Char, String] =
-    specialCharClassCharToLit.map {
-      case (special, lit) =>
-        (lit, "\\" + special)
+    specialCharClassCharToLit.map { case (special, lit) =>
+      (lit, "\\" + special)
     }
 
   def nonGraphicalToUnicode(c: Char): String =
@@ -57,10 +55,9 @@ object RegexPrettyPrinter {
     import Match._
 
     def showDiet(diet: Diet[A]): String =
-      diet.foldLeftRange("") {
-        case (s, cats.collections.Range(l, h)) =>
-          val current = if (l === h) f(true, l) else s"${f(true, l)}-${f(true, h)}"
-          s + current
+      diet.foldLeftRange("") { case (s, cats.collections.Range(l, h)) =>
+        val current = if (l === h) f(true, l) else s"${f(true, l)}-${f(true, h)}"
+        s + current
       }
 
     _ match {

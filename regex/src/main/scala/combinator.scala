@@ -140,9 +140,8 @@ object combinator {
   def withMatched[In, M, Out](r: Regex[In, M, Out]): Regex[In, M, (Chain[In], Out)] =
     r match {
       case AndThen(l, r) =>
-        withMatched(l).map2(withMatched(r)) {
-          case ((sl, f), (sr, i)) =>
-            (sl.concat(sr), f(i))
+        withMatched(l).map2(withMatched(r)) { case ((sl, f), (sr, i)) =>
+          (sl.concat(sr), f(i))
         }
       case Or(alternatives) => Or(alternatives.map(withMatched))
       case e: Elem[In, M, Out] => Elem(e.metadata, in => e.apply(in).map(o => (Chain.one(in), o)))
@@ -151,18 +150,16 @@ object combinator {
           withMatched(r),
           g,
           (Chain.empty[In], z),
-          {
-            case ((s0, z), (s1, i)) =>
-              (s0 concat s1, f(z, i))
+          { case ((s0, z), (s1, i)) =>
+            (s0 concat s1, f(z, i))
           }): Regex[In, M, (Chain[In], Out)]
       case rs @ Repeat(r, q, z, f) =>
         Repeat[In, M, (Chain[In], rs.Init), (Chain[In], Out)](
           withMatched(r),
           q,
           (Chain.empty[In], z),
-          {
-            case ((s0, z), (s1, i)) =>
-              (s0 concat s1, f(z, i))
+          { case ((s0, z), (s1, i)) =>
+            (s0 concat s1, f(z, i))
           }): Regex[In, M, (Chain[In], Out)]
       case FMap(r, f) => withMatched(r).map { case (matched, out0) => (matched, f(out0)) }
       case Eps => r.map(o => (Chain.empty, o))

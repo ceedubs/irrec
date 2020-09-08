@@ -22,9 +22,8 @@ object DietGen {
   def dietMatchingGen[A: Choose](diet: Diet[A]): Gen[A] = weightedDietMatchingGen[A](diet, _ => 1)
 
   def genWeightedDietRange[A](diet: Diet[A], weight: Range[A] => Int): Gen[Range[A]] = {
-    val freqs = diet.foldLeftRange(List.empty[(Int, Gen[Range[A]])]) {
-      case (gens, range) =>
-        (weight(range), Gen.const(range)) :: gens
+    val freqs = diet.foldLeftRange(List.empty[(Int, Gen[Range[A]])]) { case (gens, range) =>
+      (weight(range), Gen.const(range)) :: gens
     }
     Gen.frequency(freqs: _*)
   }
