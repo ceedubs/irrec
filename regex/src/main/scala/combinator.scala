@@ -162,6 +162,8 @@ object combinator {
             (s0 concat s1, f(z, i))
           }): Regex[In, M, (Chain[In], Out)]
       case FMap(r, f) => withMatched(r).map { case (matched, out0) => (matched, f(out0)) }
+      case MapFilter(r, f) =>
+        withMatched(r).mapFilter { case (matched, o1) => f(o1).map(o => (matched, o)) }
       case Eps => r.map(o => (Chain.empty, o))
       case Fail() => Fail()
       case v @ Void(r) => withMatched[In, M, v.Init](r).map { case (matched, _) => (matched, ()) }

@@ -116,6 +116,9 @@ object RegexPrettyPrinter {
         },
         mapped =
           λ[λ[a => (Regex[In, Match[In], a], a => Out)] ~> λ[a => (Int, String)]](t => go(t._1)),
+        mapFilter =
+          λ[λ[a => (Regex[In, Match[In], a], a => Option[Out])] ~> λ[a => (Int, String)]](t =>
+            go(t._1)),
         or = {
           case NonEmptyList(r, Nil) => go(r)
           case alternatives =>

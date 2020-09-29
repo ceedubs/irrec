@@ -26,7 +26,8 @@ object RegexGen {
     order: Order[In],
     genMatch: Gen[Match[In]],
     includeFail: Boolean,
-    includeEps: Boolean)
+    includeEps: Boolean,
+    includeMapFilterNone: Boolean)
 
   object Config {
     def fromDiscreteDiet[A: Choose: Cogen: Discrete: Order](available: Diet[A]): Config[A] = {
@@ -37,7 +38,9 @@ object RegexGen {
         order = implicitly,
         genMatch = RegexGen.genMatch(genIn, genNonEmptySubDiet(available, _ => 1)),
         includeFail = false,
-        includeEps = false)
+        includeEps = false,
+        includeMapFilterNone = false
+      )
     }
   }
 
@@ -103,6 +106,16 @@ object RegexGen {
             arbitrary[regexGen.T => Out]
           }
         } yield r.map(f)),
+        // MapFilter
+        1 -> (for {
+          regexGen <- genGenRegexWithEv[In](cfg).apply(depth - 1)
+          r <- regexGen.evidence.regexGen
+          f <- {
+            implicit val cogenOut = regexGen.evidence.cogenOut
+            if (cfg.includeMapFilterNone) arbitrary[regexGen.T => Option[Out]]
+            else arbitrary[regexGen.T => Out].map(_.andThen(_.some))
+          }
+        } yield r.mapFilter(f)),
         // Or
         3 -> (
           for {

@@ -147,7 +147,7 @@ val regexAndMatchGen: Gen[RegexAndCandidate[Char, Double]] =
 val regexesAndMatchesGen: Gen[List[RegexAndCandidate[Char, Double]]] =
   Gen.listOfN(4, regexAndMatchGen)
 
-val regexesAndMatches: List[RegexAndCandidate[Char, Double]] = regexesAndMatchesGen.apply(Gen.Parameters.default.withSize(30), Seed(105773L)).get
+val regexesAndMatches: List[RegexAndCandidate[Char, Double]] = regexesAndMatchesGen.apply(Gen.Parameters.default.withSize(30), Seed(105769L)).get
 ```
 
 ```scala mdoc
@@ -162,7 +162,7 @@ Sometimes you may want to generate both matches and non-matches for your random 
 val regexesAndCandidatesGen: Gen[List[RegexAndCandidate[Char, Double]]] =
   Gen.listOfN(4, genAlphaNumRegexAndCandidate)
 
-val regexesAndCandidates: List[RegexAndCandidate[Char, Double]] = regexesAndCandidatesGen.apply(Gen.Parameters.default.withSize(15), Seed(105373L)).get
+val regexesAndCandidates: List[RegexAndCandidate[Char, Double]] = regexesAndCandidatesGen.apply(Gen.Parameters.default.withSize(15), Seed(105361L)).get
 ```
 
 ```scala mdoc
