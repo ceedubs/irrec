@@ -53,6 +53,11 @@ object RegexMatchGen {
               } yield nestedStream.flatten),
           mapped = λ[λ[a => (Regex[In, M, a], a => Out)] ~> λ[a => Gen[Stream[In]]]](t =>
             outer.apply(t._1)),
+          mapFilter = λ[λ[a => (Regex[In, M, a], a => Option[Out])] ~> λ[a => Gen[Stream[In]]]] {
+            case (r, f) =>
+              val rc = r.compile
+              outer.apply(r).filter(input => rc.parseOnly(input).flatMap(f).isDefined)
+          },
           or = alternatives => Gen.oneOf(alternatives.toList).flatMap(apply),
           void = _ => λ[Regex[In, M, ?] ~> λ[a => Gen[Stream[In]]]](outer.apply(_))
         )(fa)

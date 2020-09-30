@@ -2,10 +2,11 @@ package ceedubs.irrec
 package regex
 
 import algebra.ring.Rig
-import cats.{~>, Alternative, Applicative, Foldable}
+import cats.{~>, Alternative, Applicative, Foldable, FunctorFilter}
 import cats.data.{Chain, NonEmptyChain, NonEmptyList, State}
 import cats.evidence.Is
 import cats.implicits._
+import cats.Functor
 
 /**
  * A generalized representation of a regular expression.
@@ -91,6 +92,11 @@ object Regex {
     type Init = I
   }
 
+  final case class MapFilter[-In, +M, I, Out](r: Regex[In, M, I], f: I => Option[Out])
+      extends Regex[In, M, Out] {
+    type Init = I
+  }
+
   final case class Star[-In, +M, I, Out](
     r: Regex[In, M, I],
     greediness: Greediness,
@@ -150,6 +156,7 @@ object Regex {
       case Star(r, g, z, fold) => traverseM(r)(f).map(Star(_, g, z, fold))
       case Repeat(r, q, z, fold) => traverseM(r)(f).map(Repeat(_, q, z, fold))
       case FMap(r, g) => traverseM(r)(f).map(FMap(_, g))
+      case MapFilter(r, g) => traverseM(r)(f).map(MapFilter(_, g))
       case Or(alternatives) => alternatives.traverse(traverseM(_)(f)).map(Or(_))
       case AndThen(l, r) => traverseM(l)(f).map2(traverseM(r)(f))(AndThen(_, _))
       case v @ Void(r) => traverseM[F, In, M, M2, v.Init](r)(f).map(Void(_))
@@ -163,6 +170,7 @@ object Regex {
     star: λ[i => (Regex[In, M, i], Greediness, Out, (Out, i) => Out)] ~> λ[a => R],
     repeat: λ[i => (Regex[In, M, i], Quantifier, Out, (Out, i) => Out)] ~> λ[a => R],
     mapped: λ[a => (Regex[In, M, a], a => Out)] ~> λ[a => R],
+    mapFilter: λ[a => (Regex[In, M, a], a => Option[Out])] ~> λ[a => R],
     or: NonEmptyList[Regex[In, M, Out]] => R,
     void: Is[Unit, Out] => Regex[In, M, ?] ~> λ[a => R]
   )(r: Regex[In, M, Out]): R =
@@ -173,6 +181,7 @@ object Regex {
       case Star(r, g, z, f) => star((r, g, z, f))
       case Repeat(r, q, z, f) => repeat((r, q, z, f))
       case FMap(r, f) => mapped((r, f))
+      case MapFilter(r, f) => mapFilter((r, f))
       case Eps => eps(Is.refl[Unit])
       case Fail() => fail()
       case Void(r) => void(Is.refl[Unit])(r)
@@ -198,6 +207,14 @@ object Regex {
         super.productR(void(fa))(fb)
       override def as[A, B](fa: Regex[In, M, A], b: B): Regex[In, M, B] =
         fa.void.map(_ => b)
+    }
+
+  implicit def functorFilterRegex[In, M]: FunctorFilter[Regex[In, M, ?]] =
+    new FunctorFilter[Regex[In, M, ?]] {
+      override def functor: Functor[Regex[In, M, ?]] = alternativeRegex
+
+      override def mapFilter[A, B](fa: Regex[In, M, A])(f: A => Option[B]): Regex[In, M, B] =
+        MapFilter(fa, f)
     }
 
   /**
@@ -290,6 +307,12 @@ object Regex {
           cont => rc(cont.map(_ compose t._2))
         }
       },
+      mapFilter = new (λ[a => (Regex[In, (ThreadId, M), a], a => Option[A])] ~> λ[a => ContOut]) {
+        def apply[i](t: (Regex[In, (ThreadId, M), i], i => Option[A])): ContOut = {
+          val rc = compileCont[In, M, i, R](t._1)
+          cont => rc(cont.map(f => i => t._2(i).toStream.flatMap(f)))
+        }
+      },
       or = alternatives => {
         val alternativesC = alternatives.map(compileCont[In, M, A, R](_)).toList.toStream
         cont => alternativesC.flatMap(_.apply(cont))
@@ -328,6 +351,7 @@ object Regex {
           case AndThen(l, r) => f(AndThen(apply(l), apply(r)))
           case Or(alternatives) => f(Or(alternatives.map(apply(_))))
           case FMap(r, g) => f(FMap(apply(r), g))
+          case MapFilter(r, g) => f(MapFilter(apply(r), g))
           case Star(r, greediness, z, fold) => f(Star(apply(r), greediness, z, fold))
           case Repeat(r, q, z, fold) =>
             f(Repeat(apply(r), q, z, fold))
