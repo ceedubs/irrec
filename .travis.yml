@@ -19,8 +19,6 @@ jobs:
       script: ./scripts/builds.sh testJS
     - env: TEST="lint"
       script: ./scripts/builds.sh lint
-    - env: TEST="coverage"
-      script: ./scripts/builds.sh coverage
     - stage: release
       script: ./scripts/builds.sh release
     - stage: publish-docs
