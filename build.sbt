@@ -12,9 +12,6 @@ val catsOrg = "org.typelevel"
 val scalacheckOrg = "org.scalacheck"
 val scalaJsOrg = "org.scala-js"
 
-val isTravisBuild =
-  settingKey[Boolean]("Flag indicating whether the current build is running under Travis")
-
 inThisBuild(
   List(
     organization := "net.ceedubs",
@@ -27,8 +24,7 @@ inThisBuild(
         "ceedubs@gmail.com",
         url("https://github.com/ceedubs")
       )
-    ),
-    isTravisBuild := sys.env.get("TRAVIS").isDefined
+    )
   ))
 
 coverageExcludedPackages in ThisBuild := "ceedubs.irrec.bench"
@@ -229,9 +225,7 @@ val commonSettings: Seq[Setting[_]] = Seq(
 ) ++ scalacOptionSettings
 
 val commonJsSettings: Seq[Setting[_]] = Seq(
-  parallelExecution := false,
-  // batch mode decreases the amount of memory needed to compile Scala.js code
-  scalaJSOptimizerOptions := scalaJSOptimizerOptions.value.withBatchMode(isTravisBuild.value)
+  parallelExecution := false
 )
 
 val noPublishSettings = Seq(
