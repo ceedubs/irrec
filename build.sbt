@@ -29,7 +29,7 @@ inThisBuild(
 
 coverageExcludedPackages in ThisBuild := "ceedubs.irrec.bench"
 
-val scala212Version = "2.12.10"
+val scala212Version = "2.12.13"
 scalaVersion in Global := scala212Version
 
 lazy val regex = crossProject(JSPlatform, JVMPlatform)
