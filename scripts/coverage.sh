@@ -4,4 +4,3 @@
 set -euxo pipefail
 
 sbt ';coverage;jvm/test;coverageReport'
-bash <(curl -s https://codecov.io/bash)
