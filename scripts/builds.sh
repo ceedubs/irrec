@@ -23,7 +23,6 @@ case "$1" in
         ;;
     "coverage")
         sbt ';coverage;jvm/test;coverageReport'
-        bash <(curl -s https://codecov.io/bash)
         ;;
     "release")
         sbt 'ci-release'
