@@ -4,7 +4,7 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 val catsVersion = "2.0.0"
 val catsCollectionsVersion = "0.9.0"
 val algebraVersion = "1.0.1"
-val scalacheckVersion = "1.14.3"
+val scalacheckVersion = "1.15.1"
 val fastParseVersion = "2.1.2"
 val scalaJsDomVersion = "1.1.0"
 
