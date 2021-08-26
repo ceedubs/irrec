@@ -6,7 +6,7 @@ val catsCollectionsVersion = "0.9.0"
 val algebraVersion = "1.0.1"
 val scalacheckVersion = "1.14.3"
 val fastParseVersion = "2.1.2"
-val scalaJsDomVersion = "1.1.0"
+val scalaJsDomVersion = "1.2.0"
 
 val catsOrg = "org.typelevel"
 val scalacheckOrg = "org.scalacheck"
