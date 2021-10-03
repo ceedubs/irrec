@@ -31,8 +31,8 @@ object RegexMatchGen {
     dietMatchToGen(Diet.fromRange(Range(Long.MinValue, Long.MaxValue)), dietMatchingGen(_))
 
   def regexMatchingStreamGen[In, M](
-    matchGen: M => Gen[In]): Regex[In, M, ?] ~> λ[a => Gen[Stream[In]]] =
-    new (Regex[In, M, ?] ~> λ[a => Gen[Stream[In]]]) { outer =>
+    matchGen: M => Gen[In]): Regex[In, M, *] ~> λ[a => Gen[Stream[In]]] =
+    new (Regex[In, M, *] ~> λ[a => Gen[Stream[In]]]) { outer =>
       def apply[Out](fa: Regex[In, M, Out]): Gen[Stream[In]] =
         Regex.fold[In, M, Out, Gen[Stream[In]]](
           eps = _ => Gen.const(Stream.empty),
@@ -59,12 +59,12 @@ object RegexMatchGen {
               outer.apply(r).filter(input => rc.parseOnly(input).flatMap(f).isDefined)
           },
           or = alternatives => Gen.oneOf(alternatives.toList).flatMap(apply),
-          void = _ => λ[Regex[In, M, ?] ~> λ[a => Gen[Stream[In]]]](outer.apply(_))
+          void = _ => λ[Regex[In, M, *] ~> λ[a => Gen[Stream[In]]]](outer.apply(_))
         )(fa)
     }
 
   def regexMMatchingStreamGen[In](
-    matchGen: Match[In] => Gen[In]): RegexM[In, ?] ~> λ[a => Gen[Stream[In]]] =
+    matchGen: Match[In] => Gen[In]): RegexM[In, *] ~> λ[a => Gen[Stream[In]]] =
     regexMatchingStreamGen(matchGen)
 
   def dietRegexMatchingStreamGen[In: Choose: Discrete: Order, Out](

@@ -1,12 +1,14 @@
-// shadow sbt-scalajs' crossProject and CrossType from Scala.js 0.6.x
+// shadow sbt-scalajs' crossProject and CrossType from Scala.js
 import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
-val catsVersion = "2.0.0"
-val catsCollectionsVersion = "0.9.0"
-val algebraVersion = "1.0.1"
-val scalacheckVersion = "1.14.3"
-val fastParseVersion = "2.1.2"
-val scalaJsDomVersion = "1.1.0"
+val catsVersion = "2.6.1"
+val catsCollectionsVersion = "0.9.3"
+val algebraVersion = "2.2.3"
+val scalacheckVersion = "1.15.4"
+val fastParseVersion = "2.3.3"
+val scalaJsDomVersion = "1.2.0"
+val disciplineScalatestVersion = "2.1.5"
+val kindProjectorVersion = "0.13.2"
 
 val catsOrg = "org.typelevel"
 val scalacheckOrg = "org.scalacheck"
@@ -27,10 +29,11 @@ inThisBuild(
     )
   ))
 
-coverageExcludedPackages in ThisBuild := "ceedubs.irrec.bench"
+ThisBuild / coverageExcludedPackages := "ceedubs.irrec.bench"
 
-val scala212Version = "2.12.10"
-scalaVersion in Global := scala212Version
+val scala212Version = "2.12.15"
+val scala213Version = "2.13.6"
+Global / scalaVersion := scala213Version
 
 lazy val regex = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Pure)
@@ -49,7 +52,8 @@ lazy val tests = crossProject(JSPlatform, JVMPlatform)
     libraryDependencies ++= Seq(
       catsOrg %%% "cats-laws" % catsVersion % Test,
       "org.typelevel" %%% "algebra-laws" % algebraVersion % Test,
-      catsOrg %%% "discipline-scalatest" % "1.0.1" % Test)
+      catsOrg %%% "discipline-scalatest" % disciplineScalatestVersion % Test
+    )
   )
   .settings(commonSettings)
   .settings(noPublishSettings)
@@ -69,7 +73,7 @@ lazy val parser = crossProject(JSPlatform, JVMPlatform)
   .settings(
     moduleName := "irrec-parser",
     libraryDependencies ++= Seq(
-      "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided",
+      "org.scala-lang" % "scala-compiler" % scalaVersion.value % Provided,
       "com.lihaoyi" %%% "fastparse" % fastParseVersion)
   )
   .settings(commonSettings)
@@ -92,12 +96,12 @@ lazy val docs = project
   .dependsOn(regex.jvm, regexGen.jvm, parser.jvm)
   .settings(commonSettings)
   .settings(
-    scalacOptions in (ScalaUnidoc, unidoc) += "-diagrams",
-    unidocProjectFilter in (ScalaUnidoc, unidoc) := inProjects(regex.jvm, regexGen.jvm, parser.jvm),
-    target in (ScalaUnidoc, unidoc) := (baseDirectory in LocalRootProject).value / "website" / "static" / "api",
-    cleanFiles += (target in (ScalaUnidoc, unidoc)).value,
-    docusaurusCreateSite := docusaurusCreateSite.dependsOn(unidoc in Compile).value,
-    docusaurusPublishGhpages := docusaurusPublishGhpages.dependsOn(unidoc in Compile).value,
+    ScalaUnidoc / unidoc / scalacOptions += "-diagrams",
+    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(regex.jvm, regexGen.jvm, parser.jvm),
+    ScalaUnidoc / unidoc / target := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
+    cleanFiles += (ScalaUnidoc / unidoc / target).value,
+    docusaurusCreateSite := docusaurusCreateSite.dependsOn(Compile / unidoc).value,
+    docusaurusPublishGhpages := docusaurusPublishGhpages.dependsOn(Compile / unidoc).value,
     mdocJS := Some(jsDocs),
     mdocVariables := Map(
       "ORG" -> organization.value,
@@ -115,25 +119,19 @@ lazy val benchmarks = project
   .dependsOn(regex.jvm)
 
 lazy val jvm = project
-  .settings(
-    moduleName := "irrec-root-jvm"
-  )
+  .settings(moduleName := "irrec-root-jvm")
   .aggregate(regex.jvm, regexGen.jvm, parser.jvm, tests.jvm, benchmarks)
   .settings(commonSettings)
   .settings(noPublishSettings)
 
 lazy val js = project
-  .settings(
-    moduleName := "irrec-root-js"
-  )
+  .settings(moduleName := "irrec-root-js")
   .aggregate(regex.js, regexGen.js, parser.js, tests.js)
   .settings(commonSettings)
   .settings(noPublishSettings)
 
 lazy val root = project
-  .settings(
-    moduleName := "irrec-root"
-  )
+  .settings(moduleName := "irrec-root")
   .aggregate(jvm, js)
   .settings(commonSettings)
   .settings(noPublishSettings)
@@ -151,7 +149,7 @@ val scalac212Options: Seq[String] = Seq(
   "-language:implicitConversions", // Allow definition of implicit functions called views
   "-unchecked", // Enable additional warnings where generated code depends on assumptions.
   "-Xcheckinit", // Wrap field accessors to throw an exception on uninitialized access.
-  "-Xfatal-warnings", // Fail the compilation if there are any warnings.
+  // "-Xfatal-warnings", // Fail the compilation if there are any warnings.
   "-Xfuture", // Turn on future language features.
   "-Xlint:adapted-args", // Warn if an argument list is modified to match the receiver.
   "-Xlint:by-name-right-associative", // By-name parameter of right associative operator.
@@ -188,14 +186,20 @@ val scalac212Options: Seq[String] = Seq(
   "-Ywarn-value-discard" // Warn when non-Unit expression results are unused.
 )
 
-val scalac211Options: Seq[String] = {
+val scalac213Options: Seq[String] = {
   val exclusions = Set(
-    "-Xlint:constant",
-    "-Ywarn-extra-implicit"
+    "-Xfuture",
+    "-Xlint:by-name-right-associative",
+    "-Xlint:nullary-override",
+    "-Xlint:unsound-match",
+    "-Yno-adapted-args",
+    "-Ypartial-unification",
+    "-Ywarn-inaccessible",
+    "-Ywarn-infer-any",
+    "-Ywarn-nullary-override",
+    "-Ywarn-nullary-unit"
   )
-  scalac212Options.filter(s =>
-    !s.startsWith("-Ywarn-unused") &&
-      !exclusions.contains(s))
+  scalac212Options.filter(s => !exclusions.contains(s))
 }
 
 val scalacOptionExclusionsForConsole: Seq[String] = Seq("-Ywarn-unused:imports", "-Xfatal-warnings")
@@ -203,23 +207,24 @@ val scalacOptionExclusionsForConsole: Seq[String] = Seq("-Ywarn-unused:imports",
 val scalacOptionSettings: Seq[Setting[_]] = {
   def baseScalaCOptions(scalaVersion: String) =
     CrossVersion.partialVersion(scalaVersion) match {
-      case Some((2, 11)) => scalac211Options
+      case Some((2, 13)) => scalac213Options
       case _ => scalac212Options
     }
 
   Seq(
     scalacOptions ++= baseScalaCOptions(scalaVersion.value),
-    scalacOptions in (Compile, console) --= scalacOptionExclusionsForConsole,
-    scalacOptions in (Test, console) --= scalacOptionExclusionsForConsole
+    Compile / console / scalacOptions --= scalacOptionExclusionsForConsole,
+    Compile / console / scalacOptions --= scalacOptionExclusionsForConsole
   )
 }
 
 val commonSettings: Seq[Setting[_]] = Seq(
-  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3"),
-  scalaVersion := scala212Version,
-  crossScalaVersions := List("2.11.12", scala212Version),
+  addCompilerPlugin(
+    "org.typelevel" % "kind-projector" % kindProjectorVersion cross CrossVersion.full),
+  scalaVersion := scala213Version,
+  crossScalaVersions := List(scala212Version, scala213Version),
   autoAPIMappings := true,
-  testOptions in Test += {
+  Test / testOptions += {
     Tests.Argument(TestFrameworks.ScalaTest, "-oDF")
   }
 ) ++ scalacOptionSettings

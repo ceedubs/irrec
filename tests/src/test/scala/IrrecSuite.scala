@@ -30,6 +30,6 @@ abstract class IrrecSuite
     val props = rules.all.properties.map { case (id, prop) =>
       prop.label(id)
     }
-    Prop.all(props: _*)
+    Prop.all(props.toSeq: _*)
   }
 }
