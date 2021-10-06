@@ -172,7 +172,7 @@ object Regex {
     mapped: λ[a => (Regex[In, M, a], a => Out)] ~> λ[a => R],
     mapFilter: λ[a => (Regex[In, M, a], a => Option[Out])] ~> λ[a => R],
     or: NonEmptyList[Regex[In, M, Out]] => R,
-    void: Is[Unit, Out] => Regex[In, M, ?] ~> λ[a => R]
+    void: Is[Unit, Out] => Regex[In, M, *] ~> λ[a => R]
   )(r: Regex[In, M, Out]): R =
     r match {
       case AndThen(l, r) => andThen((l, r))
@@ -188,8 +188,8 @@ object Regex {
     }
 
   // TODO this will probably get created a lot. Reuse a singleton instance?
-  implicit def alternativeRegex[In, M]: Alternative[Regex[In, M, ?]] =
-    new Alternative[Regex[In, M, ?]] {
+  implicit def alternativeRegex[In, M]: Alternative[Regex[In, M, *]] =
+    new Alternative[Regex[In, M, *]] {
       def ap[A, B](ff: Regex[In, M, A => B])(fa: Regex[In, M, A]): Regex[In, M, B] = AndThen(ff, fa)
       def combineK[A](x: Regex[In, M, A], y: Regex[In, M, A]): Regex[In, M, A] = x | y
       def empty[A]: Regex[In, M, A] = Fail()
@@ -209,9 +209,9 @@ object Regex {
         fa.void.map(_ => b)
     }
 
-  implicit def functorFilterRegex[In, M]: FunctorFilter[Regex[In, M, ?]] =
-    new FunctorFilter[Regex[In, M, ?]] {
-      override def functor: Functor[Regex[In, M, ?]] = alternativeRegex
+  implicit def functorFilterRegex[In, M]: FunctorFilter[Regex[In, M, *]] =
+    new FunctorFilter[Regex[In, M, *]] {
+      override def functor: Functor[Regex[In, M, *]] = alternativeRegex
 
       override def mapFilter[A, B](fa: Regex[In, M, A])(f: A => Option[B]): Regex[In, M, B] =
         MapFilter(fa, f)
@@ -318,13 +318,13 @@ object Regex {
         cont => alternativesC.flatMap(_.apply(cont))
       },
       void = ev =>
-        λ[Regex[In, (ThreadId, M), ?] ~> λ[a => ContOut]](r =>
+        λ[Regex[In, (ThreadId, M), *] ~> λ[a => ContOut]](r =>
           compileCont(r.map(_ => ev.coerce(()))))
     )(re)
   }
 
-  private def expandRepeat[In, M]: Regex[In, M, ?] ~> Regex[In, M, ?] =
-    new (Regex[In, M, ?] ~> Regex[In, M, ?]) {
+  private def expandRepeat[In, M]: Regex[In, M, *] ~> Regex[In, M, *] =
+    new (Regex[In, M, *] ~> Regex[In, M, *]) {
       def apply[A](r: Regex[In, M, A]): Regex[In, M, A] =
         r match {
           case r: Repeat[_, _, _, _] => r.expand
@@ -341,8 +341,8 @@ object Regex {
   }
 
   def transformRecursive[In, M](
-    f: Regex[In, M, ?] ~> Regex[In, M, ?]): Regex[In, M, ?] ~> Regex[In, M, ?] =
-    new (Regex[In, M, ?] ~> Regex[In, M, ?]) {
+    f: Regex[In, M, *] ~> Regex[In, M, *]): Regex[In, M, *] ~> Regex[In, M, *] =
+    new (Regex[In, M, *] ~> Regex[In, M, *]) {
       def apply[A](fa: Regex[In, M, A]): Regex[In, M, A] =
         fa match {
           case Eps => f(Eps)

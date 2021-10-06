@@ -126,7 +126,7 @@ object RegexPrettyPrinter {
               orPrecedence,
               alternatives.map(r => parensMaybe(orPrecedence, go(r), false)).mkString_("|"))
         },
-        void = _ => λ[Regex[In, Match[In], ?] ~> λ[a => (Int, String)]](go(_))
+        void = _ => λ[Regex[In, Match[In], *] ~> λ[a => (Int, String)]](go(_))
       )(r)
     go(_)._2
   }

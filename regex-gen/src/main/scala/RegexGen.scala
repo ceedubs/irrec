@@ -164,8 +164,8 @@ object RegexGen {
    * The returned function takes an `Int` that indicates the desired "depth" of the regex.
    */
   private def genGenRegexWithEv[In](
-    cfg: Config[In]): Int => Gen[TypeWith[GenRegexWithEv[In, Match[In], ?]]] = {
-    val leafGen: Gen[TypeWith[GenRegexWithEv[In, Match[In], ?]]] = Gen.frequency(
+    cfg: Config[In]): Int => Gen[TypeWith[GenRegexWithEv[In, Match[In], *]]] = {
+    val leafGen: Gen[TypeWith[GenRegexWithEv[In, Match[In], *]]] = Gen.frequency(
       9 -> genTypeWithGenAndCogen.map { outType =>
         implicit val arbOut = Arbitrary(outType.evidence.gen)
         implicit val cogenOut = outType.evidence.cogen
@@ -175,7 +175,7 @@ object RegexGen {
       (if (cfg.includeEps) 2 else 0) -> Gen.const(
         TypeWith(GenRegexWithEv.fromRegexGen(Gen.const(combinator.empty[In, Match[In]]))))
     )
-    def go(depth: Int): Gen[TypeWith[GenRegexWithEv[In, Match[In], ?]]] =
+    def go(depth: Int): Gen[TypeWith[GenRegexWithEv[In, Match[In], *]]] =
       if (depth <= 1) leafGen
       else
         Gen.frequency(
